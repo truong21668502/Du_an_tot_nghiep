@@ -8,13 +8,17 @@ use App\Events\TestEvent;
 use App\Models\TestRealTime;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
+    return Inertia::render('Home', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
 });
+
+Route::get('/thuc-don', function(){
+    return Inertia::render('Menu');
+})->name('menu');
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');

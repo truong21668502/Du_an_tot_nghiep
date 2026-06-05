@@ -1,11 +1,146 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-/* @import "tailwindcss"; */
-@plugin "daisyui";
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap");
 
-/* @variant dark (false); */
+@theme {
+    /* Colors */
+    --color-surface: #fbf9f7;
+    --color-surface-dim: #dbdad8;
+    --color-surface-bright: #fbf9f7;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low: #f5f3f1;
+    --color-surface-container: #efedec;
+    --color-surface-container-high: #eae8e6;
+    --color-surface-container-highest: #e4e2e0;
 
-@plugin "daisyui" {
-    themes: light --default;
+    --color-on-surface: #1b1c1b;
+    --color-on-surface-variant: #4c463e;
+    --color-inverse-surface: #30302f;
+    --color-inverse-on-surface: #f2f0ee;
+
+    --color-outline: #7d766d;
+    --color-outline-variant: #cec5bb;
+
+    --color-primary: #665d50;
+    --color-on-primary: #ffffff;
+    --color-primary-container: #dccfbf;
+    --color-on-primary-container: #61584b;
+
+    --color-secondary: #745849;
+    --color-on-secondary: #ffffff;
+    --color-secondary-container: #fed8c4;
+    --color-on-secondary-container: #795c4d;
+
+    --color-tertiary: #566158;
+    --color-on-tertiary: #ffffff;
+    --color-tertiary-container: #c8d4c8;
+    --color-on-tertiary-container: #515c52;
+
+    --color-error: #ba1a1a;
+    --color-error-container: #ffdad6;
+    --color-on-error: #ffffff;
+
+    --color-background: #fbf9f7;
+    --color-on-background: #1b1c1b;
+
+    /* Typography */
+    --font-serif: "Playfair Display", serif;
+    --font-sans: "Plus Jakarta Sans", sans-serif;
+
+    /* Border Radius */
+    --radius-sm: 0.5rem;
+    --radius-default: 1rem;
+    --radius-xl: 1.5rem;
+    --radius-lg: 2rem;
+    --radius-full: 9999px;
+
+    /* Spacing */
+    --spacing-gutter: 24px;
+    --spacing-margin-mobile: 16px;
+    --spacing-margin-desktop: 40px;
+
+    /* Shadows */
+    --shadow-soft: 0 10px 40px rgba(74, 55, 40, 0.04), 0 2px 4px rgba(74, 55, 40, 0.02);
+}
+
+body {
+    @apply bg-background text-on-background font-sans antialiased;
+}
+
+/* Typography Utilities */
+@utility text-display-lg {
+    font-family: var(--font-serif);
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 56px;
+    letter-spacing: -0.02em;
+}
+
+@utility text-display-lg-mobile {
+    font-family: var(--font-serif);
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 44px;
+    letter-spacing: -0.02em;
+}
+
+@utility text-headline-md {
+    font-family: var(--font-serif);
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 40px;
+}
+
+@utility text-headline-sm {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 32px;
+}
+
+@utility text-body-lg {
+    font-family: var(--font-sans);
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 28px;
+}
+
+@utility text-body-md {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+}
+
+@utility text-label-md {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+@utility text-label-sm {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 16px;
+}
+
+/* Glass Panel Effect */
+@utility glass-panel {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Hide Scrollbar */
+@utility hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
 }
