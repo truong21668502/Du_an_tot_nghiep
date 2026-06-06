@@ -29,7 +29,17 @@ Route::get('/ve-chung-toi', function(){
 
 // Đặt bàn (có thể thêm sau)
 Route::get('/dat-ban', function(){
-    return Inertia::render('Booking');
+    return Inertia::render('Booking', [
+        'auth' => [
+            'user' => [
+                'id' => 1,
+                'name' => 'Nguyễn Văn A',
+                'email' => 'nguyenvana@example.com',
+                'phone' => '0912345678',
+                'avatar' => null,
+            ]
+        ]
+    ]);
 })->name('booking');
 
 // Đơn hàng (có thể thêm sau)
@@ -41,6 +51,16 @@ Route::get('/don-hang', function(){
 Route::get('/gio-hang', function(){
     return Inertia::render('Cart');
 })->name('cart');
+
+Route::post('/lien-he/gui', function(){
+    return response()->json([
+    'success' => true
+]);
+})->name('contact.send');
+
+Route::get('/lien-he', function(){
+    return Inertia::render('Contact');
+})->name('contact');
 
 // Dashboard (cần đăng nhập)
 Route::get('/dashboard', function () {
@@ -67,6 +87,36 @@ Route::get('/fire', function () {
         'content' => 'Tin nhắn tự động lúc ' . now()->toTimeString()
     ]);
     return 'Đã lưu vào database bản ghi số: ' . $newData->id;
+});
+
+
+use App\Http\Controllers\TestRealTimeController;
+
+Route::get(
+    '/test-real-times',
+    [TestRealTimeController::class, 'index']
+);
+
+Route::prefix('api')->group(function () {
+    Route::get(
+        '/test-real-times',
+        [TestRealTimeController::class, 'list']
+    );
+
+    Route::post(
+        '/test-real-times',
+        [TestRealTimeController::class, 'store']
+    );
+
+    Route::put(
+        '/test-real-times/{testRealTime}',
+        [TestRealTimeController::class, 'update']
+    );
+
+    Route::delete(
+        '/test-real-times/{testRealTime}',
+        [TestRealTimeController::class, 'destroy']
+    );
 });
 
 require __DIR__.'/auth.php';

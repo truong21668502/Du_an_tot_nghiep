@@ -25,13 +25,13 @@ const navLinks = [
     routeName: 'booking'
   },
   { 
-    label: 'Đơn hàng', 
-    href: '/don-hang',
-    routeName: 'orders'
-  },
-  { 
     label: 'Về chúng tôi', 
     href: '/ve-chung-toi',
+    routeName: 'about'
+  },
+  { 
+    label: 'Liên hệ', 
+    href: '/lien-he',
     routeName: 'about'
   }
 ]

@@ -1,15 +1,82 @@
-<script setup>
+﻿<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import { useBooking } from '@/Composables/useBooking'
+import BookingHeader from './Booking/Partials/BookingHeader.vue'
+import TableGrid from './Booking/Partials/TableGrid.vue'
+import ReservationModal from './Booking/Partials/ReservationModal.vue'
 
 defineOptions({ layout: MainLayout })
+
+const {
+  tables,
+  loading,
+  error,
+  fetchTables,
+  fetchReservations,
+  createReservation,
+  getTableSizeClass,
+  getTableStatusColor,
+  getTableStatusLabel,
+  mockTables,
+  todayReservations
+} = useBooking()
+
+const showReservationModal = ref(false)
+const selectedTable = ref(null)
+const user = computed(() => usePage().props.auth?.user || null)
+
+const handleTableClick = (table) => {
+  if (!user.value) {
+    window.location.href = '/login'
+    return
+  }
+  if (table.status === 'EMPTY') {
+    selectedTable.value = table
+    showReservationModal.value = true
+  }
+}
+
+const handleReservationSubmit = async (formData) => {
+  const result = await createReservation({
+    table_id: selectedTable.value.id,
+    ...formData
+  })
+  if (result.success) {
+    showReservationModal.value = false
+    selectedTable.value = null
+  }
+  return result
+}
+
+onMounted(() => {
+  tables.value = mockTables
+})
 </script>
 
 <template>
-  <div class="w-full max-w-[1280px] mx-auto px-margin-mobile md:px-gutter py-12 md:py-24">
-    <div class="text-center py-20">
-      <span class="material-symbols-outlined text-6xl text-outline-variant mb-4">event_seat</span>
-      <h1 class="text-display-lg-mobile md:text-display-lg text-primary mb-4">Đặt Bàn</h1>
-      <p class="text-body-lg text-on-surface-variant">Tính năng đang được phát triển. Vui lòng quay lại sau!</p>
-    </div>
+  <div class="w-full">
+    <BookingHeader 
+      :today-reservations="todayReservations"
+    />
+    
+    <TableGrid 
+      :tables="tables"
+      :loading="loading"
+      :error="error"
+      :get-table-size-class="getTableSizeClass"
+      :get-table-status-color="getTableStatusColor"
+      :get-table-status-label="getTableStatusLabel"
+      @table-click="handleTableClick"
+    />
+
+    <ReservationModal 
+      v-if="showReservationModal"
+      :table="selectedTable"
+      :user="user"
+      @close="showReservationModal = false"
+      @submit="handleReservationSubmit"
+    />
   </div>
 </template>
