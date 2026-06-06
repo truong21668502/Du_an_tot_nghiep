@@ -8,6 +8,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
+
 class TestEvent implements ShouldBroadcast
 {
     use Dispatchable, SerializesModels;
@@ -17,6 +18,8 @@ class TestEvent implements ShouldBroadcast
 
     public function __construct(TestRealTime $data)
     {
+        // Đặt một cái bẫy ghi log ở đây
+        info('HÀM CONSTRUCT ĐÃ TỰ CHẠY! Data content là: ' . $data->content);
         $this->data = $data;
     }
 

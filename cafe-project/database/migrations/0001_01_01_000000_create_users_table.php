@@ -11,29 +11,53 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // 1. BẢNG USERS (Đã bổ sung comment chi tiết cho từng trường)
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
-            $table->timestamps();
+            $table->id()->comment('Mã định danh người dùng (Khóa chính)');
+            $table->string('full_name', 100)->comment('Họ và tên đầy đủ của người dùng');
+            $table->string('phone_number', 15)->unique()->comment('Số điện thoại (Dùng để đăng nhập/liên hệ)');
+            $table->string('email', 100)->unique()->nullable()->comment('Email của người dùng');
+            $table->string('password', 255)->comment('Mật khẩu tài khoản (đã mã hóa)');
+            
+            $table->enum('role', ['ADMIN', 'STAFF', 'BARISTA', 'CUSTOMER'])
+                ->default('CUSTOMER')
+                ->comment('Vai trò/Phân quyền trong hệ thống');
+                
+            $table->integer('reward_points')->nullable()->default(0)->comment('Điểm tích lũy cho khách hàng');
+            
+            $table->enum('gender', ['Nam', 'Nữ', 'Khác'])
+                ->default('Khác')
+                ->comment('Giới tính của người dùng');
+                
+            $table->date('date_of_birth')->nullable()->comment('Ngày tháng năm sinh');
+            
+            $table->enum('status', ['active', 'inactive', 'banned'])
+                ->default('active')
+                ->comment('Trạng thái tài khoản (Hoạt động, Không hoạt động, Bị khóa)');
+                
+            $table->tinyInteger('is_email_verified')->default(0)->comment('Trạng thái xác thực email (0: Chưa, 1: Rồi)');
+            $table->string('google_id', 255)->nullable()->comment('ID tài khoản Google (nếu đăng nhập bằng Google)');
+            
+            // Thời gian tạo và cập nhật chuẩn DB
+            $table->timestamp('created_at')->useCurrent()->comment('Thời gian tạo tài khoản');
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate()->comment('Thời gian cập nhật thông tin gần nhất');
         });
 
+        // 2. BẢNG MẶC ĐỊNH CỦA LARAVEL
         Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
+            $table->string('email')->primary()->comment('Email yêu cầu đổi mật khẩu');
+            $table->string('token')->comment('Mã token xác thực đổi mật khẩu');
+            $table->timestamp('created_at')->nullable()->comment('Thời gian tạo token');
         });
 
+        // 3. BẢNG MẶC ĐỊNH CỦA LARAVEL
         Schema::create('sessions', function (Blueprint $table) {
-            $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
-            $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable();
-            $table->longText('payload');
-            $table->integer('last_activity')->index();
+            $table->string('id')->primary()->comment('Mã session định danh');
+            $table->foreignId('user_id')->nullable()->index()->comment('ID người dùng liên kết (nếu có)');
+            $table->string('ip_address', 45)->nullable()->comment('Địa chỉ IP của thiết bị');
+            $table->text('user_agent')->nullable()->comment('Thông tin trình duyệt/thiết bị');
+            $table->longText('payload')->comment('Dữ liệu lưu trữ trong session');
+            $table->integer('last_activity')->index()->comment('Thời điểm tương tác cuối cùng (Timestamp)');
         });
     }
 

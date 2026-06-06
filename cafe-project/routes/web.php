@@ -84,8 +84,9 @@ Route::get('/realtime', function () {
 
 Route::get('/fire', function () {
     $newData = TestRealTime::create([
-        'content' => 'Tin nhắn tự động lúc ' . now()->toTimeString()
+        'content' => 'Tin nhắn tự động lúc ' . now()->toTimeString(),
     ]);
+
     return 'Đã lưu vào database bản ghi số: ' . $newData->id;
 });
 
