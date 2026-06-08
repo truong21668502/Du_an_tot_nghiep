@@ -25,6 +25,8 @@ return new class extends Migration
                 ->constrained('tables')
                 ->onDelete('restrict') // Chặn xóa bàn nếu bàn đó đang có khách đặt trước
                 ->comment('Mã bàn được chọn (Khóa ngoại → tables.id)');
+
+            $table->string('phone_number', 15)->nullable()->unique()->comment('Số điện thoại (khác, nếu có)');
                 
             $table->dateTime('reservation_time')->comment('Ngày và giờ chính xác khách hẹn đến quán');
             $table->integer('guest_count')->comment('Số lượng khách đi cùng nhóm');

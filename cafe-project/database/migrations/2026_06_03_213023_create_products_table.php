@@ -51,7 +51,7 @@ return new class extends Migration
                 ->onDelete('cascade') // Nếu xóa sản phẩm gốc, tự động xóa sạch các size biến thể của nó
                 ->comment('Mã sản phẩm cha (Khóa ngoại → products.id)');
 
-            $table->enum('size', ['M', 'L'])->comment('Kích cỡ của sản phẩm (Size M hoặc Size L)');
+            $table->string('size', 50)->comment('Kích cỡ của sản phẩm (Size M hoặc Size L...)');
 
             // Các trường tài chính quản lý giá của từng size độc lập
             $table->decimal('price', 10, 2)->comment('Giá bán gốc của sản phẩm tương ứng với size này');
