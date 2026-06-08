@@ -27,7 +27,12 @@ return new class extends Migration
                 ->comment('Mã sản phẩm (Khóa ngoại → products.id)');
                 
             $table->integer('quantity')->default(1)->comment('Số lượng món ăn/nước uống khách đặt');
-            $table->enum('size', ['M', 'L'])->default('M')->comment('Kích cỡ sản phẩm tại thời điểm mua');
+
+            $table->foreignId('variant_id')
+                ->constrained('product_variants')
+                ->onDelete('restrict') // Không cho xóa variant nếu đã có trong đơn hàng
+                ->comment('Mã variant đã đặt');
+
             $table->decimal('unit_price', 10, 2)->comment('Giá bán của 1 sản phẩm tại thời điểm mua (Giúp giữ vững báo cáo tài chính)');
             $table->string('note', 255)->nullable()->comment('Ghi chú món ăn của khách (Ví dụ: Ít đường, không đá...)');
             
@@ -41,7 +46,7 @@ return new class extends Migration
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
 
             // CHỈ MỤC TỐI ƯU: Đảm bảo trong 1 đơn hàng, cùng 1 món nước ở 1 size cố định sẽ không bị tách làm 2 dòng
-            $table->unique(['order_id', 'product_id', 'size'], 'order_product_size_unique');
+            $table->unique(['order_id', 'variant_id'], 'order_product_variant_unique');
         });
     }
 

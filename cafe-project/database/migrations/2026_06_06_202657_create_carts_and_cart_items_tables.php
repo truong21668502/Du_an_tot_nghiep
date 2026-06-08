@@ -43,15 +43,20 @@ return new class extends Migration
                 ->comment('Mã sản phẩm (Khóa ngoại → products.id)');
                 
             $table->integer('quantity')->default(1)->comment('Số lượng sản phẩm khách chọn');
-            $table->enum('size', ['M', 'L'])->default('M')->comment('Kích cỡ ly nước khách chọn');
+
+            $table->foreignId('variant_id')
+                ->constrained('product_variants')
+                ->onDelete('cascade')
+                ->comment('Mã variant đã chọn');
+
             $table->string('note', 255)->nullable()->comment('Ghi chú đặc biệt của khách (ví dụ: ít đá, nhiều đường...)');
             
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
 
             // CHỈ MỤC TỐI ƯU: Tránh trùng lặp món cùng size trong giỏ hàng
-            // Giúp Backend dễ xử lý logic: trùng món + trùng size thì tự động CỘNG DỒN số lượng thay vì tạo dòng mới
-            $table->unique(['cart_id', 'product_id', 'size'], 'cart_product_size_unique');
+            // Giúp Backend dễ xử lý logic: trùng món + trùng biến thể thì tự động CỘNG DỒN số lượng thay vì tạo dòng mới
+            $table->unique(['cart_id', 'variant_id'], 'cart_variant_unique');
         });
     }
 

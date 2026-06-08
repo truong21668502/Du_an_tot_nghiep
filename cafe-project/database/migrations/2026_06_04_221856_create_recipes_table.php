@@ -14,22 +14,16 @@ return new class extends Migration
         Schema::create('recipes', function (Blueprint $table) {
             $table->id()->comment('Mã công thức (Khóa chính)');
             
-            // Khóa ngoại liên kết tới bảng sản phẩm (products)
-            $table->foreignId('product_id')
-                    ->constrained('products')
-                    ->onDelete('cascade') // Nếu xóa sản phẩm, tự động xóa công thức của sản phẩm đó
-                    ->comment('Mã sản phẩm (Khóa ngoại liên kết tới bảng products)');
+            $table->foreignId('variant_id')
+                    ->constrained('product_variants')
+                    ->onDelete('cascade')
+                    ->comment('Mã variant (công thức theo từng size)');
 
             // Khóa ngoại liên kết tới bảng nguyên liệu (materials)
             $table->foreignId('material_id')
                     ->constrained('materials')
-                    ->onDelete('restrict') // Nếu xóa nguyên liệu, tự động dọn dẹp hàng liên quan trong công thức
+                    ->onDelete('restrict') //hạn chế vì khi xoá nguyên liệu thì vẫn cần dữ lại công thức để dùng sau
                     ->comment('Mã nguyên liệu (Khóa ngoại liên kết tới bảng materials)');
-            
-            // Phân loại định lượng nguyên liệu theo từng kích cỡ ly
-            $table->enum('size', ['M', 'L'])
-                    ->default('M')
-                    ->comment('Kích cỡ sản phẩm áp dụng công thức này');
 
             // Định lượng cần dùng (Ví dụ: 15.50 g cà phê hoặc 120.00 ml sữa)
             $table->decimal('quantity_needed', 10, 2)
@@ -41,7 +35,7 @@ return new class extends Migration
 
             // CHỈ MỤC TỐI ƯU (Ràng buộc Unique tránh trùng lặp)
             // Đảm bảo 1 sản phẩm ở 1 size cố định không thể bị trùng lặp cùng 1 loại nguyên liệu 2 lần
-            $table->unique(['product_id', 'material_id', 'size'], 'product_material_size_unique');
+            $table->unique(['variant_id', 'material_id'], 'variant_material_unique');
         });
     }
 

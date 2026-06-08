@@ -17,6 +17,8 @@ return new class extends Migration
             
             // Cột mở rộng giúp phân loại khu vực phục vụ trong quán
             $table->string('area', 50)->nullable()->default('Tầng trệt')->comment('Khu vực hoặc vị trí tầng (Ví dụ: Tầng 1, Ngoài trời, Sân thượng)');
+
+            $table->integer('capacity')->default(4)->comment('Sức chứa tối đa của bàn (số người)');
             
             // Đường dẫn URL tích hợp trong mã QR để khách quét gọi món tại bàn
             $table->string('qr_code', 255)->unique()->nullable()->comment('Link hoặc mã QR định danh phục vụ gọi món tại bàn (Duy nhất)');
