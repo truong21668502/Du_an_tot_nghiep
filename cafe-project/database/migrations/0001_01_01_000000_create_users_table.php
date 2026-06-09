@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id()->comment('Mã định danh người dùng (Khóa chính)');
             $table->string('full_name', 100)->comment('Họ và tên đầy đủ của người dùng');
-            $table->string('phone_number', 15)->unique()->comment('Số điện thoại (Dùng để đăng nhập/liên hệ)');
+            $table->string('phone_number', 15)->unique()->nullable()->comment('Số điện thoại (Dùng để đăng nhập/liên hệ)');
             $table->string('email', 100)->unique()->nullable()->comment('Email của người dùng');
             $table->string('password', 255)->comment('Mật khẩu tài khoản (đã mã hóa)');
             

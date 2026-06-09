@@ -111,8 +111,8 @@ router.on('navigate', () => {
           
           <!-- Login Button (Desktop) -->
           <a 
-            href="/login"
-            @click.prevent="navigateTo('/login')"
+            href="/dang-nhap"
+            @click.prevent="navigateTo('/dang-nhap')"
             class="hidden md:block px-6 py-2 bg-primary text-on-primary rounded-full font-sans text-label-md hover:bg-primary/90 transition-colors duration-200 shadow-sm hover:shadow-md"
           >
             Đăng nhập
