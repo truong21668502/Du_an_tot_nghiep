@@ -15,11 +15,25 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            UserSeeder::class,
+            BrandSeeder::class,
+            CategorySeeder::class,
+            ProductSeeder::class,
+            ProductImageSeeder::class,
+            ProductVariantSeeder::class,
+            TableSeeder::class,
+            MaterialSeeder::class,
+            RecipeSeeder::class,
+            CouponSeeder::class,
+            CouponUserSeeder::class,
+            ImportReceiptSeeder::class,
+            ImportReceiptDetailSeeder::class,
+            PostCategorySeeder::class,
+            PostSeeder::class
         ]);
     }
+
+    //lệnh cho ae chạy nhanh toàn bộ migration và seeder
+    //php artisan migrate:fresh --seed
 }
