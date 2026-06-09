@@ -20,8 +20,28 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'full_name',
+        'phone_number',
         'email',
         'password',
+        'role',
+        'reward_points',
+        'gender',
+        'date_of_birth',
+        'status',
+        'is_email_verified',
+        'google_id',
+    ];
+
+    /**
+     * Tự động ép kiểu dữ liệu khi lấy từ Database ra Model.
+     */
+    protected $casts = [
+        'date_of_birth' => 'date',
+        'reward_points' => 'integer',
+        'is_email_verified' => 'boolean', // Chuyển tinyint(4) thành true/false cho dễ dùng
+        'password' => 'hashed', // Tự động hash password từ bản Laravel 10 trở lên
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     /**
