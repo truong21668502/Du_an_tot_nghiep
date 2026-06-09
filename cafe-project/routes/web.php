@@ -143,6 +143,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::get('bai-viet', function(){
+    return Inertia::render('Blog');
+})->name('blog');
+
 // Real-time testing
 Route::get('/realtime', function () {
     $existingData = TestRealTime::latest()->limit(10)->get();
