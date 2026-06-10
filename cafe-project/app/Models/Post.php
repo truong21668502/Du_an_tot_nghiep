@@ -14,14 +14,14 @@ class Post extends Model
 
     // Cho phép fill dữ liệu hàng loạt (Mass Assignment) cho các trường của bảng posts
     protected $fillable = [
-        'post_category_id',
+        'category_id',
+        'user_id',
         'title',
-        'slug',
-        'image',
-        'summary',
+        'slug', // Giả định cột "Đường dẫn URL thân thiện cho SEO" tên là slug
+        'thumbnail_url',
         'content',
-        'views',
         'status',
+        'published_at',
     ];
 
     // Ép kiểu dữ liệu cho các thuộc tính đặc biệt (ví dụ trường views là kiểu số nguyên)
@@ -33,9 +33,15 @@ class Post extends Model
      * 📌 Mối quan hệ: Nhiều bài viết thuộc về một Danh mục bài viết (Many-to-One)
      * Liên kết ngược lại với bảng post_categories qua khóa ngoại post_category_id
      */
+
+    public function user()
+    {
+        // Giả định khóa ngoại là 'user_id'
+        return $this->belongsTo(User::class, 'user_id');
+    }
     public function category()
     {
-        return $this->belongsTo(PostCategory::class, 'post_category_id');
+        return $this->belongsTo(PostCategory::class, 'category_id');
     }
 
     /**

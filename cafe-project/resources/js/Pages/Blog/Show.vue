@@ -2,9 +2,9 @@
 import { usePage, Link } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import AnimateOnScroll from '@/Components/Base/AnimateOnScroll.vue'
-import CommentSection from './Blog/Partials/CommentSection.vue'
-import RelatedPosts from './Blog/Partials/RelatedPosts.vue'
-import AuthorBox from './Blog/Partials/AuthorBox.vue'
+import CommentSection from './Partials/CommentSection.vue'
+import RelatedPosts from './Partials/RelatedPosts.vue'
+import AuthorBox from './Partials/AuthorBox.vue'
 defineOptions({ layout: MainLayout })
 const { props } = usePage()
 const post = props.post || {}
