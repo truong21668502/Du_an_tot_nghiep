@@ -35,7 +35,6 @@ return new class extends Migration
                 ->default('active')
                 ->comment('Trạng thái tài khoản (Hoạt động, Không hoạt động, Bị khóa)');
                 
-            $table->tinyInteger('is_email_verified')->default(0)->comment('Trạng thái xác thực email (0: Chưa, 1: Rồi)');
             $table->string('google_id', 255)->nullable()->comment('ID tài khoản Google (nếu đăng nhập bằng Google)');
 
             // kiểm tra email đã xác thực hay chưa (dùng cho logic đăng nhập/đăng ký bằng email)

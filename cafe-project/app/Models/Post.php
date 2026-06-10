@@ -17,11 +17,11 @@ class Post extends Model
         'category_id',
         'user_id',
         'title',
-        'slug', // Giả định cột "Đường dẫn URL thân thiện cho SEO" tên là slug
-        'thumbnail_url',
+        'slug',
+        'image',
+        'summary',
         'content',
         'status',
-        'published_at',
     ];
 
     // Ép kiểu dữ liệu cho các thuộc tính đặc biệt (ví dụ trường views là kiểu số nguyên)

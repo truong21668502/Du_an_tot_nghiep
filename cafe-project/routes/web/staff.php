@@ -9,20 +9,20 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:STAFF'])->prefix('staff')->name('staff.')->group(function () {
+    Route::middleware(['auth', 'role:STAFF'])->prefix('nhan-vien')->name('staff.')->group(function () {
     
     // Dashboard
-    Route::get('/dashboard', function () {
+    Route::get('/bang-dieu-khien', function () {
         return Inertia::render('Staff/Dashboard');
     })->name('dashboard');
 
     // Quản lý đơn hàng
-    Route::get('/orders', function () {
-        return Inertia::render('Staff/Orders/Index');
+    Route::get('/don-hang', function () {
+        return Inertia::render('Staff/Orders');
     })->name('orders.index');
 
     // Quản lý đặt bàn
-    Route::get('/bookings', function () {
-        return Inertia::render('Staff/Bookings/Index');
+    Route::get('/dat-ban', function () {
+        return Inertia::render('Staff/Bookings');
     })->name('bookings.index');
 });
