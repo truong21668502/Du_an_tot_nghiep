@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 import BaseButton from '@/Components/Base/BaseButton.vue'
 defineOptions({ layout: GuestLayout })
@@ -26,7 +26,7 @@ const handleLogin = () => {
     <div class="w-full max-w-md">
       <div class="text-center mb-10">
         <Link href="/" class="inline-block font-serif text-headline-md text-primary mb-3 hover:opacity-80 transition-opacity">Nắng Coffee</Link>
-        <h1 class="font-serif text-headline-sm text-on-surface">Đăng nhập</h1>
+        <h1 class="font-serif text-headline-sm text-on-surface">Đăng Nhập Hệ Thống Nội Bộ</h1>
         <p class="font-sans text-body-md text-on-surface-variant mt-2">Chào mừng bạn trở lại!</p>
       </div>
       <div class="bg-surface rounded-2xl shadow-soft border border-outline-variant/20 p-8">
@@ -63,10 +63,6 @@ const handleLogin = () => {
             {{ loading ? 'Đang đăng nhập...' : 'Đăng nhập' }}
           </BaseButton>
         </form>
-        <div class="relative my-6">
-          <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-outline-variant/30"></div></div>
-          <div class="relative flex justify-center"><span class="px-4 bg-surface font-sans text-label-sm text-on-surface-variant">hoặc</span></div>
-        </div>
       </div>
     </div>
   </div>
