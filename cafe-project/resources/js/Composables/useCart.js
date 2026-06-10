@@ -1,95 +1,193 @@
-﻿import { ref, computed } from 'vue'
-import { router } from '@inertiajs/vue3'
-export function useCart(initialCart = null, initialItems = []) {
-  const cart = ref(initialCart)
-  const items = ref(initialItems)
+﻿import { ref, computed, watch } from 'vue'
+import { router, usePage } from '@inertiajs/vue3'
+import { toast } from 'vue3-toastify'
+
+export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, initialAppliedVoucher = null) {
+  const items = ref(initialItems || [])
   const loading = ref(false)
   const errors = ref({})
-  const voucherCode = ref('')
-  const voucherDiscount = ref(0)
-  const appliedVoucher = ref(null)
+  const voucherCode = ref(initialAppliedVoucher?.code || '')
+  const appliedVoucher = ref(initialAppliedVoucher)
+  const voucherDiscount = ref(Number(initialVoucherDiscount) || 0)
+
   const subtotal = computed(() => {
     return items.value.reduce((sum, item) => {
-      const price = item.variant?.price || item.product?.price || 0
-      return sum + price * item.quantity
+      const price = Number(item.variant?.price || item.product?.price || 0)
+      return sum + (price * item.quantity)
     }, 0)
   })
+
   const taxAmount = computed(() => Math.round(subtotal.value * 0.08))
-  const total = computed(() => subtotal.value + taxAmount.value - voucherDiscount.value)
-  const totalItems = computed(() => items.value.reduce((sum, item) => sum + item.quantity, 0))
+
+  const total = computed(() => {
+    return Math.max(0, subtotal.value + taxAmount.value - voucherDiscount.value)
+  })
+
+  const totalItems = computed(() => {
+    return items.value.reduce((sum, item) => sum + item.quantity, 0)
+  })
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(Number(price))
+  }
+
+  const updatePageData = (page) => {
+    items.value = page.props.cartItems || []
+    voucherDiscount.value = Number(page.props.voucherDiscount) || 0
+    appliedVoucher.value = page.props.appliedVoucher || null
+    if (appliedVoucher.value) {
+      voucherCode.value = appliedVoucher.value.code || ''
+    }
+    loading.value = false
+    errors.value = {}
+  }
+
   const updateItem = (itemId, quantity) => {
     loading.value = true
-    router.put(`/gio-hang/san-pham/${itemId}`, { quantity }, {
-      preserveScroll: true,
-      onSuccess: (page) => {
-        const updated = page.props.cartItems?.find(i => i.id === itemId)
-        if (updated) {
-          const idx = items.value.findIndex(i => i.id === itemId)
-          if (idx !== -1) items.value[idx] = updated
-        }
-      },
-      onError: (err) => { errors.value = err },
-      onFinish: () => { loading.value = false }
-    })
+    router.put(
+      route('customer.cart.update', itemId),
+      { quantity },
+      {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: (page) => {
+          updatePageData(page)
+          toast.success('Đã cập nhật giỏ hàng')
+        },
+        onError: (err) => {
+          errors.value = err
+          loading.value = false
+          if (err.quantity) {
+            toast.error(err.quantity)
+          } else {
+            toast.error('Có lỗi xảy ra khi cập nhật giỏ hàng')
+          }
+        },
+      }
+    )
   }
+
   const removeItem = (itemId) => {
     loading.value = true
-    router.delete(`/gio-hang/san-pham/${itemId}`, {
-      preserveScroll: true,
-      onSuccess: () => {
-        items.value = items.value.filter(i => i.id !== itemId)
-      },
-      onError: (err) => { errors.value = err },
-      onFinish: () => { loading.value = false }
-    })
+    router.delete(
+      route('customer.cart.remove', itemId),
+      {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: (page) => {
+          updatePageData(page)
+          toast.success('Đã xóa sản phẩm khỏi giỏ hàng')
+        },
+        onError: (err) => {
+          errors.value = err
+          loading.value = false
+          toast.error('Có lỗi xảy ra khi xóa sản phẩm')
+        },
+      }
+    )
   }
+
+  const clearCart = () => {
+    if (!confirm('Bạn có chắc muốn xóa tất cả sản phẩm?')) return
+    loading.value = true
+    router.delete(
+      route('customer.cart.clear'),
+      {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: (page) => {
+          items.value = page.props.cartItems || []
+          voucherDiscount.value = 0
+          appliedVoucher.value = null
+          voucherCode.value = ''
+          loading.value = false
+          errors.value = {}
+          toast.success('Đã xóa toàn bộ giỏ hàng')
+        },
+        onError: (err) => {
+          errors.value = err
+          loading.value = false
+          toast.error('Có lỗi xảy ra khi xóa giỏ hàng')
+        },
+      }
+    )
+  }
+
   const applyVoucher = () => {
     if (!voucherCode.value.trim()) {
-      errors.value = { voucher: 'Vui long nhap ma voucher' }
+      toast.warning('Vui lòng nhập mã giảm giá')
       return
     }
     loading.value = true
-    router.post('/gio-hang/voucher', { code: voucherCode.value }, {
-      preserveScroll: true,
-      onSuccess: (page) => {
-        appliedVoucher.value = page.props.appliedVoucher || null
-        voucherDiscount.value = page.props.voucherDiscount || 0
-        errors.value = {}
-      },
-      onError: (err) => {
-        voucherDiscount.value = 0
-        appliedVoucher.value = null
-        errors.value = err
-      },
-      onFinish: () => { loading.value = false }
-    })
+    router.post(
+      route('customer.cart.voucher.apply'),
+      { code: voucherCode.value.trim() },
+      {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: (page) => {
+          updatePageData(page)
+          if (page.props.flash?.success) {
+            toast.success(page.props.flash.success)
+          }
+        },
+        onError: (err) => {
+          errors.value = err
+          loading.value = false
+          if (err.voucher) {
+            toast.error(err.voucher)
+          } else {
+            toast.error('Mã giảm giá không hợp lệ')
+          }
+        },
+      }
+    )
   }
+
   const removeVoucher = () => {
-    voucherCode.value = ''
-    voucherDiscount.value = 0
-    appliedVoucher.value = null
-  }
-  const clearCart = () => {
+        console.log(route('customer.cart.voucher.remove'));
+
+        
+
     loading.value = true
-    router.delete('/gio-hang', {
-      preserveScroll: true,
-      onSuccess: () => {
-        items.value = []
-        cart.value = null
-        voucherDiscount.value = 0
-        appliedVoucher.value = null
-        voucherCode.value = ''
-      },
-      onError: (err) => { errors.value = err },
-      onFinish: () => { loading.value = false }
-    })
+    router.delete(
+      route('customer.cart.voucher.remove'),
+      {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: (page) => {
+          updatePageData(page)
+          voucherCode.value = ''
+          toast.success('Đã xóa mã giảm giá')
+        },
+        onError: (err) => {
+          errors.value = err
+          loading.value = false
+          toast.error('Có lỗi xảy ra khi xóa mã giảm giá')
+        },
+      }
+    )
   }
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
-  }
+
   return {
-    cart, items, loading, errors, voucherCode, voucherDiscount, appliedVoucher,
-    subtotal, taxAmount, total, totalItems,
-    updateItem, removeItem, applyVoucher, removeVoucher, clearCart, formatPrice
+    items,
+    loading,
+    errors,
+    voucherCode,
+    voucherDiscount,
+    appliedVoucher,
+    subtotal,
+    taxAmount,
+    total,
+    totalItems,
+    updateItem,
+    removeItem,
+    applyVoucher,
+    removeVoucher,
+    clearCart,
+    formatPrice,
   }
 }

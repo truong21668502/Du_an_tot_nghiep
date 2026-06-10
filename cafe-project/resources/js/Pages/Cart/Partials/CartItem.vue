@@ -1,27 +1,43 @@
 ﻿<script setup>
 import { ref, watch } from 'vue'
+
 const props = defineProps({
   item: { type: Object, required: true },
   formatPrice: { type: Function, required: true },
   loading: { type: Boolean, default: false }
 })
+
 const emit = defineEmits(['update-quantity', 'remove'])
+
 const quantity = ref(props.item.quantity)
-watch(() => props.item.quantity, (val) => { quantity.value = val })
+
+watch(() => props.item.quantity, (val) => {
+  quantity.value = val
+})
 </script>
+
 <template>
   <div class="bg-surface rounded-xl border border-outline-variant/20 p-4 md:p-6 flex gap-4">
     <div class="w-24 h-24 md:w-28 md:h-28 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-low">
-      <img :src="item.product?.image" :alt="item.product?.name" class="w-full h-full object-cover" loading="lazy" />
+      <img
+        :src="item.product?.image || 'https://placehold.co/400x400'"
+        :alt="item.product?.name || 'Sản phẩm'"
+        class="w-full h-full object-cover"
+        loading="lazy"
+      />
     </div>
     <div class="flex-1 min-w-0">
       <div class="flex justify-between items-start gap-4">
         <div class="min-w-0">
-          <h3 class="font-serif text-headline-sm text-primary truncate">{{ item.product?.name }}</h3>
-          <p v-if="item.variant" class="font-sans text-label-sm text-on-surface-variant mt-1">
-            {{ item.variant.size }} / {{ item.variant.sugar }} / {{ item.variant.ice }}
+          <h3 class="font-serif text-headline-sm text-primary truncate">
+            {{ item.product?.name || 'Đang tải...' }}
+          </h3>
+          <p v-if="item.variant?.size" class="font-sans text-label-sm text-on-surface-variant mt-1">
+            Size: {{ item.variant.size }}
           </p>
-          <p v-if="item.note" class="font-sans text-label-sm text-secondary mt-1 italic">Ghi chú: {{ item.note }}</p>
+          <p v-if="item.note" class="font-sans text-label-sm text-secondary mt-1 italic">
+            Ghi chú: {{ item.note }}
+          </p>
         </div>
         <button
           @click="emit('remove', item.id)"

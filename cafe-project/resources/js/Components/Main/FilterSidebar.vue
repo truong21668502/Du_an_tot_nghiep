@@ -17,14 +17,12 @@ defineEmits(["update:priceRange", "update:rating", "close"]);
 </script>
 
 <template>
-    <!-- Overlay cho mobile -->
     <div
         v-if="show"
         @click="$emit('close')"
         class="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
     ></div>
 
-    <!-- Sidebar -->
     <aside
         :class="[
             'fixed md:sticky top-24 left-0 h-[calc(100vh-6rem)] w-80 bg-surface border-r border-outline-variant/20 p-6 overflow-y-auto z-50 transition-transform duration-300',
@@ -43,18 +41,16 @@ defineEmits(["update:priceRange", "update:rating", "close"]);
         </div>
 
         <div class="space-y-8">
-            <!-- Price Range Filter -->
             <PriceRangeFilter
-                :current-min="filters.priceRange.min"
-                :current-max="filters.priceRange.max"
+                :current-min="filters?.min_price ?? ''"
+                :current-max="filters?.max_price ?? ''"
                 @update:price-range="$emit('update:priceRange', $event)"
             />
 
             <hr class="border-outline-variant/20" />
 
-            <!-- Rating Filter -->
             <RatingFilter
-                :model-value="filters.rating"
+                :model-value="filters?.rating ?? null"
                 @update:model-value="$emit('update:rating', $event)"
             />
 

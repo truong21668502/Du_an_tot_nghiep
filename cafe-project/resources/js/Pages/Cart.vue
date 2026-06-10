@@ -7,15 +7,20 @@ import CartItem from './Cart/Partials/CartItem.vue'
 import CartSummary from './Cart/Partials/CartSummary.vue'
 import VoucherInput from './Cart/Partials/VoucherInput.vue'
 import AnimateOnScroll from '@/Components/Base/AnimateOnScroll.vue'
+
 defineOptions({ layout: MainLayout })
+
 const { props } = usePage()
 const initialCart = props.cart || null
 const initialItems = props.cartItems || []
+const initialVoucherDiscount = props.voucherDiscount || 0
+const initialAppliedVoucher = props.appliedVoucher || null
+
 const {
   items, loading, errors, voucherCode, voucherDiscount, appliedVoucher,
   subtotal, taxAmount, total, totalItems,
   updateItem, removeItem, applyVoucher, removeVoucher, clearCart, formatPrice
-} = useCart(initialCart, initialItems)
+} = useCart(initialCart, initialItems, initialVoucherDiscount, initialAppliedVoucher)
 </script>
 <template>
   <div class="w-full">

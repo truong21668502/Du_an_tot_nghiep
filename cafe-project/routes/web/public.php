@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Models\TestRealTime;
+use App\Http\Controllers\Customer\ProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,10 +22,9 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+
 // Thực đơn
-Route::get('/thuc-don', function () {
-    return Inertia::render('Menu');
-})->name('menu');
+Route::get('/thuc-don', [ProductController::class, 'index'])->name('customer.menu.index');
 
 // Về chúng tôi
 Route::get('/ve-chung-toi', function () {

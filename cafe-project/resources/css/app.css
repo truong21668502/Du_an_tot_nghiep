@@ -144,3 +144,7 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
     display: none;
 }
+
+.Toastify__toast-container--top-right {
+    top: 70px !important;
+}
