@@ -6,7 +6,7 @@ use Inertia\Inertia;
 use App\Models\TestRealTime;
 use App\Http\Controllers\Customer\ProductController;
 use App\Http\Controllers\Customer\PostController;
-
+use App\Http\Controllers\Customer\PostCommentController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -45,7 +45,10 @@ Route::post('/lien-he/gui', function () {
 
 // Blog
 Route::get('/bai-viet', [PostController::class, 'index'])->name('blog.index');
-Route::get('/bai-viet/{slug}', [PostController::class, 'show'])->name('blog.show');
+Route::get('/bai-viet/{slug}', [PostController::class, 'dispatch'])->name('blog.dispatch');
+Route::post('/bai-viet/{postId}/binh-luan', [PostCommentController::class, 'store'])
+    ->name('comments.store')
+    ->middleware('auth');
 
 // Real-time testing (public)
 Route::get('/realtime', function () {
