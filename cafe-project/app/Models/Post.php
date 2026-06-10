@@ -14,14 +14,14 @@ class Post extends Model
 
     // Cho phép fill dữ liệu hàng loạt (Mass Assignment) cho các trường của bảng posts
     protected $fillable = [
-        'post_category_id',
+        'category_id',
+        'user_id',
         'title',
         'slug',
-        'image',
-        'summary',
+        'thumbnail_url',
         'content',
-        'views',
         'status',
+        'published_at'
     ];
 
     // Ép kiểu dữ liệu cho các thuộc tính đặc biệt (ví dụ trường views là kiểu số nguyên)
