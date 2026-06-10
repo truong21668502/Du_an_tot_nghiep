@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Models\TestRealTime;
+use App\Http\Controllers\PostController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,9 +44,8 @@ Route::post('/lien-he/gui', function () {
 })->name('contact.send');
 
 // Blog
-Route::get('/bai-viet', function () {
-    return Inertia::render('Blog');
-})->name('blog');
+Route::get('/bai-viet', [PostController::class, 'index'])->name('blog.index');
+Route::get('/bai-viet/{slug}', [PostController::class, 'show'])->name('blog.show');
 
 // Real-time testing (public)
 Route::get('/realtime', function () {
