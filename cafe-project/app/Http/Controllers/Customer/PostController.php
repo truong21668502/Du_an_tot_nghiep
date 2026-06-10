@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
-
+namespace App\Http\Controllers\Customer;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\PostCategory;
 use Inertia\Inertia;
+use App\Http\Controllers\Controller;
 
 class PostController extends Controller
 {

@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Models\TestRealTime;
 use App\Http\Controllers\Customer\ProductController;
-use App\Http\Controllers\PostController;
+use App\Http\Controllers\Customer\PostController;
 
 /*
 |--------------------------------------------------------------------------
