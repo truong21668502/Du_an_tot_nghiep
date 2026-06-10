@@ -1,6 +1,6 @@
 ﻿<script setup>
 import { ref } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 import BaseButton from '@/Components/Base/BaseButton.vue'
 defineOptions({ layout: GuestLayout })
@@ -9,12 +9,16 @@ const errors = ref({})
 const form = ref({ email: '', password: '', remember: false })
 const showPassword = ref(false)
 const handleLogin = () => {
-  loading.value = true
-  const { router } = require('@inertiajs/vue3')
-  router.post('/dang-nhap', form.value, {
-    onError: (err) => { errors.value = err },
-    onFinish: () => { loading.value = false }
-  })
+    loading.value = true
+
+    router.post('/login', form.value, {
+        onError: (err) => {
+            errors.value = err
+        },
+        onFinish: () => {
+            loading.value = false
+        }
+    })
 }
 </script>
 <template>
