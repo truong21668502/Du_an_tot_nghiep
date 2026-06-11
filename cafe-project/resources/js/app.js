@@ -9,8 +9,12 @@ import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import Vue3Toastify from 'vue3-toastify'
 import 'vue3-toastify/dist/index.css'
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+import { computed, watch } from 'vue'
+import { usePage } from "@inertiajs/vue3";
+import { toast } from "vue3-toastify";
 
+const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const page = usePage()
 
 
 createInertiaApp({
@@ -32,3 +36,24 @@ createInertiaApp({
       .mount(el)
   },
 })
+
+
+const flash = computed(() => page.props.flash)
+
+// console.log('FLASH MESSAGES BAN ĐẦU:', flash.value)
+
+watch(
+  flash,
+  (newFlash) => {
+    if (newFlash && newFlash['toast-success']) {
+      // console.log('ĐÃ NHẬN FLASH MESSAGE THÀNH CÔNG:', newFlash['toast-success'])
+
+      toast.success(newFlash['toast-success']) 
+    }
+    else if (newFlash && newFlash['error']) { 
+      // console.log('ĐÃ NHẬN FLASH MESSAGE LỖI:', newFlash['error'])
+      toast.error(newFlash['error'])
+    }
+  },
+  { deep: true, immediate: true }
+)

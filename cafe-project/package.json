@@ -5,7 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "project": "concurrently \"php artisan serve\" \"php artisan reverb:start\" \"php artisan queue:work\" \"npm run dev\""
+        "project": "concurrently \"php artisan serve --host=localhost\" \"php artisan reverb:start\" \"php artisan queue:work\" \"npm run dev\""
     },
     "devDependencies": {
         "@inertiajs/vue3": "^2.0.0",

@@ -38,6 +38,15 @@ class HandleInertiaRequests extends Middleware
             ],
 
             'brand' => fn () => \App\Models\Brand::first(),
+
+            'auth_config' => [
+                'google_client_id' => env('GOOGLE_CLIENT_ID'),
+            ],
+
+            'flash' => [
+                'toast-success' => fn () => $request->session()->get('toast-success'),
+                'error' => fn () => $request->session()->get('toast-error'),
+            ],
         ];
     }
 }

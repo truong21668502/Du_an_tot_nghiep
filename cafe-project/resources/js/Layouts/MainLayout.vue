@@ -1,6 +1,7 @@
 ﻿<script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { usePage, router } from '@inertiajs/vue3'
+import { toast } from "vue3-toastify";
 const isMobileMenuOpen = ref(false)
 const page = usePage()
 const currentUrl = computed(() => page.url)
@@ -29,6 +30,7 @@ const toggleMobileMenu = () => {
 router.on('navigate', () => {
   isMobileMenuOpen.value = false
 })
+
 </script>
 <template>
   <div class="min-h-screen flex flex-col">
@@ -146,7 +148,7 @@ router.on('navigate', () => {
               </a>
               <a 
                 href="/dang-xuat"
-                @click.prevent="router.post('/dang-xuat')"
+                @click.prevent="router.post(route('logout'))"
                 class="flex items-center justify-center gap-2 w-full py-3 bg-error text-on-error rounded-full font-sans text-label-md hover:bg-error/90 transition-colors"
               >
                 <span class="material-symbols-outlined text-lg">logout</span>

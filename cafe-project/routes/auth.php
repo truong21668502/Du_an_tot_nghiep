@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\GoogleOneTapController;
 
 Route::middleware('guest')->group(function () {
     Route::get('dang-ky', [RegisteredUserController::class, 'create'])
@@ -33,6 +34,9 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
+
+    Route::post('/auth/google-one-tap', [GoogleOneTapController::class, 'handle'])
+    ->name('auth.google-one-tap');
 
     
 });
