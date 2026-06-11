@@ -58,8 +58,8 @@ return new class extends Migration
             $table->decimal('discount_price', 10, 2)->nullable()->comment('Giá khuyến mãi/giảm giá của size này (Để NULL nếu không giảm giá)');
 
             // Thời gian áp dụng chương trình giảm giá
-            $table->date('sale_date_start')->nullable()->comment('Ngày bắt đầu áp dụng giá khuyến mãi');
-            $table->date('sale_date_end')->nullable()->comment('Ngày kết thúc áp dụng giá khuyến mãi');
+            $table->dateTime('sale_date_start')->nullable()->comment('Ngày bắt đầu áp dụng giá khuyến mãi');
+            $table->dateTime('sale_date_end')->nullable()->comment('Ngày kết thúc áp dụng giá khuyến mãi');
 
             // Quản lý số lượng và trạng thái của riêng từng size
             $table->integer('stock_quantity')->default(0)->comment('Số lượng ly/sản phẩm còn có thể phục vụ trong kho cho size này');
