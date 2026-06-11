@@ -45,7 +45,7 @@ class HandleInertiaRequests extends Middleware
 
             'flash' => [
                 'toast-success' => fn () => $request->session()->get('toast-success'),
-                'error' => fn () => $request->session()->get('toast-error'),
+                'toast-error' => fn () => $request->session()->get('toast-error'),
             ],
         ];
     }

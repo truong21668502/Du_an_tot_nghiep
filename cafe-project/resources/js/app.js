@@ -50,9 +50,9 @@ watch(
 
       toast.success(newFlash['toast-success']) 
     }
-    else if (newFlash && newFlash['error']) { 
+    else if (newFlash && newFlash['toast-error']) { 
       // console.log('ĐÃ NHẬN FLASH MESSAGE LỖI:', newFlash['error'])
-      toast.error(newFlash['error'])
+      toast.error(newFlash['toast-error'])
     }
   },
   { deep: true, immediate: true }
