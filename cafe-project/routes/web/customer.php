@@ -4,7 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Customer\CartController;
-
+use App\Http\Controllers\Customer\BookingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,32 +25,25 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Giỏ hàng
-        Route::get('/gio-hang', [CartController::class, 'index'])->name('customer.cart.index');
+    Route::get('/gio-hang', [CartController::class, 'index'])->name('customer.cart.index');
 
-        Route::post('/cart/add', [CartController::class, 'add'])->name('customer.cart.add');
+    Route::post('/cart/add', [CartController::class, 'add'])->name('customer.cart.add');
 
-        Route::delete('/cart', [CartController::class, 'clear'])->name('customer.cart.clear');
+    Route::delete('/cart', [CartController::class, 'clear'])->name('customer.cart.clear');
 
-        Route::post('/cart/voucher', [CartController::class, 'applyVoucher'])->name('customer.cart.voucher.apply');
-        Route::delete('/cart/voucher', [CartController::class, 'removeVoucher'])->name('customer.cart.voucher.remove');
+    Route::post('/cart/voucher', [CartController::class, 'applyVoucher'])->name('customer.cart.voucher.apply');
+    Route::delete('/cart/voucher', [CartController::class, 'removeVoucher'])->name('customer.cart.voucher.remove');
 
-        Route::put('/cart/{cartItem}', [CartController::class, 'update'])->name('customer.cart.update');
-        Route::delete('/cart/{cartItem}', [CartController::class, 'remove'])->name('customer.cart.remove');
+    Route::put('/cart/{cartItem}', [CartController::class, 'update'])->name('customer.cart.update');
+    Route::delete('/cart/{cartItem}', [CartController::class, 'remove'])->name('customer.cart.remove');
 
     // Đặt bàn
-    Route::get('/dat-ban', function () {
-        return Inertia::render('Booking', [
-            'auth' => [
-                'user' => [
-                    'id' => 1,
-                    'name' => 'Nguyễn Văn A',
-                    'email' => 'nguyenvana@example.com',
-                    'phone' => '0912345678',
-                    'avatar' => null,
-                ]
-            ]
-        ]);
-    })->name('booking');
+    Route::get('/dat-ban', [BookingController::class, 'index'])->name('booking');
+    Route::get('/api/tables', [BookingController::class, 'tables'])->name('api.tables');
+    Route::get('/api/reservations', [BookingController::class, 'reservations'])->name('api.reservations');
+    Route::post('/api/reservations', [BookingController::class, 'store']);
+
+
 
     // Đơn hàng
     Route::get('/don-hang', function () {

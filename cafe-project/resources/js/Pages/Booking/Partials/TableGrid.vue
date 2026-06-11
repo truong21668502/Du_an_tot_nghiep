@@ -45,7 +45,7 @@ defineEmits(['table-click'])
           animation="scale-in"
           :duration="500"
           :delay="index * 80"
-          :class="getTableSizeClass(table.max_people)"
+          :class="getTableSizeClass(table.capacity)"
         >
           <button
             @click="$emit('table-click', table)"
@@ -59,13 +59,13 @@ defineEmits(['table-click'])
             ]"
           >
             <span class="material-symbols-outlined text-2xl">
-              {{ table.max_people > 6 ? 'table_restaurant' : 'table_bar' }}
+              {{ table.capacity > 6 ? 'table_restaurant' : 'table_bar' }}
             </span>
             <div class="text-center">
               <h3 class="font-serif text-headline-sm">{{ table.table_name }}</h3>
               <p class="font-sans text-label-sm flex items-center justify-center gap-1">
                 <span class="material-symbols-outlined text-sm">person</span>
-                {{ table.max_people }} người
+                {{ table.capacity }} người
               </p>
               <span class="inline-block mt-1 px-2 py-0.5 rounded-full font-sans text-label-sm bg-white/50">
                 {{ getTableStatusLabel(table.status) }}

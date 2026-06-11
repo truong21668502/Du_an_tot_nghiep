@@ -31,4 +31,14 @@ class TableStatusUpdated implements ShouldBroadcastNow
     {
         return 'TableUpdated';
     }
+
+    public function broadcastWith()
+    {
+        return [
+            'id' => $this->table->id,
+            'status' => $this->table->status,
+            // Nếu Frontend cần thêm thông tin gì (như table_name), hãy thêm vào đây
+            'table_name' => $this->table->table_name,
+        ];
+    }
 }
