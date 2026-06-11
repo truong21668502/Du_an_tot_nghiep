@@ -39,6 +39,8 @@ Route::middleware('guest')->group(function () {
     ->name('auth.google-one-tap');
 
     
+    Route::get('dang-nhap-he-thong', [AuthenticatedSessionController::class, 'create_system'])
+        ->name('login');
 });
 
 Route::middleware('auth')->group(function () {

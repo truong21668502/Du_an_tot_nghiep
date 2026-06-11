@@ -18,9 +18,17 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): Response
     {
-        
-
+        //trả về trang chủ khách hàng
         return Inertia::render('Auth/Login', [
+            'canResetPassword' => Route::has('password.request'),
+            'status' => session('status'),
+        ]);
+    }
+
+    public function create_system(): Response
+    {
+        //trả về trang đăng nhập hệ thống admin
+        return Inertia::render('Admin/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
         ]);
@@ -50,6 +58,16 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        if(Auth::user()->role !== "CUSTOMER"){
+            Auth::guard('web')->logout();
+
+            $request->session()->invalidate();
+
+            $request->session()->regenerateToken();
+
+            return redirect('/dang-nhap-he-thong');
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
