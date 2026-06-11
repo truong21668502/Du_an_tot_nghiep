@@ -28,7 +28,7 @@ class Table extends Model
      * Tự động ép kiểu dữ liệu khi lấy từ cơ sở dữ liệu ra.
      */
     protected $casts = [
-        'capacity'   => 'integer',
+        'capacity' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -40,5 +40,10 @@ class Table extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class, 'table_id', 'id');
+    }
+
+    public function reservations()
+    {
+        return $this->hasMany(TableReservation::class);
     }
 }
