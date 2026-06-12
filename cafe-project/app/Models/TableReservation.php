@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TableReservation extends Model
 {
@@ -18,7 +19,7 @@ class TableReservation extends Model
         'note',
     ];
 
-    public function table()
+    public function table(): BelongsTo
     {
         return $this->belongsTo(Table::class);
     }

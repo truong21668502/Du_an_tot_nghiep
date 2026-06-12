@@ -12,7 +12,8 @@ defineProps({
     <div class="max-w-[1280px] mx-auto">
       <AnimateOnScroll animation="fade-up" :duration="700">
         <div class="text-center mb-8">
-          <span class="inline-block px-4 py-2 bg-primary-container/30 text-on-primary-container rounded-full font-sans text-label-sm mb-6">
+          <span
+            class="inline-block px-4 py-2 bg-primary-container/30 text-on-primary-container rounded-full font-sans text-label-sm mb-6">
             Đặt bàn
           </span>
           <h1 class="text-display-lg-mobile md:text-display-lg text-primary mb-4">
@@ -38,9 +39,9 @@ defineProps({
             <span class="font-sans text-label-sm text-on-surface-variant">Đã đặt trước</span>
           </div>
         </div>
-        <p class="text-center font-sans text-label-sm text-on-surface-variant">
+        <!-- <p class="text-center font-sans text-label-sm text-on-surface-variant">
           Hôm nay có {{ todayReservations.length }} lượt đặt bàn
-        </p>
+        </p> -->
       </AnimateOnScroll>
     </div>
   </section>

@@ -59,8 +59,53 @@ class BookingController extends Controller
             $validated['reservation_date'] . ' ' . $validated['reservation_time']
         );
 
+        if ($fullReservationTime->isPast()) {
+            abort(422, 'Không thể đặt bàn cho thời gian trong quá khứ.');
+        }
+
+        $userId = $request->user()->id;
+
+        // ✅ Check: user đã có reservation active ở khung giờ gần đây chưa
+        $duplicateSlot = TableReservation::where('user_id', $userId)
+            ->whereIn('status', ['PENDING', 'CONFIRMED'])
+            ->whereBetween('reservation_time', [
+                $fullReservationTime->copy()->subHours(2),
+                $fullReservationTime->copy()->addHours(2),
+            ])
+            ->exists();
+
+        if ($duplicateSlot) {
+            abort(422, 'Bạn đã có lượt đặt bàn khác gần khung giờ này. Vui lòng chọn giờ khác hoặc hủy lượt đặt cũ.');
+        }
+
+        // ✅ Check: giới hạn tổng số lượt đặt active trong ngày
+        // ✅ Check: giới hạn tổng số lượt đặt active trong ngày
+        $maxPerDay = 3; // điều chỉnh số này theo policy quán
+
+        $countToday = TableReservation::where('user_id', $userId)
+            ->whereIn('status', ['PENDING', 'CONFIRMED'])
+            ->whereDate('reservation_time', $fullReservationTime->toDateString())
+            ->count();
+
+        if ($countToday >= $maxPerDay) {
+            abort(422, "Bạn đã đạt giới hạn {$maxPerDay} lượt đặt bàn trong ngày {$fullReservationTime->format('d/m/Y')}.");
+        }
+
         DB::transaction(function () use ($validated, $request, $fullReservationTime) {
             $table = Table::lockForUpdate()->findOrFail($validated['table_id']);
+
+            // ✅ Check trùng lịch của BÀN với reservation khác
+            $conflict = TableReservation::where('table_id', $validated['table_id'])
+                ->whereIn('status', ['PENDING', 'CONFIRMED'])
+                ->whereBetween('reservation_time', [
+                    $fullReservationTime->copy()->subHours(2),
+                    $fullReservationTime->copy()->addHours(2),
+                ])
+                ->exists();
+
+            if ($conflict) {
+                abort(422, 'Bàn này đã có người đặt vào khung giờ gần đó (trong vòng 2 tiếng).');
+            }
 
             if ($table->status !== 'EMPTY') {
                 abort(422, 'Bàn này vừa được đặt bởi người khác.');
@@ -77,8 +122,7 @@ class BookingController extends Controller
             ]);
 
             // ✅ Chỉ RESERVED nếu đặt bàn trong hôm nay
-            $isToday = $fullReservationTime->isToday();
-            if ($isToday) {
+            if ($fullReservationTime->isToday()) {
                 $table->update(['status' => 'RESERVED']);
                 broadcast(new TableStatusUpdated($table->fresh()));
             }
