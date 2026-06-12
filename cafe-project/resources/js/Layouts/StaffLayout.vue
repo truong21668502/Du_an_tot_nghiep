@@ -70,12 +70,10 @@ router.on('navigate', () => {
                         class="material-symbols-outlined group-hover:text-primary transition-colors duration-300">settings</span>
                     Cài đặt
                 </a>
-                <button
-                    class="flex items-center w-full text-left gap-4 text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 hover:text-primary transition-colors duration-300 group">
-                    <span
-                        class="material-symbols-outlined group-hover:text-primary transition-colors duration-300">logout</span>
-                    Đăng xuất
-                </button>
+                <Link :href="route('logout')" method="post" as="button" class="flex items-center w-full text-left gap-4 text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 hover:text-error transition-colors duration-300 group">
+                <span class="material-symbols-outlined group-hover:text-error transition-colors duration-300">logout</span>
+                Đăng xuất
+                </Link>
             </div>
         </aside>
 
@@ -127,11 +125,10 @@ router.on('navigate', () => {
                             <span class="material-symbols-outlined">settings</span>
                             <span class="text-body-md">Cài đặt</span>
                         </button>
-                        <button
-                            class="flex items-center gap-4 py-3 px-4 rounded-lg text-error hover:bg-error-container/50 transition-all w-full text-left">
-                            <span class="material-symbols-outlined">logout</span>
-                            <span class="text-body-md">Đăng xuất</span>
-                        </button>
+                        <Link :href="route('logout')" method="post" as="button" class="flex items-center gap-4 py-3 px-4 rounded-lg text-error hover:bg-error-container/50 transition-all w-full text-left">
+                        <span class="material-symbols-outlined">logout</span>
+                        <span class="text-body-md">Đăng xuất</span>
+                        </Link>
                     </div>
                 </div>
             </Transition>

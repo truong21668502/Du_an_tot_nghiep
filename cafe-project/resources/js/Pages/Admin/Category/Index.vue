@@ -82,7 +82,7 @@ const deleteCategory = (id, name) => {
         <div class="space-y-6 relative">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="font-serif text-headline-md text-on-surface">Danh mục sản phẩm</h1>
+                    <h1 class="font-sans text-headline-md text-on-surface">Danh mục sản phẩm</h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">Quản lý các nhóm danh mục sản phẩm của Nắng Coffee.</p>
                 </div>
                 

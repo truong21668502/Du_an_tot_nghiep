@@ -30,6 +30,13 @@ class StoreProductRequest extends FormRequest
             'variants.*.discount_price' => 'nullable|numeric|min:0|lt:variants.*.price',
             'variants.*.stock_quantity' => 'required|integer|min:0',
             'variants.*.status'         => 'required|in:AVAILABLE,OUT_OF_STOCK',
+            
+            // 🌟 THÊM MỚI: Xác thực số lượng đã bán (sold)
+            'variants.*.sold'           => 'nullable|integer|min:0',
+            
+            // 🌟 THÊM MỚI: Xác thực ngày bắt đầu và kết thúc khuyến mãi
+            'variants.*.sale_date_start' => 'nullable|date',
+            'variants.*.sale_date_end'   => 'nullable|date|after_or_equal:variants.*.sale_date_start',
         ];
     }
 
@@ -44,7 +51,14 @@ class StoreProductRequest extends FormRequest
             'variants.required'        => 'Sản phẩm phải có ít nhất một biến thể (Size/Giá).',
             'variants.*.size.required' => 'Kích cỡ không được để trống.',
             'variants.*.price.required'=> 'Giá bán không được để trống.',
-            'variants.*.discount_price.lt' => 'Giá giảm phải nhỏ hơn giá gốc.',
+            'variants.*.discount_price.lt' => 'Giá giảm phải nhỏ hơn giá gốc.', 
+
+            // 🌟 Thông báo lỗi thêm mới
+            'variants.*.sold.integer'            => 'Số lượng đã bán phải là một số nguyên.',
+            'variants.*.sold.min'                => 'Số lượng đã bán không được nhỏ hơn 0.',
+            'variants.*.sale_date_start.date'    => 'Ngày bắt đầu khuyến mãi không đúng định dạng.',
+            'variants.*.sale_date_end.date'      => 'Ngày kết thúc khuyến mãi không đúng định dạng.',
+            'variants.*.sale_date_end.after_or_equal' => 'Ngày kết thúc KM phải lớn hơn hoặc bằng ngày bắt đầu.',
         ];
     }
 }

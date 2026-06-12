@@ -1,90 +1,421 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
 import StaffLayout from '../../Layouts/StaffLayout.vue';
 import StatCards from './Partials/StatCards.vue';
+
+const props = defineProps({
+    initialOrders: Array,
+    initialTables: Array,
+});
+
+// ================= LOGIC ĐƠN HÀNG =================
+const orders = ref(props.initialOrders || []);
+const selectedOrder = ref(null);
+const isOrderModalOpen = ref(false);
+
+const openOrderDetails = (order) => {
+    selectedOrder.value = order;
+    isOrderModalOpen.value = true;
+};
+
+const closeOrderModal = () => {
+    isOrderModalOpen.value = false;
+    setTimeout(() => selectedOrder.value = null, 300);
+};
+
+// Hàm 1: Bấm Tiếp nhận -> Chỉ đổi trạng thái thành PROCESSING
+const acceptOrder = (orderId) => {
+    router.patch(route('staff.orders.accept', orderId), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            // Cập nhật UI mảng orders
+            const index = orders.value.findIndex(o => o.id === orderId);
+            if (index !== -1) {
+                orders.value[index].status = 'PROCESSING';
+            }
+            // Cập nhật UI Modal đang mở
+            if (selectedOrder.value && selectedOrder.value.id === orderId) {
+                selectedOrder.value.status = 'PROCESSING';
+            }
+        }
+    });
+};
+
+// Hàm 2: Bấm Hoàn thành -> Ẩn đơn hàng khỏi Dashboard
+const completeOrder = (orderId) => {
+    router.patch(route('staff.orders.complete', orderId), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            orders.value = orders.value.filter(o => o.id !== orderId);
+            closeOrderModal();
+        }
+    });
+};
+
+// ================= LOGIC QUẢN LÝ BÀN =================
+const tables = ref(props.initialTables || []);
+const selectedTable = ref(null);
+const isTableModalOpen = ref(false);
+
+const groupedTables = computed(() => {
+    return tables.value.reduce((acc, table) => {
+        const area = table.area || 'Khu vực khác';
+        if (!acc[area]) acc[area] = [];
+        acc[area].push(table);
+        return acc;
+    }, {});
+});
+
+const openTableDetails = (table) => {
+    selectedTable.value = table;
+    isTableModalOpen.value = true;
+};
+
+const closeTableModal = () => {
+    isTableModalOpen.value = false;
+    setTimeout(() => selectedTable.value = null, 300);
+};
+
+const updateTableStatus = (tableId, newStatus) => {
+    router.patch(route('staff.tables.update-status', tableId), { status: newStatus }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            const table = tables.value.find(t => t.id === tableId);
+            if (table) table.status = newStatus;
+            closeTableModal();
+        }
+    });
+};
+
+// ================= REAL-TIME =================
+onMounted(() => {
+    if (window.Echo) {
+        window.Echo.channel('staff-orders')
+            .listen('.OrderCreated', (e) => {
+                orders.value.push(e.order);
+            });
+
+        window.Echo.channel('cafe-tables')
+            .listen('.TableUpdated', (e) => {
+                const index = tables.value.findIndex(t => t.id === e.table.id);
+                if (index !== -1) tables.value[index].status = e.table.status;
+            });
+    }
+});
+
+onUnmounted(() => {
+    if (window.Echo) {
+        window.Echo.leaveChannel('staff-orders');
+        window.Echo.leaveChannel('cafe-tables');
+    }
+});
+
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
+};
 </script>
 
 <template>
-<Head title="Bảng điều khiển - Nắng Coffee" />
 
-<StaffLayout>
-    <div class="mb-10">
-        <p class="text-label-md text-primary tracking-wider mb-2">NẮNG COFFEE</p>
-        <h2 class="text-headline-md text-on-background">Bảng điều khiển</h2>
-    </div>
+    <Head title="Bảng điều khiển - Nắng Coffee" />
 
-    <StatCards />
+    <StaffLayout>
+        <div class="mb-10">
+            <p class="text-label-md text-primary tracking-wider mb-2">NẮNG COFFEE</p>
+            <h2 class="text-display-lg-mobile md:text-display-lg text-on-background">Bảng điều khiển</h2>
+        </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        
-        <section class="lg:col-span-2">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-headline-sm text-on-background">Đơn Đang Chờ</h3>
-                <button class="text-label-md text-primary hover:text-secondary transition-colors">Xem tất cả</button>
-            </div>
-            
-            <div class="flex flex-col gap-4">
-                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-soft flex items-center justify-between border-l-4 border-primary">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary text-headline-sm">
-                            #42
-                        </div>
+        <StatCards />
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-10">
+
+            <!-- ================= DANH SÁCH ĐƠN HÀNG ================= -->
+            <section class="xl:col-span-2">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-headline-sm text-on-background flex items-center gap-2">
+                        Đơn Đang Hoạt Động
+                        <span v-if="orders.length > 0"
+                            class="bg-primary text-on-primary text-[12px] px-2 py-0.5 rounded-full font-sans">{{
+                            orders.length }}</span>
+                    </h3>
+                </div>
+
+                <div v-if="orders.length === 0"
+                    class="bg-surface-container-lowest rounded-xl p-8 shadow-soft flex flex-col items-center justify-center border border-outline-variant/30 text-center">
+                    <span class="material-symbols-outlined text-outline text-[48px] mb-3">coffee</span>
+                    <p class="text-body-md text-on-surface-variant">Tuyệt vời! Không có đơn hàng nào đang tồn đọng.</p>
+                </div>
+
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div v-for="order in orders" :key="order.id" @click="openOrderDetails(order)"
+                        class="bg-surface-container-lowest rounded-xl p-5 shadow-soft flex flex-col justify-between border-t-4 hover:bg-surface-container-low transition-colors cursor-pointer"
+                        :class="order.status === 'PENDING' ? 'border-error' : 'border-primary'">
                         <div>
-                            <h4 class="text-label-md text-on-surface">Bàn 04 • 2 món</h4>
-                            <p class="text-body-md text-on-surface-variant mt-1">1x Pour Over, 1x Bánh sừng bò</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-end gap-2">
-                        <span class="text-label-sm text-error bg-error-container text-on-error-container px-3 py-1 rounded-full">5 phút trước</span>
-                        <button class="text-label-md text-primary hover:underline">Chi tiết</button>
-                    </div>
-                </div>
+                            <div class="flex items-center gap-4 mb-3 border-b border-outline-variant/30 pb-3">
+                                <div class="w-12 h-12 rounded-full flex items-center justify-center text-headline-sm font-bold"
+                                    :class="order.status === 'PENDING' ? 'bg-error-container/30 text-error' : 'bg-primary-container/30 text-primary'">
+                                    #{{ order.id }}
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-label-md text-on-surface truncate">{{ order.table ?
+                                        order.table.table_name : 'Mang đi / Giao hàng' }}</h4>
+                                    <p class="text-label-sm text-on-surface-variant mt-1">{{ order.order_type }}</p>
+                                </div>
 
-                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-soft flex items-center justify-between border-l-4 border-secondary-container">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-secondary text-headline-sm">
-                            #43
+                                <!-- Nhãn trạng thái hiển thị trên thẻ -->
+                                <span v-if="order.status === 'PENDING'"
+                                    class="text-label-sm text-error bg-error-container text-on-error-container px-3 py-1 rounded-full whitespace-nowrap">Chờ
+                                    tiếp nhận</span>
+                                <span v-else-if="order.status === 'PROCESSING'"
+                                    class="text-label-sm text-primary bg-primary-container text-on-primary-container px-3 py-1 rounded-full whitespace-nowrap">Đang
+                                    xử lý</span>
+                            </div>
+                            <p class="text-body-md text-on-surface-variant truncate">
+                                <span class="font-bold text-primary">{{ order.order_details?.length || 0 }} món:</span>
+                                <span v-for="(detail, index) in order.order_details" :key="detail.id">
+                                    {{ detail.product?.product_name }}<span
+                                        v-if="index < order.order_details.length - 1">, </span>
+                                </span>
+                            </p>
                         </div>
-                        <div>
-                            <h4 class="text-label-md text-on-surface">Mang đi • 1 món</h4>
-                            <p class="text-body-md text-on-surface-variant mt-1">1x Cold Brew</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-end gap-2">
-                        <span class="text-label-sm text-on-tertiary-container bg-tertiary-container px-3 py-1 rounded-full">Vừa xong</span>
-                        <button class="text-label-md text-primary hover:underline">Chi tiết</button>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <section class="lg:col-span-1">
-            <h3 class="text-headline-sm text-on-background mb-6">Trạng Thái Bàn</h3>
-            <div class="bg-surface-container-lowest rounded-xl p-6 shadow-soft">
-                <div class="grid grid-cols-3 gap-4">
-                    <div class="aspect-square rounded-lg border border-primary bg-primary-container/20 flex flex-col items-center justify-center cursor-pointer hover:bg-primary-container/40 transition-colors">
-                        <span class="text-headline-sm text-primary">01</span>
-                        <span class="text-label-sm text-primary/70">Có khách</span>
-                    </div>
-                    <div class="aspect-square rounded-lg bg-surface-container flex flex-col items-center justify-center cursor-pointer hover:bg-surface-container-high transition-colors">
-                        <span class="text-headline-sm text-on-surface-variant">02</span>
-                        <span class="text-label-sm text-on-surface-variant/70">Trống</span>
-                    </div>
-                    <div class="aspect-square rounded-lg bg-surface-container flex flex-col items-center justify-center cursor-pointer hover:bg-surface-container-high transition-colors">
-                        <span class="text-headline-sm text-on-surface-variant">03</span>
-                        <span class="text-label-sm text-on-surface-variant/70">Trống</span>
-                    </div>
-                    <div class="aspect-square rounded-lg border border-primary bg-primary-container/20 flex flex-col items-center justify-center cursor-pointer hover:bg-primary-container/40 transition-colors">
-                        <span class="text-headline-sm text-primary">04</span>
-                        <span class="text-label-sm text-primary/70">Có khách</span>
-                    </div>
-                    <div class="aspect-square rounded-lg bg-secondary-container flex flex-col items-center justify-center cursor-pointer hover:bg-secondary-container/80 transition-colors">
-                        <span class="text-headline-sm text-on-secondary-container">05</span>
-                        <span class="text-label-sm text-on-secondary-container/70">Đặt trước</span>
+            <!-- ================= SƠ ĐỒ TRẠNG THÁI BÀN ================= -->
+            <section class="xl:col-span-1">
+                <h3 class="text-headline-sm text-on-background mb-6">Trạng Thái Bàn</h3>
+                <div class="bg-surface-container-lowest rounded-xl p-6 shadow-soft border border-outline-variant/30">
+                    <div v-for="(areaTables, areaName) in groupedTables" :key="areaName" class="mb-8 last:mb-0">
+                        <h4 class="text-label-md text-outline mb-4 border-b border-outline-variant/30 pb-2">{{ areaName
+                            }}</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div v-for="table in areaTables" :key="table.id" @click="openTableDetails(table)" :class="[
+                                'aspect-square rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all border-2',
+                                table.status === 'EMPTY' ? 'bg-surface border-transparent hover:bg-surface-container-high text-on-surface-variant' : '',
+                                table.status === 'OCCUPIED' ? 'bg-primary-container/20 border-primary text-primary shadow-sm' : '',
+                                table.status === 'RESERVED' ? 'bg-secondary-container border-transparent text-on-secondary-container shadow-sm' : ''
+                            ]">
+                                <span class="text-headline-sm font-bold">{{ table.table_name.replace('Bàn ', '')
+                                    }}</span>
+                                <span class="text-[10px] mt-1 uppercase tracking-wider font-semibold">
+                                    {{ table.status === 'EMPTY' ? 'Trống' : (table.status === 'OCCUPIED' ? 'Đang dùng' :
+                                    'Đã đặt') }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </section>
+        </div>
+
+        <!-- ================= MODAL CHI TIẾT ĐƠN HÀNG ================= -->
+        <Transition name="fade">
+            <div v-if="isOrderModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+                <div class="absolute inset-0 bg-inverse-surface/60 backdrop-blur-sm" @click="closeOrderModal"></div>
+
+                <Transition name="slide-up">
+                    <div v-if="isOrderModalOpen"
+                        class="relative bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+
+                        <div
+                            class="px-6 py-5 border-b border-outline-variant/30 flex justify-between items-start bg-surface">
+                            <div>
+                                <h3 class="text-headline-md text-on-background">Chi tiết đơn #{{ selectedOrder?.id }}
+                                </h3>
+                                <p class="text-label-md text-on-surface-variant mt-1">{{ selectedOrder?.order_type }}
+                                </p>
+                            </div>
+                            <button @click="closeOrderModal"
+                                class="p-2 text-on-surface-variant hover:bg-surface-container hover:text-error rounded-full transition-colors">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        <div class="p-6 overflow-y-auto flex-1 bg-surface-container-lowest hide-scrollbar">
+                            <div
+                                class="flex justify-between mb-8 p-4 bg-surface rounded-xl border border-outline-variant/30">
+                                <div>
+                                    <p class="text-label-sm text-outline mb-1">VỊ TRÍ / KHÁCH</p>
+                                    <p class="text-headline-sm font-bold text-on-surface">{{ selectedOrder?.table ?
+                                        selectedOrder.table.table_name : 'Khách mang đi' }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-label-sm text-outline mb-1">TRẠNG THÁI</p>
+                                    <!-- Đổi màu Trạng thái theo logic -->
+                                    <p v-if="selectedOrder?.status === 'PENDING'"
+                                        class="text-label-md text-error bg-error-container/30 px-3 py-1 rounded-md inline-block">
+                                        CHỜ TIẾP NHẬN
+                                    </p>
+                                    <p v-else-if="selectedOrder?.status === 'PROCESSING'"
+                                        class="text-label-md text-primary bg-primary-container/30 px-3 py-1 rounded-md inline-block">
+                                        ĐANG XỬ LÝ
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="border border-outline-variant/30 rounded-xl overflow-hidden">
+                                <div
+                                    class="bg-surface-container-low px-5 py-3 border-b border-outline-variant/30 flex justify-between items-center">
+                                    <p class="text-label-sm text-on-surface-variant">DANH SÁCH MÓN</p>
+                                    <p class="text-label-sm text-on-surface-variant hidden sm:block">TRẠNG THÁI PHA CHẾ
+                                    </p>
+                                </div>
+                                <ul class="divide-y divide-outline-variant/30">
+                                    <li v-for="detail in selectedOrder?.order_details" :key="detail.id"
+                                        class="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-surface-container-low/30 transition-colors">
+                                        <div class="flex-1">
+                                            <p class="text-body-lg text-on-surface">
+                                                <span class="font-bold text-primary mr-2">{{ detail.quantity }}x</span>
+                                                {{ detail.product?.product_name }}
+                                            </p>
+                                            <div v-if="detail.note"
+                                                class="mt-2 flex items-start gap-1 text-tertiary bg-surface-container px-3 py-1.5 rounded-lg border border-outline-variant/20 inline-block">
+                                                <span
+                                                    class="material-symbols-outlined text-[16px] mt-0.5">edit_note</span>
+                                                <span class="text-label-sm italic">{{ detail.note }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-5 justify-between sm:justify-end">
+                                            <span
+                                                class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border"
+                                                :class="{
+                                                    'bg-surface-dim border-outline/20 text-on-surface-variant': detail.barista_status === 'PENDING',
+                                                    'bg-secondary-container border-secondary/20 text-on-secondary-container': detail.barista_status === 'PREPARING',
+                                                    'bg-primary-container border-primary/20 text-on-primary-container': detail.barista_status === 'COMPLETED',
+                                                    'bg-error-container border-error/20 text-on-error-container': detail.barista_status === 'CANCELLED'
+                                                }">
+                                                {{ detail.barista_status === 'PENDING' ? 'Chờ pha' :
+                                                    detail.barista_status === 'PREPARING' ? 'Đang làm' :
+                                                        detail.barista_status === 'COMPLETED' ? 'Đã xong' : 'Đã hủy' }}
+                                            </span>
+                                            <span class="text-label-md text-on-surface-variant w-20 text-right">
+                                                {{ formatCurrency(detail.unit_price * detail.quantity) }}
+                                            </span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div
+                                class="mt-8 flex justify-between items-center p-4 bg-surface rounded-xl border border-outline-variant/30">
+                                <span class="text-body-lg text-on-surface-variant font-medium">Tổng thanh toán:</span>
+                                <span class="text-headline-md text-primary font-bold">{{
+                                    formatCurrency(selectedOrder?.final_amount) }}</span>
+                            </div>
+                        </div>
+
+                        <!-- THAY ĐỔI NÚT DỰA VÀO TRẠNG THÁI -->
+                        <div class="px-6 py-5 bg-surface border-t border-outline-variant/30 flex gap-4 justify-end">
+                            <button @click="closeOrderModal"
+                                class="px-6 py-2.5 rounded-full text-label-md text-on-surface-variant hover:bg-surface-container transition-colors">
+                                Đóng lại
+                            </button>
+
+                            <!-- Nút Tiếp nhận (Hiện khi PENDING) -->
+                            <button v-if="selectedOrder?.status === 'PENDING'" @click="acceptOrder(selectedOrder.id)"
+                                class="px-8 py-2.5 rounded-full bg-primary text-on-primary text-label-md shadow-soft hover:bg-primary/90 transition-all flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[20px]">task_alt</span>
+                                Tiếp nhận đơn
+                            </button>
+
+                            <!-- Nút Hoàn thành (Hiện khi PROCESSING) -->
+                            <button v-else-if="selectedOrder?.status === 'PROCESSING'"
+                                @click="completeOrder(selectedOrder.id)"
+                                class="px-8 py-2.5 rounded-full bg-secondary text-on-secondary text-label-md shadow-soft hover:bg-secondary/90 transition-all flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[20px]">done_all</span>
+                                Hoàn thành & Giao khách
+                            </button>
+                        </div>
+
+                    </div>
+                </Transition>
             </div>
-        </section>
-    </div>
-</StaffLayout>
+        </Transition>
+
+        <!-- ================= MODAL CHI TIẾT BÀN (Giữ nguyên) ================= -->
+        <Transition name="fade">
+            <div v-if="isTableModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+                <div class="absolute inset-0 bg-inverse-surface/60 backdrop-blur-sm" @click="closeTableModal"></div>
+                <Transition name="slide-up">
+                    <div v-if="isTableModalOpen"
+                        class="relative bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
+                        <div class="px-6 py-5 border-b border-outline-variant/30 flex justify-between items-center"
+                            :class="[
+                                selectedTable?.status === 'EMPTY' ? 'bg-surface' : '',
+                                selectedTable?.status === 'OCCUPIED' ? 'bg-primary-container text-on-primary-container' : '',
+                                selectedTable?.status === 'RESERVED' ? 'bg-secondary-container text-on-secondary-container' : ''
+                            ]">
+                            <div>
+                                <h3 class="text-headline-md font-bold">{{ selectedTable?.table_name }}</h3>
+                                <p class="text-label-md mt-1 opacity-80">{{ selectedTable?.area }}</p>
+                            </div>
+                            <button @click="closeTableModal"
+                                class="p-2 hover:bg-black/10 rounded-full transition-colors">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div class="p-6 bg-surface-container-lowest">
+                            <div
+                                class="flex items-center justify-between mb-6 border border-outline-variant/30 p-4 rounded-xl bg-surface">
+                                <div class="flex items-center gap-3 text-on-surface-variant">
+                                    <span class="material-symbols-outlined">group</span>
+                                    <span class="text-label-md">Sức chứa</span>
+                                </div>
+                                <span class="text-headline-sm text-on-background">{{ selectedTable?.capacity }}
+                                    người</span>
+                            </div>
+                            <div class="space-y-3">
+                                <button v-if="selectedTable?.status !== 'OCCUPIED'"
+                                    @click="updateTableStatus(selectedTable.id, 'OCCUPIED')"
+                                    class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-on-primary text-label-md hover:opacity-90 transition-opacity shadow-sm">
+                                    <span class="material-symbols-outlined text-[20px]">how_to_reg</span> Khách vào bàn
+                                </button>
+                                <button v-if="selectedTable?.status !== 'EMPTY'"
+                                    @click="updateTableStatus(selectedTable.id, 'EMPTY')"
+                                    class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-2 border-outline-variant text-on-surface hover:bg-surface-container transition-colors font-sans text-label-md">
+                                    <span class="material-symbols-outlined text-[20px]">cleaning_services</span> Dọn bàn
+                                    (Trống)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+            </div>
+        </Transition>
+
+    </StaffLayout>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+}
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+</style>

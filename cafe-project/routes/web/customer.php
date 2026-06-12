@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\ProfileController;
+use App\Http\Controllers\Customer\BookingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,9 +45,18 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER'])->group(function () {
     Route::delete('/cart/{cartItem}', [CartController::class, 'remove'])->name('customer.cart.remove');
 
     // Đặt bàn
+<<<<<<< HEAD
     Route::get('/dat-ban', function () {
         return Inertia::render('Booking');
     })->name('booking');
+=======
+    Route::get('/dat-ban', [BookingController::class, 'index'])->name('booking');
+    Route::get('/api/tables', [BookingController::class, 'tables'])->name('api.tables');
+    Route::get('/api/reservations', [BookingController::class, 'reservations'])->name('api.reservations');
+    Route::post('/api/reservations', [BookingController::class, 'store']);
+
+
+>>>>>>> 3d5ce311f1019c3f496118181692beb2f084dc89
 
     // Đơn hàng
     Route::get('/don-hang', function () {

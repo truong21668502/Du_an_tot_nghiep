@@ -30,6 +30,8 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::post('/san-pham', [ProductController::class, 'store'])->name('products.store');
     Route::put('/san-pham/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/san-pham/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::post('/hinh-anh-phu', [App\Http\Controllers\Admin\ProductController::class, 'storeImage'])->name('products.storeImage');
+    Route::delete('/hinh-anh-phu/{image}', [App\Http\Controllers\Admin\ProductController::class, 'destroyImage'])->name('products.destroyImage');
 
     // Quản lý users
     Route::get('/users', function () {

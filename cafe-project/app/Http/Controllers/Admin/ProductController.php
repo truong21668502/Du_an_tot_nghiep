@@ -12,27 +12,50 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\Request;
+use App\Models\ProductImage;
 
 class ProductController extends Controller
 {
     /**
      * Hiển thị trang danh sách sản phẩm + Modal Thêm/Sửa
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        // Lấy sản phẩm kèm theo thông tin danh mục, thương hiệu và danh sách biến thể
-        $products = Product::with(['category', 'brand', 'variants'])
-            ->latest('id')
-            ->paginate(10);
+        // Bắt đầu câu lệnh truy vấn dữ liệu sản phẩm
+        $query = Product::with(['category', 'brand', 'variants','images'])->latest('id');
 
-        // Lấy nhanh danh sách danh mục và thương hiệu để đổ vào thẻ <select> trong Modal
+        // 1. Lọc theo từ khóa tìm kiếm (Tìm theo Tên sản phẩm hoặc Slug)
+        $query->when($request->input('search'), function ($q, $search) {
+            $q->where(function ($subQuery) use ($search) {
+                $subQuery->where('product_name', 'LIKE', "%{$search}%")
+                        ->orWhere('slug', 'LIKE', "%{$search}%");
+            });
+        });
+
+        // 2. Lọc theo Danh mục sản phẩm
+        $query->when($request->input('category_id'), function ($q, $categoryId) {
+            $q->where('category_id', $categoryId);
+        });
+
+        // 3. Lọc theo Trạng thái kinh doanh
+        $query->when($request->input('is_active'), function ($q, $isActive) {
+            $q->where('is_active', $isActive);
+        });
+
+        // Thực thi lấy dữ liệu kèm phân trang, appends() dùng để giữ lại các bộ lọc trên URL khi bấm chuyển trang
+        $products = $query->paginate(10)->withQueryString();
+
+        // Lấy danh sách danh mục và thương hiệu để đổ vào các thẻ select
         $categories = Category::select('id', 'category_name')->get();
-        $brands = Brand::select('id', 'brand_name')->get(); // Giả định bảng brands có cột 'name'
+        $brands = Brand::select('id', 'brand_name')->get();
 
         return Inertia::render('Admin/Product/Index', [
             'products'   => $products,
             'categories' => $categories,
             'brands'     => $brands,
+            // Gửi ngược lại các giá trị lọc cũ về Vue để hiển thị lên thanh tìm kiếm
+            'filters'    => $request->only(['search', 'category_id', 'is_active'])
         ]);
     }
 
@@ -52,18 +75,17 @@ class ProductController extends Controller
             }
         }
 
-        // Tiến hành lưu đa bảng an toàn
         DB::transaction(function () use ($validated) {
             // 1. Tạo sản phẩm chính
             $product = Product::create($validated);
 
-            // 2. Tạo các biến thể kích thước tương ứng
-            foreach ($validated['variants'] as $variant) {
+            // 2. Tạo các biến thể kích thước tương ứng (Thêm dấu & trước $variant)
+            foreach ($validated['variants'] as &$variant) {
                 $product->variants()->create($variant);
             }
         });
 
-        return redirect()->back()->with('message', 'Thêm mới sản phẩm và các size thành công!');
+        return redirect()->back()->with('toast-success', 'Thêm mới sản phẩm và các size thành công!');
     }
 
     /**
@@ -87,14 +109,14 @@ class ProductController extends Controller
             // 1. Cập nhật thông tin sản phẩm chính
             $product->update($validated);
 
-            // 2. Đồng bộ biến thể bằng cách xóa các biến thể cũ và ghi đè loạt biến thể mới
+            // 2. Đồng bộ biến thể (Thêm dấu & trước $variant)
             $product->variants()->delete();
-            foreach ($validated['variants'] as $variant) {
+            foreach ($validated['variants'] as &$variant) {
                 $product->variants()->create($variant);
             }
         });
 
-        return redirect()->back()->with('message', 'Cập nhật thông tin sản phẩm thành công!');
+        return redirect()->back()->with('toast-success', 'Cập nhật thông tin sản phẩm thành công!');
     }
 
     /**
@@ -105,6 +127,24 @@ class ProductController extends Controller
         // Chỗ này bạn có thể bổ sung kiểm tra nếu sản phẩm đã nằm trong Đơn hàng (Order Details) thì không cho xóa
         $product->delete();
 
-        return redirect()->back()->with('message', 'Xóa sản phẩm thành công!');
+        return redirect()->back()->with('toast-success', 'Xóa sản phẩm thành công!');
+    }
+
+    public function storeImage(Request $request)
+    {
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'image_url'  => 'required|string|max:255',
+        ]);
+    
+        ProductImage::create($validated);
+    
+        return redirect()->back()->with('toast-success', 'Đã thêm ảnh phụ thành công!');
+    }
+    
+    public function destroyImage(ProductImage $image)
+    {
+        $image->delete();
+        return redirect()->back()->with('toast-success', 'Đã xóa ảnh phụ thành công!');
     }
 }
