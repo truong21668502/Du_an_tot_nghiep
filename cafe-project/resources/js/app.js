@@ -38,8 +38,7 @@ createInertiaApp({
 })
 
 
-const flash = computed(() => page.props.flash)
-
+const flash = computed(() => page?.props?.flash ?? {})
 // console.log('FLASH MESSAGES BAN ĐẦU:', flash.value)
 
 watch(

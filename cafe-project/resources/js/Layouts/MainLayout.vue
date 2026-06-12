@@ -77,7 +77,7 @@ router.on('navigate', () => {
               class="hidden md:flex items-center gap-2 px-4 py-2 bg-primary-container/30 hover:bg-primary-container/50 rounded-full transition-all duration-200"
             >
               <span class="material-symbols-outlined text-primary">person</span>
-              <span class="font-sans text-label-sm text-on-primary-container">{{ user.name }}</span>
+              <span class="font-sans text-label-sm text-on-primary-container">{{ user.full_name }}</span>
             </button>
           </template>
           <template v-else>
@@ -109,7 +109,7 @@ router.on('navigate', () => {
             <div class="flex items-center gap-3 px-4 py-3 mb-2 bg-primary-container/20 rounded-xl">
               <span class="material-symbols-outlined text-3xl text-primary">account_circle</span>
               <div>
-                <p class="font-sans text-label-md text-on-surface">{{ user.name }}</p>
+                <p class="font-sans text-label-md text-on-surface">{{ user.full_name }}</p>
                 <p class="font-sans text-label-sm text-on-surface-variant">{{ user.email }}</p>
               </div>
             </div>
