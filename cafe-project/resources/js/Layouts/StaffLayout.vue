@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Link, usePage, router } from '@inertiajs/vue3'
 
 const isMobileMenuOpen = ref(false)
@@ -25,6 +25,33 @@ const toggleMobileMenu = () => {
 // Đóng mobile menu khi chuyển trang
 router.on('navigate', () => {
     isMobileMenuOpen.value = false
+})
+
+// Ngày giờ thực
+const currentTime = ref('')
+
+let timeInterval = null
+
+const updateTime = () => {
+    currentTime.value = new Intl.DateTimeFormat('vi-VN', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+    }).format(new Date())
+}
+
+onMounted(() => {
+    updateTime()
+
+    timeInterval = setInterval(() => {
+        updateTime()
+    }, 1000)
+})
+
+onUnmounted(() => {
+    clearInterval(timeInterval)
 })
 </script>
 
@@ -89,7 +116,7 @@ router.on('navigate', () => {
                 </div>
 
                 <div class="hidden md:block">
-                    <p class="text-body-md text-on-surface-variant">Thứ Năm, 24 Tháng 10, 2026</p>
+                    <p class="text-body-md text-on-surface-variant">{{ currentTime }}</p>
                 </div>
 
                 <div class="flex items-center gap-4">

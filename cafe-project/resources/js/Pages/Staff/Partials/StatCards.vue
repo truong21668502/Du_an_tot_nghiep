@@ -1,3 +1,25 @@
+<script setup>
+import { computed } from 'vue';
+
+// Khai báo nhận dữ liệu tables từ Dashboard truyền sang
+const props = defineProps({
+    tables: {
+        type: Array,
+        default: () => []
+    }
+});
+
+// Tính toán số bàn đang có khách (Trạng thái OCCUPIED)
+const occupiedTablesCount = computed(() => {
+    return props.tables.filter(table => table.status === 'OCCUPIED').length;
+});
+
+// Tính tổng số bàn hiện có trong Database
+const totalTablesCount = computed(() => {
+    return props.tables.length || 12; 
+});
+</script>
+
 <template>
     <section class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-10">
         <div class="bg-surface-container-lowest rounded-xl p-6 shadow-soft flex flex-col justify-between min-h-[140px]">
@@ -17,8 +39,8 @@
                 <span class="material-symbols-outlined text-primary bg-primary-container/30 p-2 rounded-full">table_restaurant</span>
             </div>
             <div class="mt-4">
-                <span class="text-display-lg-mobile text-on-surface">8</span>
-                <span class="text-body-md text-outline ml-2">/ 24 bàn</span>
+                <span class="text-display-lg-mobile text-on-surface">{{ occupiedTablesCount }}</span>
+                <span class="text-body-md text-outline ml-2">/ {{ totalTablesCount }} bàn</span>
             </div>
         </div>
 
