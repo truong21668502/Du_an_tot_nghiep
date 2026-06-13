@@ -24,7 +24,6 @@ const {
 
 const showReservationModal = ref(false)
 const selectedTable = ref(null)
-const justReservedTableId = ref(null) // lưu id bàn vừa đặt để skip event WebSocket
 const user = computed(() => usePage().props.auth?.user || null)
 
 const handleTableClick = (table) => {
@@ -38,21 +37,15 @@ const handleTableClick = (table) => {
   }
 }
 
-const handleReservationSubmit = async (formData) => {
+const handleReservationSubmit = async () => {
   if (!selectedTable.value) return
 
-  const isToday = formData.reservation_date === new Date().toISOString().split('T')[0]
-
-  // Chỉ cập nhật UI sang RESERVED nếu đặt hôm nay
-  if (isToday) {
-    justReservedTableId.value = selectedTable.value.id
-    const index = tables.value.findIndex(t => t.id === selectedTable.value.id)
-    if (index !== -1) {
-      tables.value[index] = { ...tables.value[index], status: 'RESERVED' }
-    }
-  }
-
+  // Không tự đoán status ở frontend nữa — lấy lại trạng thái thật từ server.
+  // table.status chỉ đổi thành RESERVED khi gần đến giờ hẹn (do
+  // reservations:activate xử lý), nên ngay sau khi đặt bàn vẫn có thể là EMPTY.
+  await fetchTables()
   await fetchReservations()
+
   showReservationModal.value = false
   selectedTable.value = null
 }
@@ -68,22 +61,10 @@ onMounted(async () => {
 
   const channel = window.Echo.channel('cafe-tables')
 
-  console.log('✅ Đã subscribe channel cafe-tables')
-
   channel.listen('.TableUpdated', ({ id, status }) => {
-    console.log('📡 Nhận event TableUpdated:', { id, status })
-
-    if (justReservedTableId.value === id) {
-      console.log('⏭️ Skip vì tab này vừa đặt')
-      justReservedTableId.value = null
-      return
-    }
-
     const index = tables.value.findIndex(t => t.id === id)
-    console.log('🔍 Tìm bàn index:', index)
     if (index !== -1) {
       tables.value[index] = { ...tables.value[index], status }
-      console.log('🟢 Đã cập nhật bàn', id, 'sang', status)
     }
   })
 })

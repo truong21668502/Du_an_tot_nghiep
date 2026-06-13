@@ -45,10 +45,19 @@ Route::post('/lien-he/gui', function () {
 
 // Blog
 Route::get('/bai-viet', [PostController::class, 'index'])->name('blog.index');
+Route::get('/bai-viet/danh-muc/{slug}', [PostController::class, 'category'])->name('blog.category');
 Route::get('/bai-viet/{slug}', [PostController::class, 'dispatch'])->name('blog.dispatch');
-Route::post('/bai-viet/{postId}/binh-luan', [PostCommentController::class, 'store'])
-    ->name('comments.store')
-    ->middleware('auth');
+
+Route::middleware('auth')->group(function () {
+    Route::post('/bai-viet/{postId}/binh-luan', [PostCommentController::class, 'store'])
+        ->name('comments.store');
+
+    Route::put('/bai-viet/{postId}/binh-luan/{comment}', [PostCommentController::class, 'update'])
+        ->name('comments.update');
+
+    Route::delete('/bai-viet/{postId}/binh-luan/{comment}', [PostCommentController::class, 'destroy'])
+        ->name('comments.destroy');
+});
 
 // Real-time testing (public)
 Route::get('/realtime', function () {
