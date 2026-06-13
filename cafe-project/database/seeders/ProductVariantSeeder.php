@@ -61,8 +61,7 @@ class ProductVariantSeeder extends Seeder
                 'price'            => $priceM,
                 'discount_price'   => null, // Mặc định không giảm giá
                 'sale_date_start'  => null,
-                'sale_date_end'    => null,
-                'stock_quantity'   => 100,  
+                'sale_date_end'    => null, 
                 'sold'             => 0,    // Đã bán mặc định bằng 0 theo yêu cầu
                 'status'           => 'AVAILABLE',
             ]);
@@ -77,8 +76,7 @@ class ProductVariantSeeder extends Seeder
                 'price'            => $priceL,
                 'discount_price'   => null,
                 'sale_date_start'  => null,
-                'sale_date_end'    => null,
-                'stock_quantity'   => 100,  
+                'sale_date_end'    => null, 
                 'sold'             => 0,    // Đã bán mặc định bằng 0 theo yêu cầu
                 'status'           => 'AVAILABLE',
             ]);

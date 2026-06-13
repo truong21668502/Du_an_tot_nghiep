@@ -34,7 +34,6 @@ class UpdateProductRequest extends FormRequest
             'variants.*.size'           => 'required|string|max:50',
             'variants.*.price'          => 'required|numeric|min:0',
             'variants.*.discount_price' => 'nullable|numeric|min:0|lt:variants.*.price',
-            'variants.*.stock_quantity' => 'required|integer|min:0',
             'variants.*.status'         => 'required|in:AVAILABLE,OUT_OF_STOCK',
             
             // 🌟 THÊM MỚI: Xác thực số lượng đã bán (sold)
@@ -59,7 +58,6 @@ class UpdateProductRequest extends FormRequest
             'variants.*.price.required'          => 'Giá gốc không được để trống.',
             'variants.*.price.numeric'           => 'Giá gốc phải là số.',
             'variants.*.discount_price.lt'       => 'Giá khuyến mãi phải nhỏ hơn giá bán gốc.',
-            'variants.*.stock_quantity.required' => 'Số lượng tồn kho không được để trống.',
             
             // 🌟 Thông báo lỗi thêm mới
             'variants.*.sold.integer'            => 'Số lượng đã bán phải là một số nguyên.',

@@ -1,8 +1,11 @@
 <script setup>
 import { ref } from "vue";
-import { router, useForm } from "@inertiajs/vue3";
+import { router } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
-import { toast } from 'vue3-toastify'
+import { toast } from 'vue3-toastify';
+
+// Import component form vừa tách
+import CategoryFormModal from "./Components/CategoryFormModal.vue";
 
 defineProps({
     categories: {
@@ -11,64 +14,23 @@ defineProps({
     },
 });
 
-// Trạng thái điều khiển Modal
+// Các state kiểm soát Modal con
 const isModalOpen = ref(false);
 const isEditMode = ref(false);
-const currentCategoryId = ref(null);
+const selectedCategory = ref(null);
 
-// Sử dụng useForm của Inertia để quản lý dữ liệu form và bắt lỗi validation tự động
-const form = useForm({
-    category_name: "",
-    description: "",
-    slug: "",
-});
-
-// Hàm mở Modal Thêm mới
 const openCreateModal = () => {
     isEditMode.value = false;
-    currentCategoryId.value = null;
-    form.reset();
-    form.clearErrors();
+    selectedCategory.value = null;
     isModalOpen.value = true;
 };
 
-// Hàm mở Modal Chỉnh sửa (Đổ dữ liệu cũ vào form)
 const openEditModal = (category) => {
     isEditMode.value = true;
-    currentCategoryId.value = category.id;
-    form.clearErrors();
-    
-    form.category_name = category.category_name;
-    form.description = category.description || "";
-    form.slug = category.slug;
-    
+    selectedCategory.value = category;
     isModalOpen.value = true;
 };
 
-// Hàm submit form (Xử lý cả Thêm lẫn Sửa tùy thuộc vào trạng thái isEditMode)
-const submitForm = () => {
-    if (isEditMode.value) {
-        // Gửi request PUT 
-        form.put(`/quan-tri/danh-muc/${currentCategoryId.value}`, {
-            onSuccess: () => {
-                isModalOpen.value = false;
-                toast.success('Sửa danh mục thành công !');
-                form.reset();
-            },
-        });
-    } else {
-        // Gửi request POST
-        form.post("/quan-tri/danh-muc", {
-            onSuccess: () => {
-                isModalOpen.value = false;
-                toast.success('Tạo danh mục thành công !');
-                form.reset();
-            },
-        });
-    }
-};
-
-// Hàm xử lý xóa danh mục
 const deleteCategory = (id, name) => {
     if (confirm(`Bạn có chắc chắn muốn xóa danh mục "${name}" không?`)) {
         toast.success('Xoá danh mục thành công !');
@@ -88,7 +50,7 @@ const deleteCategory = (id, name) => {
                 
                 <button
                     @click="openCreateModal"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all duration-200 self-start sm:self-center"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all duration-200 self-start sm:self-center cursor-pointer"
                 >
                     <span class="material-symbols-outlined text-md">add</span>
                     Thêm danh mục
@@ -126,10 +88,10 @@ const deleteCategory = (id, name) => {
                                 </td>
                                 <td class="p-4 text-right">
                                     <div class="flex items-center justify-end gap-1">
-                                        <button @click="openEditModal(category)" class="p-2 hover:bg-surface-container-high text-on-surface-variant hover:text-primary rounded-full transition-colors" title="Chỉnh sửa">
+                                        <button @click="openEditModal(category)" class="p-2 hover:bg-surface-container-high text-on-surface-variant hover:text-primary rounded-full transition-colors cursor-pointer" title="Chỉnh sửa">
                                             <span class="material-symbols-outlined text-xl">edit</span>
                                         </button>
-                                        <button @click="deleteCategory(category.id, category.category_name)" class="p-2 hover:bg-error-container/20 text-on-surface-variant hover:text-error rounded-full transition-colors" title="Xóa">
+                                        <button @click="deleteCategory(category.id, category.category_name)" class="p-2 hover:bg-error-container/20 text-on-surface-variant hover:text-error rounded-full transition-colors cursor-pointer" title="Xóa">
                                             <span class="material-symbols-outlined text-xl">delete</span>
                                         </button>
                                     </div>
@@ -166,98 +128,13 @@ const deleteCategory = (id, name) => {
                 </div>
             </div>
 
-            <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-                <div class="bg-surface w-full max-w-md rounded-2xl border border-outline-variant/20 shadow-xl overflow-hidden p-6 space-y-6 animate-scale-up">
-                    
-                    <div class="flex items-center justify-between">
-                        <h2 class="font-serif text-on-surface">
-                            {{ isEditMode ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới' }}
-                        </h2>
-                        <button @click="isModalOpen = false" class="p-1 hover:bg-surface-container-high rounded-full text-on-surface-variant">
-                            <span class="material-symbols-outlined">close</span>
-                        </button>
-                    </div>
-
-                    <form @submit.prevent="submitForm" class="space-y-4 font-sans text-body-medium">
-                        <div class="flex flex-col gap-1">
-                            <label class="text-label-large text-on-surface-variant font-bold">Tên danh mục <span class="text-error">*</span></label>
-                            <input 
-                                v-model="form.category_name" 
-                                type="text" 
-                                placeholder="Ví dụ: Cà phê phin, Trà sữa..."
-                                class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                            />
-                            <span v-if="form.errors.category_name" class="text-body-small text-error flex items-center gap-1 mt-0.5">
-                                <span class="material-symbols-outlined text-sm">error</span> {{ form.errors.category_name }}
-                            </span>
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <label class="text-label-large text-on-surface-variant font-bold">Đường dẫn (Slug)</label>
-                            <input 
-                                v-model="form.slug" 
-                                type="text" 
-                                placeholder="Để trống hệ thống sẽ tự sinh ra"
-                                class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface text-on-surface font-mono text-body-small focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                            />
-                            <span v-if="form.errors.slug" class="text-body-small text-error flex items-center gap-1 mt-0.5">
-                                <span class="material-symbols-outlined text-sm">error</span> {{ form.errors.slug }}
-                            </span>
-                        </div>
-
-                        <div class="flex flex-col gap-1">
-                            <label class="text-label-large text-on-surface-variant font-bold">Mô tả chi tiết</label>
-                            <textarea 
-                                v-model="form.description" 
-                                rows="3" 
-                                placeholder="Nhập một vài mô tả về nhóm danh mục này..."
-                                class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none"
-                            ></textarea>
-                            <span v-if="form.errors.description" class="text-body-small text-error flex items-center gap-1 mt-0.5">
-                                <span class="material-symbols-outlined text-sm">error</span> {{ form.errors.description }}
-                            </span>
-                        </div>
-
-                        <div class="flex items-center justify-end gap-3 pt-4 border-t border-outline-variant/20">
-                            <button 
-                                type="button" 
-                                @click="isModalOpen = false" 
-                                class="px-5 py-2.5 hover:bg-surface-container-high text-primary font-sans text-label-large rounded-full transition-colors"
-                            >
-                                Hủy bỏ
-                            </button>
-                            <button 
-                                type="submit" 
-                                :disabled="form.processing"
-                                class="px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all disabled:opacity-50"
-                            >
-                                {{ form.processing ? 'Đang lưu...' : (isEditMode ? 'Cập nhật' : 'Lưu lại') }}
-                            </button>
-                        </div>
-                    </form>
-
-                </div>
-            </div>
+            <CategoryFormModal 
+                :isOpen="isModalOpen" 
+                :editMode="isEditMode" 
+                :category="selectedCategory" 
+                @close="isModalOpen = false" 
+            />
 
         </div>
     </AdminLayout>
 </template>
-
-<style scoped>
-/* Thêm một vài hiệu ứng animation nhỏ để Modal xuất hiện mượt mà */
-.animate-fade-in {
-    animation: fadeIn 0.2s ease-out forwards;
-}
-.animate-scale-up {
-    animation: scaleUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-@keyframes scaleUp {
-    from { transform: scale(0.95); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-</style>

@@ -28,7 +28,6 @@ class StoreProductRequest extends FormRequest
             'variants.*.size'           => 'required|string|max:50',
             'variants.*.price'          => 'required|numeric|min:0',
             'variants.*.discount_price' => 'nullable|numeric|min:0|lt:variants.*.price',
-            'variants.*.stock_quantity' => 'required|integer|min:0',
             'variants.*.status'         => 'required|in:AVAILABLE,OUT_OF_STOCK',
             
             // 🌟 THÊM MỚI: Xác thực số lượng đã bán (sold)

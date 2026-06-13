@@ -24,7 +24,6 @@ class ProductVariant extends Model
         'discount_price',
         'sale_date_start',
         'sale_date_end',
-        'stock_quantity',
         'sold',
         'status',
     ];
@@ -38,7 +37,6 @@ class ProductVariant extends Model
         'discount_price'  => 'decimal:2',
         'sale_date_start' => 'datetime',
         'sale_date_end'   => 'datetime',
-        'stock_quantity'  => 'integer',
         'sold'            => 'integer',
         'created_at'      => 'datetime',
         'updated_at'      => 'datetime',

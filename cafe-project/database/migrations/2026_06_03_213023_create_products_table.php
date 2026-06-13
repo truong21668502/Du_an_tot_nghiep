@@ -61,8 +61,6 @@ return new class extends Migration
             $table->dateTime('sale_date_start')->nullable()->comment('Ngày bắt đầu áp dụng giá khuyến mãi');
             $table->dateTime('sale_date_end')->nullable()->comment('Ngày kết thúc áp dụng giá khuyến mãi');
 
-            // Quản lý số lượng và trạng thái của riêng từng size
-            $table->integer('stock_quantity')->default(0)->comment('Số lượng ly/sản phẩm còn có thể phục vụ trong kho cho size này');
             $table->integer('sold')->default(0)->comment('Tổng số lượng đã bán được tính riêng cho size này');
 
             $table->enum('status', ['AVAILABLE', 'OUT_OF_STOCK'])
