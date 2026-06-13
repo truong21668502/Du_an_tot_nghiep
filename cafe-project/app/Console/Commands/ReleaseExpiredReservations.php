@@ -31,12 +31,12 @@ class ReleaseExpiredReservations extends Command
     {
         $expired = TableReservation::with('table')
             ->where('status', 'PENDING')
-            ->where('reservation_time', '<', now()->subHour())
+            ->where('reservation_time', '<', now()->subMinutes(20))// quá 20p thì coi như hết hạn
             ->get();
 
         foreach ($expired as $reservation) {
             /** @var TableReservation $reservation */
-            $reservation->update(['status' => 'NO_SHOW']);
+            $reservation->update(['status' => 'CANCELLED']);
 
             /** @var Table|null $table */
             $table = $reservation->table;
