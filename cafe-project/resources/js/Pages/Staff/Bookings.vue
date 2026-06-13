@@ -97,7 +97,7 @@ onUnmounted(() => {
     <StaffLayout>
         <div class="mb-10">
             <p class="text-label-md text-primary tracking-wider mb-2">QUẢN LÝ</p>
-            <h2 class="text-headline-md text-on-background">Sơ đồ mặt bằng</h2>
+            <h2 class="text-display-lg-mobile md:text-display-lg text-on-background">Sơ Đồ Mặt Bằng</h2>
         </div>
 
         <div v-for="(areaTables, areaName) in groupedTables" :key="areaName" class="mb-10">

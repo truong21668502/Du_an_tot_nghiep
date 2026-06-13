@@ -165,8 +165,8 @@ onUnmounted(() => {
         <h2 class="text-display-lg-mobile md:text-display-lg text-on-background">Bảng điều khiển nhân viên</h2>
         </div>
 
-        <!-- Truyền biến tables vào để thẻ Bàn đang phục vụ tự động nhảy số -->
-        <StatCards :tables="tables" />
+        <!-- Truyền biến tables và orders vào component StatCards -->
+        <StatCards :tables="tables" :orders="orders"/>
 
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-10">
             
