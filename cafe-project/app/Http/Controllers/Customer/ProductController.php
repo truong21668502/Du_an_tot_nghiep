@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\MenuFilterRequest;
 use App\Models\Category;
+use App\Models\FavoriteProduct;
 use App\Models\Product;
+use App\Models\Review;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -14,11 +17,11 @@ class ProductController extends Controller
         $filters = $request->validated();
 
         $categories = Category::whereHas('products', function ($q) {
-            $q->where('is_active', true);
+            $q->where('is_active', 'Đang bán');
         })->get(['id', 'category_name', 'slug']);
 
         $productsQuery = Product::with(['category', 'brand', 'images', 'variants'])
-            ->where('is_active', true);
+            ->where('is_active', 'Đang bán');
 
         if (!empty($filters['category'])) {
             $productsQuery->whereHas('category', function ($q) use ($filters) {
@@ -106,6 +109,126 @@ class ProductController extends Controller
                 'rating'    => $filters['rating'] ?? null,
                 'sort_by'   => $filters['sort_by'] ?? 'newest',
             ],
+        ]);
+    }
+
+    public function show($slug)
+    {
+        $product = Product::with([
+            'category',
+            'brand',
+            'images',
+            'variants' => function ($query) {
+                $query->where('status', 'AVAILABLE');
+            },
+            'variants.recipes.material',
+        ])
+        ->where('slug', $slug)
+        ->where('is_active', 'Đang bán')
+        ->firstOrFail();
+
+        $reviews = Review::with('user')
+            ->where('product_id', $product->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(5);
+
+        $isFavorited = false;
+        if (Auth::check()) {
+            $isFavorited = FavoriteProduct::where('user_id', Auth::id())
+                ->where('product_id', $product->id)
+                ->exists();
+        }
+
+        $productData = [
+            'id' => $product->id,
+            'product_name' => $product->product_name,
+            'slug' => $product->slug,
+            'short_description' => $product->short_description,
+            'description' => $product->description,
+            'image_url' => $product->image_url,
+            'images' => $product->images->map(fn($img) => [
+                'id' => $img->id,
+                'url' => $img->image_url,
+            ]),
+            'category' => [
+                'id' => $product->category->id ?? null,
+                'name' => $product->category->category_name ?? null,
+                'slug' => $product->category->slug ?? null,
+            ],
+            'brand' => [
+                'id' => $product->brand->id ?? null,
+                'name' => $product->brand->brand_name ?? null,
+                'logo' => $product->brand->logo_url ?? null,
+            ],
+            'variants' => $product->variants->map(function ($variant) {
+                $stockQuantity = PHP_INT_MAX;
+
+                if ($variant->recipes->isNotEmpty()) {
+                    foreach ($variant->recipes as $recipe) {
+                        if ($recipe->material && $recipe->quantity_needed > 0) {
+                            $possible = floor($recipe->material->quantity_in_stock / $recipe->quantity_needed);
+                            $stockQuantity = min($stockQuantity, $possible);
+                        }
+                    }
+                } else {
+                    $stockQuantity = $variant->status === 'AVAILABLE' ? PHP_INT_MAX : 0;
+                }
+
+                if ($stockQuantity === PHP_INT_MAX) {
+                    $stockQuantity = $variant->status === 'AVAILABLE' ? 99 : 0;
+                }
+
+                return [
+                    'id' => $variant->id,
+                    'size' => $variant->size,
+                    'price' => (float) $variant->price,
+                    'discount_price' => $variant->discount_price ? (float) $variant->discount_price : null,
+                    'quantity' => max(0, (int) $stockQuantity),
+                    'status' => $variant->status,
+                ];
+            }),
+            'avg_rating' => (float) $reviews->avg('rating') ?? 0,
+            'total_reviews' => $reviews->total(),
+        ];
+
+        $relatedProducts = Product::with(['category', 'images', 'variants'])
+            ->where('category_id', $product->category_id)
+            ->where('id', '!=', $product->id)
+            ->where('is_active', 'Đang bán')
+            ->limit(4)
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'name' => $p->product_name,
+                    'slug' => $p->slug,
+                    'price' => (float) ($p->variants->min('price') ?? 0),
+                    'category' => $p->category->slug ?? 'all',
+                    'badge' => $p->category->category_name ?? null,
+                    'badgeVariant' => 'tertiary',
+                    'rating' => 4.5,
+                    'description' => $p->short_description ?? '',
+                    'image' => $p->image_url ?? ($p->images->first()->image_url ?? null),
+                    'createdAt' => $p->created_at,
+                ];
+            });
+
+        return inertia('Menu/Show', [
+            'product' => $productData,
+            'reviews' => $reviews->through(function ($review) {
+                return [
+                    'id' => $review->id,
+                    'rating' => $review->rating,
+                    'comment' => $review->comment,
+                    'user' => [
+                        'name' => $review->user->full_name ?? 'Ẩn danh',
+                        'avatar' => $review->user->avatar ?? null,
+                    ],
+                    'created_at' => $review->created_at,
+                ];
+            }),
+            'relatedProducts' => $relatedProducts,
+            'isFavorited' => $isFavorited,
         ]);
     }
 }

@@ -5,6 +5,8 @@ use Inertia\Inertia;
 use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Customer\BookingController;
+use App\Http\Controllers\Customer\ReviewController;
+use App\Http\Controllers\Customer\FavoriteProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +32,11 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER'])->group(function () {
     Route::put('/profile/addresses/{address}', [ProfileController::class, 'updateAddress'])->name('profile.addresses.update');
     Route::delete('/profile/addresses/{address}', [ProfileController::class, 'deleteAddress'])->name('profile.addresses.delete');
     Route::put('/profile/addresses/{address}/set-default', [ProfileController::class, 'setDefaultAddress'])->name('profile.addresses.set-default');
+
+    Route::post('/menu/{product}/review', [ReviewController::class, 'store'])->name('product.review.store');
+    Route::post('/favorites/toggle/{product}', [FavoriteProductController::class, 'toggle'])->name('favorites.toggle');
+    Route::delete('/favorites/{product}', [FavoriteProductController::class, 'remove'])->name('favorites.remove');
+    Route::get('/favorites', [FavoriteProductController::class, 'index'])->name('favorites.index');
 
     // Giỏ hàng
     Route::get('/gio-hang', [CartController::class, 'index'])->name('customer.cart.index');

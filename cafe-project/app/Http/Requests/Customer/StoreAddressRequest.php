@@ -14,9 +14,10 @@ class StoreAddressRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'receiver_name' => ['required', 'string', 'max:100'],
-            'receiver_phone' => ['required', 'string', 'max:15'],
-            'address_detail' => ['required', 'string', 'max:255'],
+            'receiver_name' => ['required', 'string', 'min:2', 'max:100'],
+            // Regex mới: Bắt buộc bắt đầu bằng số 0, theo sau là các đầu số nhà mạng [3|5|7|8|9], và kết thúc bằng 8 chữ số [0-9] (Tổng cộng đúng 10 số)
+            'receiver_phone' => ['required', 'string', 'regex:/^0[3|5|7|8|9][0-9]{8}$/'],
+            'address_detail' => ['required', 'string', 'min:5', 'max:255'],
             'ward' => ['nullable', 'string', 'max:100'],
             'city' => ['nullable', 'string', 'max:100'],
             'is_default' => ['nullable', 'boolean'],
@@ -27,8 +28,15 @@ class StoreAddressRequest extends FormRequest
     {
         return [
             'receiver_name.required' => 'Vui lòng nhập tên người nhận',
+            'receiver_name.min' => 'Tên người nhận phải có ít nhất 2 ký tự',
+            'receiver_name.max' => 'Tên người nhận không được vượt quá 100 ký tự',
             'receiver_phone.required' => 'Vui lòng nhập số điện thoại',
+            'receiver_phone.regex' => 'Số điện thoại phải bắt đầu bằng số 0, gồm 10 chữ số và đúng định dạng Việt Nam',
             'address_detail.required' => 'Vui lòng nhập địa chỉ chi tiết',
+            'address_detail.min' => 'Địa chỉ chi tiết phải có ít nhất 5 ký tự',
+            'address_detail.max' => 'Địa chỉ không được vượt quá 255 ký tự',
+            'ward.max' => 'Phường/Xã không được vượt quá 100 ký tự',
+            'city.max' => 'Tỉnh/Thành phố không được vượt quá 100 ký tự',
         ];
     }
 }

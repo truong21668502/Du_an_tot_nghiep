@@ -69,7 +69,7 @@ const addToCart = () => {
     preserveState: true,
     onSuccess: () => {
       addingToCart.value = false
-      toast.success('Đã thêm vào giỏ hàng')
+      // toast.success('Đã thêm vào giỏ hàng')
     },
     onError: (err) => {
       addingToCart.value = false
@@ -103,6 +103,7 @@ if (typeof document !== 'undefined') {
 <template>
   <div 
     :data-category="item.category"
+    @click.stop="router.get(route('product.show', item.slug || item.id))"
     class="menu-item bg-surface rounded-xl border border-outline-variant/20 overflow-hidden group hover:shadow-[0_8px_30px_rgba(74,55,40,0.08)] transition-all duration-500 flex flex-col h-full"
   >
     <!-- Image Container -->
@@ -195,7 +196,7 @@ if (typeof document !== 'undefined') {
         <button 
           class="flex-1 py-3 rounded-full border border-secondary text-secondary hover:bg-secondary hover:text-on-secondary font-sans text-label-md transition-colors duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="addingToCart"
-          @click="addToCart"
+          @click.stop="addToCart"
         >
           <span v-if="!addingToCart" class="material-symbols-outlined text-lg">add</span>
           <span v-else class="w-4 h-4 border-2 border-secondary border-t-transparent rounded-full animate-spin"></span>

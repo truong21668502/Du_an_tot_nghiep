@@ -26,6 +26,7 @@ Route::get('/', function () {
 
 // Thực đơn
 Route::get('/thuc-don', [ProductController::class, 'index'])->name('customer.menu.index');
+Route::get('/thuc-don/{slug}', [ProductController::class, 'show'])->name('product.show');
 
 // Về chúng tôi
 Route::get('/ve-chung-toi', function () {

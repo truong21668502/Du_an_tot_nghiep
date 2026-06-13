@@ -89,7 +89,7 @@ class CartController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Đã thêm sản phẩm vào giỏ hàng');
+        return back()->with('toast-success', 'Đã thêm sản phẩm vào giỏ hàng');
     }
 
     public function update(UpdateCartItemRequest $request, CartItem $cartItem)
