@@ -22,8 +22,12 @@ Route::middleware(['auth', 'role:STAFF'])->prefix('nhan-vien')->name('staff.')->
             ->whereIn('status', ['PENDING', 'PROCESSING']) 
             ->orderBy('created_at', 'asc')
             ->get();
-
-        $tables = Table::all(); 
+        // Lấy danh sách bàn cùng với các đặt trước đang chờ/xác nhận để hiển thị trên dashboard
+        $tables = Table::with(['reservations' => function($query) {
+            $query->whereIn('status', ['PENDING', 'CONFIRMED'])
+                ->with('user') // Lấy thông tin khách hàng đặt bàn
+                ->orderBy('reservation_time', 'asc');
+        }])->get();
 
         return Inertia::render('Staff/Dashboard', [
             'initialOrders' => $activeOrders,
@@ -35,14 +39,21 @@ Route::middleware(['auth', 'role:STAFF'])->prefix('nhan-vien')->name('staff.')->
     Route::get('/don-hang', [OrderController::class, 'index'])->name('orders.index');
     Route::patch('/don-hang/{order}/accept', [OrderController::class, 'accept'])->name('orders.accept');
     Route::patch('/don-hang/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
-    
-    // Route quản lý bàn
+    // Route quản lý bàn (Sơ đồ mặt bằng)
     Route::get('/dat-ban', function () {
-        return Inertia::render('Staff/Bookings');
+        $tables = Table::with(['reservations' => function($query) {
+            $query->whereIn('status', ['PENDING', 'CONFIRMED'])
+                    ->with('user')
+                    ->orderBy('reservation_time', 'asc');
+        }])->get(); 
+
+        return Inertia::render('Staff/Bookings', [
+            'initialTables' => $tables
+        ]);
     })->name('bookings.index');
     
     Route::patch('/ban/{table}/trang-thai', [TableController::class, 'updateStatus'])->name('tables.update-status');
-
+    Route::patch('/dat-ban/{reservation}/trang-thai', [TableController::class, 'updateReservationStatus'])->name('reservations.update-status');
 
     // Route test tạo đơn hàng giả và bắn event real-time
     Route::get('/test-tao-don', function () {

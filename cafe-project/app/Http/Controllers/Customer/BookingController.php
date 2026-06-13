@@ -65,7 +65,6 @@ class BookingController extends Controller
 
         $userId = $request->user()->id;
 
-        // ✅ Check: user đã có reservation active ở khung giờ gần đây chưa
         $duplicateSlot = TableReservation::where('user_id', $userId)
             ->whereIn('status', ['PENDING', 'CONFIRMED'])
             ->whereBetween('reservation_time', [
@@ -78,9 +77,7 @@ class BookingController extends Controller
             abort(422, 'Bạn đã có lượt đặt bàn khác gần khung giờ này. Vui lòng chọn giờ khác hoặc hủy lượt đặt cũ.');
         }
 
-        // ✅ Check: giới hạn tổng số lượt đặt active trong ngày
-        // ✅ Check: giới hạn tổng số lượt đặt active trong ngày
-        $maxPerDay = 3; // điều chỉnh số này theo policy quán
+        $maxPerDay = 3;
 
         $countToday = TableReservation::where('user_id', $userId)
             ->whereIn('status', ['PENDING', 'CONFIRMED'])
@@ -94,7 +91,6 @@ class BookingController extends Controller
         DB::transaction(function () use ($validated, $request, $fullReservationTime) {
             $table = Table::lockForUpdate()->findOrFail($validated['table_id']);
 
-            // ✅ Check trùng lịch của BÀN với reservation khác
             $conflict = TableReservation::where('table_id', $validated['table_id'])
                 ->whereIn('status', ['PENDING', 'CONFIRMED'])
                 ->whereBetween('reservation_time', [
@@ -107,10 +103,6 @@ class BookingController extends Controller
                 abort(422, 'Bàn này đã có người đặt vào khung giờ gần đó (trong vòng 2 tiếng).');
             }
 
-            if ($table->status !== 'EMPTY') {
-                abort(422, 'Bàn này vừa được đặt bởi người khác.');
-            }
-
             TableReservation::create([
                 'table_id' => $validated['table_id'],
                 'user_id' => $request->user()->id,
@@ -121,12 +113,15 @@ class BookingController extends Controller
                 'status' => 'PENDING',
             ]);
 
-            // ✅ Chỉ RESERVED nếu đặt bàn trong hôm nay
-            if ($fullReservationTime->isToday()) {
+            //Nếu giờ đặt nằm trong 15 phút tới (cùng điều kiện với
+            // reservations:activate) → giữ bàn ngay, không chờ cron.
+            if (
+                $table->status === 'EMPTY'
+                && $fullReservationTime->between(now(), now()->addMinutes(15))
+            ) {
                 $table->update(['status' => 'RESERVED']);
                 broadcast(new TableStatusUpdated($table->fresh()));
             }
-            // Nếu đặt ngày mai trở đi → bàn vẫn EMPTY, không broadcast
         });
 
         return response()->json([

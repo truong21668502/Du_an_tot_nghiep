@@ -12,7 +12,7 @@ class ActivateReservations extends Command
      *
      * @var string
      */
-    protected $signature = 'app:activate-reservations';
+    protected $signature = 'reservations:activate';
 
     /**
      * The console command description.
@@ -30,7 +30,7 @@ class ActivateReservations extends Command
         // Lấy các reservation sắp đến trong 30 phút tới
         $upcoming = TableReservation::with('table')
             ->where('status', 'PENDING')
-            ->whereBetween('reservation_time', [now(), now()->addMinutes(30)])
+            ->whereBetween('reservation_time', [now(), now()->addMinutes(15)])
             ->get();
 
         foreach ($upcoming as $reservation) {
