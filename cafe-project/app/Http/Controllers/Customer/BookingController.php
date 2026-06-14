@@ -113,8 +113,10 @@ class BookingController extends Controller
                 'status' => 'PENDING',
             ]);
 
-            //Nếu giờ đặt nằm trong 15 phút tới (cùng điều kiện với
-            // reservations:activate) → giữ bàn ngay, không chờ cron.
+            // Broadcast ngay để admin thấy reservation mới (dù bàn vẫn EMPTY)
+            broadcast(new TableStatusUpdated($table->fresh()));
+
+            // Nếu giờ đặt trong 15 phút tới → đổi bàn thành RESERVED luôn
             if (
                 $table->status === 'EMPTY'
                 && $fullReservationTime->between(now(), now()->addMinutes(15))

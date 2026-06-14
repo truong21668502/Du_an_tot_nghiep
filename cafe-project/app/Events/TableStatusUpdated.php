@@ -22,8 +22,6 @@ class TableStatusUpdated implements ShouldBroadcastNow
 
     public function broadcastOn()
     {
-        // Quan trọng: Dùng kênh Public ('cafe-tables') thay vì Private
-        // Vì khách hàng ở nhà chưa đăng nhập vẫn phải xem được bàn nào đang trống
         return new Channel('cafe-tables');
     }
 
@@ -37,8 +35,13 @@ class TableStatusUpdated implements ShouldBroadcastNow
         return [
             'id' => $this->table->id,
             'status' => $this->table->status,
-            // Nếu Frontend cần thêm thông tin gì (như table_name), hãy thêm vào đây
             'table_name' => $this->table->table_name,
+            'reservations' => $this->table->reservations()
+                ->whereIn('status', ['PENDING', 'CONFIRMED'])
+                ->with('user:id,full_name,phone_number')
+                ->orderBy('reservation_time')
+                ->get()
+                ->toArray(),
         ];
     }
 }

@@ -27,10 +27,21 @@ class TableController extends Controller
                 ->update(['status' => 'ARRIVED']);
         }
 
-        $table->load(['reservations' => function($query) {
-            $query->whereIn('status', ['PENDING', 'CONFIRMED', 'ARRIVED'])
-                ->orderBy('reservation_time', 'asc');
-        }]);
+        if ($newStatus === 'EMPTY') {
+            // Chỉ hủy reservation đã qua giờ, giữ lại reservation tương lai
+            $table->reservations()
+                ->whereIn('status', ['PENDING', 'CONFIRMED'])
+                ->where('reservation_time', '<', now())
+                ->update(['status' => 'CANCELLED']);
+        }
+
+        $table->load([
+            'reservations' => function ($query) {
+                $query->whereIn('status', ['PENDING', 'CONFIRMED', 'ARRIVED'])
+                    ->with('user:id,full_name,phone_number')
+                    ->orderBy('reservation_time', 'asc');
+            }
+        ]);
 
         broadcast(new TableStatusUpdated($table))->toOthers();
 
@@ -43,27 +54,39 @@ class TableController extends Controller
             'status' => 'required|in:CONFIRMED,CANCELLED'
         ]);
 
-        // Cập nhật trạng thái phiếu đặt bàn
         $reservation->update(['status' => $request->status]);
 
-        // Cập nhật lại trạng thái của cái Bàn đó
         /** @var \App\Models\Table $table */
         $table = $reservation->table;
-        
+
         if ($request->status === 'CANCELLED') {
-            // Nếu từ chối -> Bàn trở lại trạng thái TRỐNG
-            $table->update(['status' => 'EMPTY']);
+            // Hủy → kiểm tra còn reservation PENDING/CONFIRMED nào khác không
+            // Nếu không còn → bàn về EMPTY
+            $hasOtherActive = $table->reservations()
+                ->whereIn('status', ['PENDING', 'CONFIRMED'])
+                ->where('id', '!=', $reservation->id)
+                ->exists();
+
+            if (!$hasOtherActive) {
+                $table->update(['status' => 'EMPTY']);
+            }
+
         } elseif ($request->status === 'CONFIRMED') {
-            // Nếu xác nhận -> Đảm bảo bàn đang ở trạng thái ĐÃ ĐẶT
-            $table->update(['status' => 'RESERVED']);
+            // Xác nhận → KHÔNG đổi status bàn ngay
+            // Chỉ đổi RESERVED nếu giờ hẹn trong 15 phút tới (khớp với cron)
+            if ($reservation->reservation_time->between(now(), now()->addMinutes(15))) {
+                $table->update(['status' => 'RESERVED']);
+            }
+            // Nếu còn xa → giữ nguyên EMPTY, cron sẽ tự đổi khi đến giờ
         }
 
-        // Load lại dữ liệu chuẩn để bắn Real-time
-        $table->load(['reservations' => function($query) {
-            $query->whereIn('status', ['PENDING', 'CONFIRMED', 'ARRIVED'])
-                ->with('user')
-                ->orderBy('reservation_time', 'asc');
-        }]);
+        $table->load([
+            'reservations' => function ($query) {
+                $query->whereIn('status', ['PENDING', 'CONFIRMED', 'ARRIVED'])
+                    ->with('user:id,full_name,phone_number')
+                    ->orderBy('reservation_time', 'asc');
+            }
+        ]);
 
         broadcast(new TableStatusUpdated($table))->toOthers();
 
