@@ -15,7 +15,7 @@ use App\Http\Controllers\Customer\FavoriteProductController;
 */
 
 Route::middleware(['auth', 'verified', 'role:CUSTOMER'])->group(function () {
-    
+
     Route::get('/ho-so', [ProfileController::class, 'info'])->name('profile.info');
     Route::get('/ho-so/mat-khau', [ProfileController::class, 'password'])->name('profile.password');
     Route::get('/ho-so/don-hang', [ProfileController::class, 'orders'])->name('profile.orders');
@@ -59,6 +59,7 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER'])->group(function () {
     Route::get('/api/tables', [BookingController::class, 'tables'])->name('api.tables');
     Route::get('/api/reservations', [BookingController::class, 'reservations'])->name('api.reservations');
     Route::post('/api/reservations', [BookingController::class, 'store']);
+    Route::delete('/api/reservations/{reservation}', [BookingController::class, 'cancel'])->name('api.reservations.cancel');
 
 
 
