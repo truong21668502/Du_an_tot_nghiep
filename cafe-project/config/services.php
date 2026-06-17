@@ -34,5 +34,10 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'bank' => [
+        'account_number' => env('BANK_ACCOUNT_NUMBER'),
+        'short_name' => env('BANK_SHORT_NAME', 'VCB'),
+        'account_name' => env('BANK_ACCOUNT_NAME'),
+    ],
 
 ];

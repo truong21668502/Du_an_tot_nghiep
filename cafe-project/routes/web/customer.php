@@ -7,6 +7,7 @@ use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Customer\BookingController;
 use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\Customer\FavoriteProductController;
+use App\Http\Controllers\Customer\CheckoutController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,6 +45,13 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER'])->group(function () {
     Route::post('/cart/add', [CartController::class, 'add'])->name('customer.cart.add');
 
     Route::delete('/cart', [CartController::class, 'clear'])->name('customer.cart.clear');
+
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
+    Route::get('/checkout/payment/{order}', [CheckoutController::class, 'payment'])->name('checkout.payment');
+    Route::post('/checkout/confirm-payment/{order}', [CheckoutController::class, 'confirmPayment'])->name('checkout.confirm-payment');
+    Route::get('/checkout/confirming/{order}', [CheckoutController::class, 'confirming'])->name('checkout.confirming');
 
     Route::post('/cart/voucher', [CartController::class, 'applyVoucher'])->name('customer.cart.voucher.apply');
     Route::delete('/cart/voucher', [CartController::class, 'removeVoucher'])->name('customer.cart.voucher.remove');

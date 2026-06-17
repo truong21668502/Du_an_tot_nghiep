@@ -20,6 +20,12 @@ return new class extends Migration
                 ->constrained('users')
                 ->onDelete('restrict')
                 ->comment('Mã khách hàng (Khóa ngoại, NULL nếu là khách vãng lai)');
+
+            $table->foreignId('user_address_id')
+                ->nullable()
+                ->constrained('user_addresses')
+                ->onDelete('restrict')
+                ->comment('Mã địa chỉ nhận hàng (Khóa ngoại, NULL nếu không giao hàng)');
                 
             // Khóa ngoại liên kết tới bàn ăn (Để NULL nếu khách mua mang về hoặc giao hàng)
             $table->foreignId('table_id')
@@ -56,7 +62,7 @@ return new class extends Migration
                 ->default('PENDING')
                 ->comment('Trạng thái đơn hàng (PENDING: Chờ duyệt, PROCESSING: Đang pha chế, COMPLETED: Hoàn thành, CANCELLED: Đã hủy)');
                 
-            $table->text('delivery_address')->nullable()->comment('Địa chỉ nhận hàng (Chỉ bắt buộc nếu order_type là DELIVERY)');
+            // $table->text('delivery_address')->nullable()->comment('Địa chỉ nhận hàng (Chỉ bắt buộc nếu order_type là DELIVERY)');
 
             // Thời gian tạo và cập nhật tự động chuẩn database
             $table->timestamp('created_at')->useCurrent()->comment('Thời gian khách đặt hàng');

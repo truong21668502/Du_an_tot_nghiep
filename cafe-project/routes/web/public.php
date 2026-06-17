@@ -24,6 +24,7 @@ Route::get('/', function () {
 })->name('home');
 
 
+
 // Thực đơn
 Route::get('/thuc-don', [ProductController::class, 'index'])->name('customer.menu.index');
 Route::get('/thuc-don/{slug}', [ProductController::class, 'show'])->name('product.show');
