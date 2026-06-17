@@ -34,26 +34,25 @@ const menuGroups = [
         label: "Quản lý bán hàng",
         icon: "storefront",
         children: [
-            {
-                label: "Đơn hàng",
-                href: "/quan-tri/don-hang",
-                icon: "receipt_long",
-            },
+            { label: "Bàn", href: "/quan-tri/ban", icon: "table_bar" },
             {
                 label: "Đặt bàn",
                 href: "/quan-tri/dat-ban",
                 icon: "table_restaurant",
             },
-            { label: "Bàn", href: "/admin/ban", icon: "table_bar" },
+            {
+                label: "Đơn hàng",
+                href: "/quan-tri/don-hang",
+                icon: "receipt_long",
+            },
         ],
     },
     {
         label: "Quản lý sản phẩm",
         icon: "inventory_2",
         children: [
-            { label: "Sản phẩm", href: "/quan-tri/san-pham", icon: "coffee" },
             { label: "Danh mục", href: "/quan-tri/danh-muc", icon: "category" },
-            { label: "Biến thể", href: "/quan-tri/bien-the", icon: "tune" },
+            { label: "Sản phẩm", href: "/quan-tri/san-pham", icon: "coffee" },
         ],
     },
     {

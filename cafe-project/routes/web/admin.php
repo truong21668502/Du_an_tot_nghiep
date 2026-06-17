@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\TableController;
+use App\Http\Controllers\Admin\ReservationController;
 
 
 /*
@@ -32,6 +34,16 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::delete('/san-pham/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
     Route::post('/hinh-anh-phu', [App\Http\Controllers\Admin\ProductController::class, 'storeImage'])->name('products.storeImage');
     Route::delete('/hinh-anh-phu/{image}', [App\Http\Controllers\Admin\ProductController::class, 'destroyImage'])->name('products.destroyImage');
+
+    // Quản lý bàn ăn / bàn cà phê
+    Route::get('/ban', [TableController::class, 'index'])->name('tables.index');            // Tải danh sách & bộ lọc
+    Route::post('/ban', [TableController::class, 'store'])->name('tables.store');          // Lưu bàn mới
+    Route::put('/ban/{table}', [TableController::class, 'update'])->name('tables.update');   // Cập nhật thông tin bàn
+    Route::delete('/ban/{table}', [TableController::class, 'destroy'])->name('tables.destroy'); // Xóa bàn
+
+    // 2. THÊM VÀO ĐÂY: Quản lý đặt bàn (Khợp chính xác với URL bên Vue)
+    Route::get('/dat-ban', [ReservationController::class, 'index'])->name('reservations.index'); // Trang giám sát chính
+    Route::put('/dat-ban/ghi-de/{id}', [ReservationController::class, 'overrideStatus'])->name('reservations.override'); // Quyền Admin ghi đè trạng thái
 
     // Quản lý users
     Route::get('/users', function () {
