@@ -130,20 +130,22 @@ const formatCurrency = (value) => {
 // ================= Lắng nghe sự kiện real-time =================
 onMounted(() => {
     if (window.Echo) {
-        window.Echo.channel('staff-orders')
-            .listen('.OrderCreated', (e) => {
-                orders.value.push(e.order);
-            });
-
         window.Echo.channel('cafe-tables')
             .listen('.TableUpdated', (e) => {
+                // Nhận id và status từ file Event trên -> Đổi màu sơ đồ bàn tức thì
                 const index = tables.value.findIndex(t => t.id === e.id);
                 if (index !== -1) {
                     tables.value[index].status = e.status;
-                    if (e.reservations) {
-                        tables.value[index].reservations = e.reservations;
-                    }
                 }
+
+                // Load ngầm lên Server để kéo Tên, SĐT, Giờ đặt về một cách bảo mật
+                router.reload({
+                    only: ['initialTables'], 
+                    preserveScroll: true,    
+                    onSuccess: (page) => {
+                        tables.value = page.props.initialTables; 
+                    }
+                });
             });
     }
 });

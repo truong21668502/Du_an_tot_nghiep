@@ -117,7 +117,7 @@ class BookingController extends Controller
             // reservations:activate) → giữ bàn ngay, không chờ cron.
             if (
                 $table->status === 'EMPTY'
-                && $fullReservationTime->between(now(), now()->addMinutes(15))
+                && $fullReservationTime->between(now(), now()->addMinutes(20))
             ) {
                 $table->update(['status' => 'RESERVED']);
                 broadcast(new TableStatusUpdated($table->fresh()));
