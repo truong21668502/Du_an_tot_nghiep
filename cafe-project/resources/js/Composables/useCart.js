@@ -148,8 +148,6 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
   }
 
   const removeVoucher = () => {
-        console.log(route('customer.cart.voucher.remove'));
-
         
 
     loading.value = true

@@ -5,7 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "project": "concurrently \"php artisan serve --host=localhost\" \"php artisan reverb:start\" \"php artisan queue:work\" \"php artisan schedule:work\" \"npm run dev\""
+        "project": "concurrently \"php artisan serve --host=localhost\" \"php artisan reverb:start\" \"php artisan queue:work\" \"php artisan schedule:work\" \"npm run dev\"",
+        "project-public": "concurrently \"php artisan serve --host=192.168.12.15\" \"php artisan reverb:start\" \"php artisan queue:work\" \"php artisan schedule:work\" \"npm run dev\""
     },
     "devDependencies": {
         "@inertiajs/vue3": "^2.0.0",
