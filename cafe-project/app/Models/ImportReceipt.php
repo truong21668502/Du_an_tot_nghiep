@@ -17,6 +17,7 @@ class ImportReceipt extends Model
         'user_id',
         'supplier_name',
         'total_cost',
+        'note'
     ];
 
     // Ép kiểu dữ liệu cho các thuộc tính đặc thù

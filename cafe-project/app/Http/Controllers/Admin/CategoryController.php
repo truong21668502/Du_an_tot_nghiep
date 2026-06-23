@@ -42,7 +42,7 @@ class CategoryController extends Controller
         Category::create($validated);
 
         // Chỉ cần redirect back để Inertia tự làm mới data trên trang Index
-        return redirect()->back()->with('message', 'Thêm mới danh mục thành công!');
+        return redirect()->back()->with('toast-success', 'Thêm mới danh mục thành công!');
     }
 
     /**
@@ -64,7 +64,7 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
-        return redirect()->back()->with('message', 'Cập nhật danh mục thành công!');
+        return redirect()->back()->with('toast-success', 'Cập nhật danh mục thành công!');
     }
 
     /**
@@ -73,11 +73,11 @@ class CategoryController extends Controller
     public function destroy(Category $category)
     {
         if ($category->products()->exists()) {
-            return redirect()->back()->with('error', 'Không thể xóa! Danh mục này đang chứa sản phẩm.');
+            return redirect()->back()->with('toast-error', 'Không thể xóa! Danh mục này đang chứa sản phẩm.');
         }
 
         $category->delete();
 
-        return redirect()->back()->with('message', 'Xóa danh mục thành công!');
+        return redirect()->back()->with('toast-success', 'Xóa danh mục thành công!');
     }
 }

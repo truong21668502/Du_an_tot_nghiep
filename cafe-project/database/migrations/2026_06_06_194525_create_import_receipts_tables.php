@@ -26,6 +26,7 @@ return new class extends Migration
             
             // Thời gian tạo phiếu (chính là thời gian nhập kho)
             $table->timestamp('created_at')->useCurrent()->comment('Thời gian lập phiếu nhập kho');
+            $table->string('note', 255)->nullable()->comment('Ghi chú lý do nhập hoặc tình trạng hàng hóa');
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }

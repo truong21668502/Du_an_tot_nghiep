@@ -7,6 +7,7 @@ use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Customer\BookingController;
 use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\Customer\FavoriteProductController;
+use App\Http\Controllers\Customer\CheckoutController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,7 +16,7 @@ use App\Http\Controllers\Customer\FavoriteProductController;
 */
 
 Route::middleware(['auth', 'verified', 'role:CUSTOMER'])->group(function () {
-    
+
     Route::get('/ho-so', [ProfileController::class, 'info'])->name('profile.info');
     Route::get('/ho-so/mat-khau', [ProfileController::class, 'password'])->name('profile.password');
     Route::get('/ho-so/don-hang', [ProfileController::class, 'orders'])->name('profile.orders');
@@ -45,6 +46,13 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER'])->group(function () {
 
     Route::delete('/cart', [CartController::class, 'clear'])->name('customer.cart.clear');
 
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
+    Route::get('/checkout/payment/{order}', [CheckoutController::class, 'payment'])->name('checkout.payment');
+    Route::post('/checkout/confirm-payment/{order}', [CheckoutController::class, 'confirmPayment'])->name('checkout.confirm-payment');
+    Route::get('/checkout/confirming/{order}', [CheckoutController::class, 'confirming'])->name('checkout.confirming');
+
     Route::post('/cart/voucher', [CartController::class, 'applyVoucher'])->name('customer.cart.voucher.apply');
     Route::delete('/cart/voucher', [CartController::class, 'removeVoucher'])->name('customer.cart.voucher.remove');
 
@@ -59,6 +67,7 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER'])->group(function () {
     Route::get('/api/tables', [BookingController::class, 'tables'])->name('api.tables');
     Route::get('/api/reservations', [BookingController::class, 'reservations'])->name('api.reservations');
     Route::post('/api/reservations', [BookingController::class, 'store']);
+    Route::delete('/api/reservations/{reservation}', [BookingController::class, 'cancel'])->name('api.reservations.cancel');
 
 
 

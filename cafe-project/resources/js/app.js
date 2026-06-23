@@ -53,6 +53,10 @@ watch(
       // console.log('ĐÃ NHẬN FLASH MESSAGE LỖI:', newFlash['error'])
       toast.error(newFlash['toast-error'])
     }
+    else if (newFlash && newFlash['toast-warning']) { 
+      // console.log('ĐÃ NHẬN FLASH MESSAGE CẢNH BÁO:', newFlash['warning'])
+      toast.warning(newFlash['toast-warning'])
+    }
   },
   { deep: true, immediate: true }
 )

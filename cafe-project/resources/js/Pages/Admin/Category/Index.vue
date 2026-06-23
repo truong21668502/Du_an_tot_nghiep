@@ -4,7 +4,7 @@ import { router } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
 import { toast } from 'vue3-toastify';
 
-// Import component form vừa tách
+// Import component form đã tách
 import CategoryFormModal from "./Components/CategoryFormModal.vue";
 
 defineProps({
@@ -33,9 +33,25 @@ const openEditModal = (category) => {
 
 const deleteCategory = (id, name) => {
     if (confirm(`Bạn có chắc chắn muốn xóa danh mục "${name}" không?`)) {
-        toast.success('Xoá danh mục thành công !');
-        router.delete(`/quan-tri/danh-muc/${id}`);
+        router.delete(`/quan-tri/danh-muc/${id}`, {
+            onSuccess: () => toast.success('Xoá danh mục thành công !')
+        });
     }
+};
+
+// Hàm định dạng ngày giờ thân thiện để Admin dễ giám sát
+const formatDateTime = (dateStr) => {
+    if (!dateStr) return "---";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    
+    return `${hours}:${minutes} — ${day}/${month}/${year}`;
 };
 </script>
 
@@ -45,7 +61,7 @@ const deleteCategory = (id, name) => {
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 class="font-sans text-headline-md text-on-surface">Danh mục sản phẩm</h1>
-                    <p class="font-sans text-body-medium text-on-surface-variant">Quản lý các nhóm danh mục sản phẩm của Nắng Coffee.</p>
+                    <p class="font-sans text-body-medium text-on-surface-variant">Quản lý và giám sát các nhóm thực đơn của Nắng Coffee.</p>
                 </div>
                 
                 <button
@@ -74,18 +90,28 @@ const deleteCategory = (id, name) => {
                                 <th class="p-4 w-16 text-center">ID</th>
                                 <th class="p-4">Tên danh mục</th>
                                 <th class="p-4">Slug</th>
-                                <th class="p-4 hidden md:table-cell">Mô tả</th>
+                                <th class="p-4 hidden lg:table-cell">Mô tả</th>
+                                <th class="p-4 hidden md:table-cell">Ngày khởi tạo</th>
+                                <th class="p-4 hidden md:table-cell">Cập nhật cuối</th>
                                 <th class="p-4 text-right w-32">Hành động</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-outline-variant/10 font-sans text-body-medium text-on-surface">
                             <tr v-for="category in categories.data" :key="category.id" class="hover:bg-surface-container-low/50 transition-colors">
-                                <td class="p-4 text-center text-outline font-mono">{{ category.id }}</td>
+                                <td class="p-4 text-center text-outline font-mono text-body-small">{{ category.id }}</td>
                                 <td class="p-4 font-bold text-primary">{{ category.category_name }}</td>
                                 <td class="p-4 font-mono text-body-small text-on-surface-variant">{{ category.slug }}</td>
-                                <td class="p-4 hidden md:table-cell text-on-surface-variant truncate max-w-xs">
+                                <td class="p-4 hidden lg:table-cell text-on-surface-variant truncate max-w-xs">
                                     {{ category.description || 'Chưa có mô tả' }}
                                 </td>
+                                
+                                <td class="p-4 hidden md:table-cell text-on-surface-variant font-mono text-body-small select-none">
+                                    {{ formatDateTime(category.created_at) }}
+                                </td>
+                                <td class="p-4 hidden md:table-cell text-primary font-mono text-body-small select-none">
+                                    {{ formatDateTime(category.updated_at) }}
+                                </td>
+
                                 <td class="p-4 text-right">
                                     <div class="flex items-center justify-end gap-1">
                                         <button @click="openEditModal(category)" class="p-2 hover:bg-surface-container-high text-on-surface-variant hover:text-primary rounded-full transition-colors cursor-pointer" title="Chỉnh sửa">
@@ -98,7 +124,7 @@ const deleteCategory = (id, name) => {
                                 </td>
                             </tr>
                             <tr v-if="categories.data.length === 0">
-                                <td colspan="5" class="p-8 text-center text-on-surface-variant">
+                                <td colspan="7" class="p-8 text-center text-on-surface-variant">
                                     <span class="material-symbols-outlined text-4xl text-outline mb-2 block">folder_open</span>
                                     Chưa có danh mục sản phẩm nào.
                                 </td>

@@ -113,8 +113,10 @@ class BookingController extends Controller
                 'status' => 'PENDING',
             ]);
 
-            //Nếu giờ đặt nằm trong 15 phút tới (cùng điều kiện với
-            // reservations:activate) → giữ bàn ngay, không chờ cron.
+            // Broadcast ngay để admin thấy reservation mới (dù bàn vẫn EMPTY)
+            broadcast(new TableStatusUpdated($table->fresh()));
+
+            // Nếu giờ đặt trong 15 phút tới → đổi bàn thành RESERVED luôn
             if (
                 $table->status === 'EMPTY'
                 && $fullReservationTime->between(now(), now()->addMinutes(20))
@@ -127,6 +129,54 @@ class BookingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Đặt bàn thành công!',
+        ]);
+    }
+
+    public function cancel(Request $request, TableReservation $reservation)
+    {
+        if ($reservation->user_id !== $request->user()->id) {
+            abort(403, 'Bạn không có quyền hủy lượt đặt bàn này.');
+        }
+
+        if (!in_array($reservation->status, ['PENDING', 'CONFIRMED'])) {
+            abort(422, 'Lượt đặt bàn này không thể hủy.');
+        }
+
+        if (
+            $reservation->reservation_time->isFuture()
+            && now()->diffInMinutes($reservation->reservation_time) < 10
+        ) {
+            abort(422, 'Không thể hủy đặt bàn trong vòng 10 phút trước giờ hẹn.');
+        }
+
+        DB::transaction(function () use ($reservation) {
+            $reservation->update(['status' => 'CANCELLED']);
+
+            $table = Table::findOrFail($reservation->table_id);
+
+            $hasOtherActive = $table->reservations()
+                ->whereIn('status', ['PENDING', 'CONFIRMED'])
+                ->where('id', '!=', $reservation->id)
+                ->exists();
+
+            if (!$hasOtherActive && $table->status === 'RESERVED') {
+                $table->update(['status' => 'EMPTY']);
+            }
+
+            $table->load([
+                'reservations' => function ($query) {
+                    $query->whereIn('status', ['PENDING', 'CONFIRMED', 'ARRIVED'])
+                        ->with('user:id,full_name,phone_number')
+                        ->orderBy('reservation_time', 'asc');
+                }
+            ]);
+
+            broadcast(new TableStatusUpdated($table));
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Hủy đặt bàn thành công.',
         ]);
     }
 }

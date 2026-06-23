@@ -19,6 +19,10 @@ class TableReservation extends Model
         'note',
     ];
 
+    protected $casts = [
+        'reservation_time' => 'datetime',
+    ];
+
     public function table(): BelongsTo
     {
         return $this->belongsTo(Table::class, 'table_id', 'id');

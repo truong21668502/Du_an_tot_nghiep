@@ -74,6 +74,21 @@ const refreshProductData = (productId) => {
         if (imageModalProduct.value?.id === productId) imageModalProduct.value = updatedProduct;
     }
 };
+
+// Hàm định dạng ngày giờ thân thiện để Admin dễ giám sát
+const formatDateTime = (dateStr) => {
+    if (!dateStr) return "---";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    
+    return `${hours}:${minutes} — ${day}/${month}/${year}`;
+};
 </script>
 
 <template>
@@ -110,9 +125,31 @@ const refreshProductData = (productId) => {
                                 <td class="p-4 text-center">
                                     <img :src="product.image_url || 'https://placehold.co/100x100?text=No+Image'" class="w-20 h-12 rounded object-cover mx-auto" />
                                 </td>
-                                <td class="p-4">
-                                    <div class="font-bold text-primary">{{ product.product_name }}</div>
-                                    <div class="font-mono text-body-small text-on-surface-variant">{{ product.slug }}</div>
+                                <td class="p-4 text-left">
+                                    <div class="relative group inline-block cursor-help">
+                                        
+                                        <div class="font-bold text-primary hover:text-primary-dark transition-colors">
+                                            {{ product.product_name }}
+                                        </div>
+                                        <div class="font-mono text-body-small text-on-surface-variant">
+                                            {{ product.slug }}
+                                        </div>
+                                    
+                                        <div class="absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col gap-1 px-3 py-2 bg-neutral-900 text-neutral-100 font-mono text-[11px] rounded-xl shadow-lg z-50 whitespace-nowrap pointer-events-none transition-all animate-fade-in">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                                                <span class="text-neutral-400 select-none">Tạo lúc:</span> 
+                                                <span>{{ formatDateTime(product.created_at) }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                                                <span class="text-neutral-400 select-none">Sửa cuối:</span> 
+                                                <span>{{ formatDateTime(product.updated_at) }}</span>
+                                            </div>
+                                            <div class="absolute top-full left-4 border-4 border-transparent border-t-neutral-900"></div>
+                                        </div>
+                                    
+                                    </div>
                                 </td>
                                 <td class="p-4 hidden lg:table-cell">
                                     <span class="px-3 py-1 bg-surface-container-high rounded-full text-body-small">
@@ -136,6 +173,7 @@ const refreshProductData = (productId) => {
                                         {{ product.is_active }}
                                     </span>
                                 </td>
+
                                 <td class="p-4 text-right">
                                     <div class="flex items-center justify-end gap-0.5">
                                         <button @click="openEditModal(product)" class="p-2 hover:bg-surface-container-high text-on-surface-variant hover:text-primary rounded-full transition-colors cursor-pointer">
