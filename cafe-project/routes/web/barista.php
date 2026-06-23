@@ -9,20 +9,20 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:BARISTA'])->prefix('barista')->name('barista.')->group(function () {
+Route::middleware(['auth', 'role:BARISTA'])->prefix('pha-che')->name('barista.')->group(function () {
     
-    // Dashboard
-    Route::get('/dashboard', function () {
+    // Bảng điều khiển chung
+    Route::get('/bang-dieu-khien', function () {
         return Inertia::render('Barista/Dashboard');
     })->name('dashboard');
 
-    // Xem đơn hàng cần pha chế
-    Route::get('/orders', function () {
-        return Inertia::render('Barista/Orders/Index');
-    })->name('orders.index');
-
-    // Queue pha chế
-    Route::get('/queue', function () {
+    // Hàng đợi pha chế (Màn hình chính của Barista)
+    Route::get('/hang-doi', function () {
         return Inertia::render('Barista/Queue');
     })->name('queue');
+
+    // Xem lịch sử đơn hàng
+    Route::get('/don-hang', function () {
+        return Inertia::render('Barista/Orders/Index');
+    })->name('orders.index');
 });
