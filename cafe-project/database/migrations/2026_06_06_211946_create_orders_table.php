@@ -20,12 +20,6 @@ return new class extends Migration
                 ->constrained('users')
                 ->onDelete('restrict')
                 ->comment('Mã khách hàng (Khóa ngoại, NULL nếu là khách vãng lai)');
-
-            $table->foreignId('user_address_id')
-                ->nullable()
-                ->constrained('user_addresses')
-                ->onDelete('restrict')
-                ->comment('Mã địa chỉ nhận hàng (Khóa ngoại, NULL nếu không giao hàng)');
                 
             // Khóa ngoại liên kết tới bàn ăn (Để NULL nếu khách mua mang về hoặc giao hàng)
             $table->foreignId('table_id')

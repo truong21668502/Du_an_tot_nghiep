@@ -23,9 +23,9 @@ return new class extends Migration
             // Đường dẫn URL tích hợp trong mã QR để khách quét gọi món tại bàn
             $table->string('qr_code', 255)->unique()->nullable()->comment('Link hoặc mã QR định danh phục vụ gọi món tại bàn (Duy nhất)');
             
-            $table->enum('status', ['EMPTY', 'OCCUPIED', 'RESERVED'])
+            $table->enum('status', ['EMPTY', 'OCCUPIED'])
                 ->default('EMPTY')
-                ->comment('Trạng thái hiện tại của bàn (EMPTY: Bàn trống, OCCUPIED: Có khách, RESERVED: Đã đặt trước)');
+                ->comment('Trạng thái hiện tại của bàn (EMPTY: Bàn trống, OCCUPIED: Có khách)');
 
             // Thời gian tạo và cập nhật tự động
             $table->timestamp('created_at')->useCurrent();

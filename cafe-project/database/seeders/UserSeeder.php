@@ -13,8 +13,8 @@ class UserSeeder extends Seeder
         $users = [
             // ==================== ADMIN ====================
             [
-                'full_name'        => 'Nguyễn Lý Đoàn Lộc',
-                'phone_number'     => '0901000001',
+                'full_name'        => 'Nguyễn Đình Tú',
+                'phone_number'     => '0336620188',
                 'email'            => 'admin@cafeshop.vn',
                 'password'         => Hash::make('Admin@123'),
                 'role'             => 'ADMIN',
@@ -30,7 +30,7 @@ class UserSeeder extends Seeder
 
             // ==================== STAFF (Nhân viên) ====================
             [
-                'full_name'        => 'Nguyễn Đình Tú',
+                'full_name'        => 'Nguyễn Lý Đoàn Lộc',
                 'phone_number'     => '0902000001',
                 'email'            => 'staff1@cafeshop.vn',
                 'password'         => Hash::make('Staff@123'),
@@ -77,7 +77,7 @@ class UserSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'full_name'        => 'Nguyễn Thị Lan',
+                'full_name'        => 'Nguyễn Phi Trường',
                 'phone_number'     => '0903000002',
                 'email'            => 'barista2@cafeshop.vn',
                 'password'         => Hash::make('Barista@123'),
@@ -94,7 +94,7 @@ class UserSeeder extends Seeder
 
             // ==================== CUSTOMER (Khách hàng) ====================
             [
-                'full_name'        => 'Võ Thành Đạt',
+                'full_name'        => 'Hồ Văn Phi',
                 'phone_number'     => '0904000001',
                 'email'            => 'customer1@gmail.com',
                 'password'         => Hash::make('Customer@123'),
@@ -109,7 +109,7 @@ class UserSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'full_name'        => 'Hoàng Thị Thu',
+                'full_name'        => 'Trần Dương Luân',
                 'phone_number'     => '0904000002',
                 'email'            => 'customer2@gmail.com',
                 'password'         => Hash::make('Customer@123'),
@@ -124,7 +124,7 @@ class UserSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'full_name'        => 'Bùi Quốc Anh',
+                'full_name'        => 'Doãn Văn Đại',
                 'phone_number'     => '0904000003',
                 'email'            => 'customer3@gmail.com',
                 'password'         => Hash::make('Customer@123'),
