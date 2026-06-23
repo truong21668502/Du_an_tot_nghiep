@@ -9,7 +9,7 @@ const currentUrl = computed(() => usePage().url)
 const navLinks = [
     { label: 'Tổng quan', href: '/nhan-vien/bang-dieu-khien', icon: 'dashboard' },
     { label: 'Đơn hàng', href: '/nhan-vien/don-hang', icon: 'coffee_maker' },
-    { label: 'Đặt bàn', href: '/nhan-vien/dat-ban', icon: 'table_restaurant' },
+    { label: 'Sơ đồ bàn', href: '/nhan-vien/so-do-ban', icon: 'table_restaurant' },
 ]
 
 // Kiểm tra link active

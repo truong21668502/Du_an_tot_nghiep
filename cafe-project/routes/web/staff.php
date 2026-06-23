@@ -40,7 +40,7 @@ Route::middleware(['auth', 'role:STAFF'])->prefix('nhan-vien')->name('staff.')->
     Route::patch('/don-hang/{order}/accept', [OrderController::class, 'accept'])->name('orders.accept');
     Route::patch('/don-hang/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
     // Route quản lý bàn (Sơ đồ mặt bằng)
-    Route::get('/dat-ban', function () {
+    Route::get('/so-do-ban', function () {
         $tables = Table::with(['reservations' => function($query) {
             $query->whereIn('status', ['PENDING', 'CONFIRMED'])
                     ->with('user')
@@ -52,8 +52,8 @@ Route::middleware(['auth', 'role:STAFF'])->prefix('nhan-vien')->name('staff.')->
         ]);
     })->name('bookings.index');
     
-    Route::patch('/ban/{table}/trang-thai', [TableController::class, 'updateStatus'])->name('tables.update-status');
-    Route::patch('/dat-ban/{reservation}/trang-thai', [TableController::class, 'updateReservationStatus'])->name('reservations.update-status');
+    Route::patch('/so-do-ban/{table}/trang-thai', [TableController::class, 'updateStatus'])->name('tables.update-status');
+    Route::patch('/so-do-ban/{reservation}/trang-thai', [TableController::class, 'updateReservationStatus'])->name('reservations.update-status');
 
     // Route test tạo đơn hàng giả và bắn event real-time
     Route::get('/test-tao-don', function () {

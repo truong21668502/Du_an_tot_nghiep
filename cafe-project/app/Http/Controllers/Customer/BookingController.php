@@ -119,7 +119,7 @@ class BookingController extends Controller
             // Nếu giờ đặt trong 15 phút tới → đổi bàn thành RESERVED luôn
             if (
                 $table->status === 'EMPTY'
-                && $fullReservationTime->between(now(), now()->addMinutes(15))
+                && $fullReservationTime->between(now(), now()->addMinutes(20))
             ) {
                 $table->update(['status' => 'RESERVED']);
                 broadcast(new TableStatusUpdated($table->fresh()));
