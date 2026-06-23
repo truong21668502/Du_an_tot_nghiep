@@ -7,6 +7,7 @@ use App\Models\TestRealTime;
 use App\Http\Controllers\Customer\ProductController;
 use App\Http\Controllers\Customer\PostController;
 use App\Http\Controllers\Customer\PostCommentController;
+use App\Http\Controllers\Customer\TableOrderController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -28,6 +29,13 @@ Route::get('/', function () {
 // Thực đơn
 Route::get('/thuc-don', [ProductController::class, 'index'])->name('customer.menu.index');
 Route::get('/thuc-don/{slug}', [ProductController::class, 'show'])->name('product.show');
+
+//!!! quan trong không rờ lung tung!!!
+Route::get('/ban/{qr_code}', [TableOrderController::class, 'show'])->name('table.order');
+Route::post('/ban/{qr_code}/order', [TableOrderController::class, 'store'])->name('table.order.store');
+Route::get('/ban/order/{order}/success', [TableOrderController::class, 'success'])->name('table.order.success');
+Route::get('/ban/order/{order}/payment', [TableOrderController::class, 'payment'])->name('table.order.payment');
+Route::post('/ban/order/{order}/confirm-payment', [TableOrderController::class, 'confirmPayment'])->name('table.order.confirm-payment');
 
 // Về chúng tôi
 Route::get('/ve-chung-toi', function () {

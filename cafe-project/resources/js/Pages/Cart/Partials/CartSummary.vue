@@ -1,5 +1,6 @@
 ﻿<script setup>
 import BaseButton from '@/Components/Base/BaseButton.vue'
+import { router, usePage } from '@inertiajs/vue3'
 defineProps({
   subtotal: { type: Number, required: true },
   taxAmount: { type: Number, required: true },
@@ -32,7 +33,7 @@ defineProps({
         <span class="font-serif text-headline-sm text-primary">{{ formatPrice(total) }}</span>
       </div>
     </div>
-    <BaseButton variant="primary" :disabled="loading" class="w-full justify-center">
+    <BaseButton variant="primary" :disabled="loading" class="w-full justify-center" @click="router.get(route('checkout.index'))">
       <span class="material-symbols-outlined text-lg">shopping_bag</span>
       Đặt hàng
     </BaseButton>
