@@ -18,7 +18,8 @@ class TableStoreRequest extends FormRequest
             'area'       => 'nullable|string|max:50',
             'capacity'   => 'required|integer|min:1',
             'qr_code'    => 'nullable|string|max:255|unique:tables,qr_code',
-            'status'     => 'required|in:EMPTY,OCCUPIED,RESERVED',
+            'qr_image'    => 'nullable|string|max:255',
+            'status'     => 'required|in:EMPTY,OCCUPIED',
         ];
     }
 
