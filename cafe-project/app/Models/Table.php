@@ -21,6 +21,7 @@ class Table extends Model
         'area',
         'capacity',
         'qr_code',
+        'qr_image',
         'status',
     ];
 

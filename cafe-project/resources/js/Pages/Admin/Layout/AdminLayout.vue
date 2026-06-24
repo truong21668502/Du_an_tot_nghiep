@@ -36,11 +36,6 @@ const menuGroups = [
         children: [
             { label: "Bàn", href: "/quan-tri/ban", icon: "table_bar" },
             {
-                label: "Đặt bàn",
-                href: "/quan-tri/dat-ban",
-                icon: "table_restaurant",
-            },
-            {
                 label: "Đơn hàng",
                 href: "/quan-tri/don-hang",
                 icon: "receipt_long",

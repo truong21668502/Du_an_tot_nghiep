@@ -21,6 +21,7 @@ class TableUpdateRequest extends FormRequest
             'area'       => 'nullable|string|max:50',
             'capacity'   => 'required|integer|min:1',
             'qr_code'    => 'nullable|string|max:255|unique:tables,qr_code,' . $tableId,
+            'qr_image'    => 'nullable|string|max:255',
             'status'     => 'required|in:EMPTY,OCCUPIED,RESERVED',
         ];
     }

@@ -23,6 +23,7 @@ class TableSeeder extends Seeder
                 'area'       => 'Tầng trệt',
                 'capacity'   => 2, // Bàn nhỏ 2 người
                 'qr_code'    => 'QR_T1_01',
+                'qr_image'   => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=http://localhost:8000/ban/QR_T1_01',
                 'status'     => 'EMPTY',
             ],
             [
@@ -30,6 +31,7 @@ class TableSeeder extends Seeder
                 'area'       => 'Tầng trệt',
                 'capacity'   => 2,
                 'qr_code'    => 'QR_T1_02',
+                'qr_image'   => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=http://localhost:8000/ban/QR_T1_02',
                 'status'     => 'EMPTY',
             ],
             [
@@ -37,6 +39,7 @@ class TableSeeder extends Seeder
                 'area'       => 'Tầng trệt',
                 'capacity'   => 4, // Bàn phổ thông 4 người
                 'qr_code'    => 'QR_T1_03',
+                'qr_image'   => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=http://localhost:8000/ban/QR_T1_03',
                 'status'     => 'EMPTY',
             ],
             [
@@ -44,6 +47,7 @@ class TableSeeder extends Seeder
                 'area'       => 'Tầng trệt',
                 'capacity'   => 6, // Bàn Sofa lớn cho nhóm 6 người
                 'qr_code'    => 'QR_T1_04',
+                'qr_image'   => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=http://localhost:8000/ban/QR_T1_04',
                 'status'     => 'EMPTY',
             ],
 
@@ -53,6 +57,7 @@ class TableSeeder extends Seeder
                 'area'       => 'Tầng lầu',
                 'capacity'   => 4,
                 'qr_code'    => 'QR_L1_01',
+                'qr_image'   => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=http://localhost:8000/ban/QR_L1_01',
                 'status'     => 'EMPTY',
             ],
             [
@@ -60,6 +65,7 @@ class TableSeeder extends Seeder
                 'area'       => 'Tầng lầu',
                 'capacity'   => 4,
                 'qr_code'    => 'QR_L1_02',
+                'qr_image'   => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=http://localhost:8000/ban/QR_L1_02',
                 'status'     => 'EMPTY',
             ],
             [
@@ -67,6 +73,7 @@ class TableSeeder extends Seeder
                 'area'       => 'Tầng lầu',
                 'capacity'   => 2,
                 'qr_code'    => 'QR_L1_03',
+                'qr_image'   => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=http://localhost:8000/ban/QR_L1_03',
                 'status'     => 'EMPTY',
             ],
             [
@@ -74,6 +81,7 @@ class TableSeeder extends Seeder
                 'area'       => 'Tầng lầu',
                 'capacity'   => 8, // Bàn dài học nhóm 8 người
                 'qr_code'    => 'QR_L1_04',
+                'qr_image'   => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=http://localhost:8000/ban/QR_L1_04',
                 'status'     => 'EMPTY',
             ],
 
@@ -83,6 +91,7 @@ class TableSeeder extends Seeder
                 'area'       => 'Sân vườn',
                 'capacity'   => 4,
                 'qr_code'    => 'QR_SV_01',
+                'qr_image'   => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=http://localhost:8000/ban/QR_SV_01',
                 'status'     => 'EMPTY',
             ],
             [
@@ -90,6 +99,7 @@ class TableSeeder extends Seeder
                 'area'       => 'Sân vườn',
                 'capacity'   => 4,
                 'qr_code'    => 'QR_SV_02',
+                'qr_image'   => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=http://localhost:8000/ban/QR_SV_02',
                 'status'     => 'EMPTY',
             ],
             [
@@ -97,6 +107,7 @@ class TableSeeder extends Seeder
                 'area'       => 'Sân vườn',
                 'capacity'   => 4,
                 'qr_code'    => 'QR_SV_03',
+                'qr_image'   => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=http://localhost:8000/ban/QR_SV_03',
                 'status'     => 'EMPTY',
             ],
             [
@@ -104,6 +115,7 @@ class TableSeeder extends Seeder
                 'area'       => 'Sân vườn',
                 'capacity'   => 6,
                 'qr_code'    => 'QR_SV_04',
+                'qr_image'   => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=http://localhost:8000/ban/QR_SV_04',
                 'status'     => 'EMPTY',
             ],
         ];
@@ -114,6 +126,7 @@ class TableSeeder extends Seeder
                 'area'       => $table['area'],
                 'capacity'   => $table['capacity'], // Đã đẩy sức chứa vào DB
                 'qr_code'    => $table['qr_code'],
+                'qr_image'    => $table['qr_image'],
                 'status'     => $table['status'],
                 'created_at' => now(),
                 'updated_at' => now(),

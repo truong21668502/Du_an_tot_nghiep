@@ -143,7 +143,6 @@ const formatDateTime = (dateStr) => {
                             <option value="">-- Trạng thái --</option>
                             <option value="EMPTY">Bàn trống</option>
                             <option value="OCCUPIED">Đang có khách</option>
-                            <option value="RESERVED">Đã đặt trước</option>
                         </select>
                     </div>
 
@@ -165,6 +164,7 @@ const formatDateTime = (dateStr) => {
                                 <th class="p-4">Khu vực tầng</th>
                                 <th class="p-4">Sức chứa tối đa</th>
                                 <th class="p-4 hidden md:table-cell">Định danh QR Link</th>
+                                <th class="p-4 hidden md:table-cell">QR Link Ảnh</th>
                                 <th class="p-4">Trạng thái</th>
                                 <th class="p-4 text-right w-36">Hành động</th>
                             </tr>
@@ -202,7 +202,10 @@ const formatDateTime = (dateStr) => {
                                 </td>
                                 <td class="p-4 font-bold">{{ table.capacity }} người</td>
                                 <td class="p-4 hidden md:table-cell text-left font-mono text-body-small text-on-surface-variant truncate max-w-xs">
-                                    {{ table.qr_code || 'Chưa gắn mã QR' }}
+                                    {{ table.qr_code || 'Chưa gắn định danh mã QR' }}
+                                </td>
+                                <td class="p-4 hidden md:table-cell text-left font-mono text-body-small text-on-surface-variant truncate max-w-xs">
+                                    {{ table.qr_image || 'Chưa có mã ảnh QR' }}
                                 </td>
                                 <td class="p-4 text-center">
                                     <span :class="['px-3 py-1 rounded-full text-label-medium font-bold', getStatusBadgeClass(table.status)]">
