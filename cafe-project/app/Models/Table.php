@@ -41,9 +41,4 @@ class Table extends Model
     {
         return $this->hasMany(Order::class, 'table_id', 'id');
     }
-
-    public function reservations(): HasMany
-    {
-        return $this->hasMany(TableReservation::class);
-    }
 }

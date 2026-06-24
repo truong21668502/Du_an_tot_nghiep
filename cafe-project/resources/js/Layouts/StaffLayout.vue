@@ -68,13 +68,6 @@ onUnmounted(() => {
                 <p class="text-label-sm text-on-surface-variant/70 mt-1">Staff Panel</p>
             </div>
 
-            <div class="px-6 mb-8">
-                <button
-                    class="w-full bg-primary text-on-primary text-label-md py-3 rounded-full shadow-soft hover:opacity-90 transition-opacity">
-                    Tạo đơn mới
-                </button>
-            </div>
-
             <nav class="flex-1 flex flex-col gap-2 text-label-md px-2">
                 <Link v-for="link in navLinks" :key="link.label" :href="link.href" :class="[
                     'flex items-center gap-4 rounded-xl px-4 py-3 transition-all duration-200 group',
