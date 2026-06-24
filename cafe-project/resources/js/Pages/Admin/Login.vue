@@ -3,6 +3,8 @@ import { ref } from 'vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 import BaseButton from '@/Components/Base/BaseButton.vue'
+import { toast } from "vue3-toastify";
+import 'vue3-toastify/dist/index.css';
 defineOptions({ layout: GuestLayout })
 const loading = ref(false)
 const errors = ref({})
@@ -14,6 +16,15 @@ const handleLogin = () => {
     router.post('/login', form.value, {
         onError: (err) => {
             errors.value = err
+        },
+        onSuccess: () => {
+            // Hiện thông báo thành công
+            toast.success("Đăng nhập thành công!", {
+                position: "top-right",
+                autoClose: 2000,
+            });
+            // Xoá trắng ô password để bảo mật
+            form.value.password = '';
         },
         onFinish: () => {
             loading.value = false

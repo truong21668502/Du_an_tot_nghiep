@@ -22,12 +22,14 @@ Route::middleware(['auth', 'role:STAFF'])->prefix('nhan-vien')->name('staff.')->
             ->whereIn('status', ['PENDING', 'PROCESSING']) 
             ->orderBy('created_at', 'asc')
             ->get();
-        // Lấy danh sách bàn cùng với các đặt trước đang chờ/xác nhận để hiển thị trên dashboard
-        $tables = Table::with(['reservations' => function($query) {
-            $query->whereIn('status', ['PENDING', 'CONFIRMED'])
-                ->with('user') // Lấy thông tin khách hàng đặt bàn
-                ->orderBy('reservation_time', 'asc');
-        }])->get();
+            
+        // Lấy toàn bộ danh sách bàn
+        $tables = Table::with(['orders' => function($query) {
+            // Chỉ lấy đơn hàng chưa hoàn tất thanh toán của bàn đó
+            $query->where('payment_status', 'PENDING')
+                ->with('orderDetails') // Kéo theo chi tiết món để đếm
+                ->latest(); // Lấy đơn mới nhất
+        }])->orderBy('id', 'asc')->get();
 
         return Inertia::render('Staff/Dashboard', [
             'initialOrders' => $activeOrders,
@@ -39,21 +41,19 @@ Route::middleware(['auth', 'role:STAFF'])->prefix('nhan-vien')->name('staff.')->
     Route::get('/don-hang', [OrderController::class, 'index'])->name('orders.index');
     Route::patch('/don-hang/{order}/accept', [OrderController::class, 'accept'])->name('orders.accept');
     Route::patch('/don-hang/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
+    
     // Route quản lý bàn (Sơ đồ mặt bằng)
     Route::get('/so-do-ban', function () {
-        $tables = Table::with(['reservations' => function($query) {
-            $query->whereIn('status', ['PENDING', 'CONFIRMED'])
-                    ->with('user')
-                    ->orderBy('reservation_time', 'asc');
-        }])->get(); 
+        // Lấy toàn bộ danh sách bàn
+        $tables = Table::orderBy('id', 'asc')->get(); 
 
-        return Inertia::render('Staff/Bookings', [
+        return Inertia::render('Staff/Tables', [
             'initialTables' => $tables
         ]);
     })->name('bookings.index');
     
+    // Route cập nhật trạng thái bàn (Trống <-> Có khách)
     Route::patch('/so-do-ban/{table}/trang-thai', [TableController::class, 'updateStatus'])->name('tables.update-status');
-    Route::patch('/so-do-ban/{reservation}/trang-thai', [TableController::class, 'updateReservationStatus'])->name('reservations.update-status');
 
     // Route test tạo đơn hàng giả và bắn event real-time
     Route::get('/test-tao-don', function () {
@@ -73,6 +73,9 @@ Route::middleware(['auth', 'role:STAFF'])->prefix('nhan-vien')->name('staff.')->
             'quantity' => 1, 
             'unit_price' => 20000
         ]);
+
+        // Nạp thông tin Bàn và Chi tiết món vào biến $order
+        $order->load(['table', 'orderDetails.product']);
 
         // Bắn event
         broadcast(new OrderCreated($order));

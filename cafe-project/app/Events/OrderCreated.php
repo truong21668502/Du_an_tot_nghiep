@@ -4,11 +4,11 @@ namespace App\Events;
 
 use App\Models\Order;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class OrderCreated implements ShouldBroadcast
+class OrderCreated implements ShouldBroadcastNow
 {
     use Dispatchable, SerializesModels;
 
@@ -27,14 +27,7 @@ class OrderCreated implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'id' => $this->order->id,
-            'order_code' => 'DH' . str_pad($this->order->id, 8, '0', STR_PAD_LEFT),
-            'total_amount' => $this->order->total_amount,
-            'final_amount' => $this->order->final_amount,
-            'status' => $this->order->status,
-            'payment_method' => $this->order->payment_method,
-            'order_type' => $this->order->order_type,
-            'created_at' => $this->order->created_at,
+            'order' => $this->order->toArray()
         ];
     }
 }

@@ -1,17 +1,15 @@
 <?php
-
 namespace App\Events;
 
 use App\Models\Table;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 class TableStatusUpdated implements ShouldBroadcastNow
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable, SerializesModels;
 
     public $table;
 
@@ -30,18 +28,11 @@ class TableStatusUpdated implements ShouldBroadcastNow
         return 'TableUpdated';
     }
 
-    public function broadcastWith()
+    public function broadcastWith(): array
     {
         return [
             'id' => $this->table->id,
             'status' => $this->table->status,
-            'table_name' => $this->table->table_name,
-            'reservations' => $this->table->reservations()
-                ->whereIn('status', ['PENDING', 'CONFIRMED'])
-                ->with('user:id,full_name,phone_number')
-                ->orderBy('reservation_time')
-                ->get()
-                ->toArray(),
         ];
     }
 }

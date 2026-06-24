@@ -11,8 +11,9 @@ class TableController extends Controller
 {
     public function updateStatus(Request $request, Table $table)
     {
+        // Chỉ cho phép 2 trạng thái trống và đang sử dụng
         $request->validate([
-            'status' => 'required|in:EMPTY,OCCUPIED,RESERVED'
+            'status' => 'required|in:EMPTY,OCCUPIED'
         ]);
 
         $oldStatus = $table->status;
