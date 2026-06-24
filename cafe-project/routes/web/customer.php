@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\ProfileController;
-use App\Http\Controllers\Customer\BookingController;
 use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\Customer\FavoriteProductController;
 use App\Http\Controllers\Customer\CheckoutController;
@@ -58,18 +57,6 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER'])->group(function () {
 
     Route::put('/cart/{cartItem}', [CartController::class, 'update'])->name('customer.cart.update');
     Route::delete('/cart/{cartItem}', [CartController::class, 'remove'])->name('customer.cart.remove');
-
-    // Đặt bàn
-    Route::get('/dat-ban', function () {
-        return Inertia::render('Booking');
-    })->name('booking');
-    Route::get('/dat-ban', [BookingController::class, 'index'])->name('booking');
-    Route::get('/api/tables', [BookingController::class, 'tables'])->name('api.tables');
-    Route::get('/api/reservations', [BookingController::class, 'reservations'])->name('api.reservations');
-    Route::post('/api/reservations', [BookingController::class, 'store']);
-    Route::delete('/api/reservations/{reservation}', [BookingController::class, 'cancel'])->name('api.reservations.cancel');
-
-
 
     // Đơn hàng
     Route::get('/don-hang', function () {

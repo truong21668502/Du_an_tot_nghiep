@@ -12,7 +12,6 @@ const logoUrl = computed(() => brand.value?.logo_url || 'https://res.cloudinary.
 const navLinks = [
   { label: 'Trang chủ', href: '/', routeName: 'home' },
   { label: 'Thực đơn', href: '/thuc-don', routeName: 'menu' },
-  { label: 'Đặt bàn', href: '/dat-ban', routeName: 'booking' },
   { label: 'Về chúng tôi', href: '/ve-chung-toi', routeName: 'about' },
   { label: 'Liên hệ', href: '/lien-he', routeName: 'contact' },
   { label: 'Bài viết', href: '/bai-viet', routeName: 'blog' },

@@ -28,7 +28,6 @@ class Order extends Model
         'payment_status',
         'order_type',
         'status',
-        'delivery_address',
     ];
 
     /**
