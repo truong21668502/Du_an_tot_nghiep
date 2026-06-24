@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\TableController;
 use App\Http\Controllers\Admin\ReservationController;
+use App\Http\Controllers\Admin\PostController;
 
 
 /*
@@ -15,7 +16,7 @@ use App\Http\Controllers\Admin\ReservationController;
 */
 
 Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->group(function () {
-    
+
     // xử lý hiển thị trang chủ
     Route::get('/trang-chu', function () {
         return Inertia::render('Admin/DashBoardAdmin');
@@ -59,4 +60,15 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::get('/reports', function () {
         return Inertia::render('Admin/Reports/Index');
     })->name('reports.index');
+
+
+    Route::middleware(['auth'])->group(function () {
+        // Quản lý Bài viết (Posts)
+        Route::get('/bai-viet', [PostController::class, 'index'])->name('posts.index');
+        Route::get('/bai-viet/tao-moi', [PostController::class, 'create'])->name('posts.create');
+        Route::post('/bai-viet', [PostController::class, 'store'])->name('posts.store');
+        Route::get('/bai-viet/{post}/sua', [PostController::class, 'edit'])->name('posts.edit');
+        Route::put('/bai-viet/{post}', [PostController::class, 'update'])->name('posts.update');
+        Route::delete('/bai-viet/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
+    });
 });

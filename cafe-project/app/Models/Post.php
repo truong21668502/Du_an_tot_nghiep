@@ -19,7 +19,6 @@ class Post extends Model
         'title',
         'slug',
         'image',
-        'summary',
         'content',
         'status',
     ];
