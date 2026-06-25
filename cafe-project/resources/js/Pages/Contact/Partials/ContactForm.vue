@@ -3,7 +3,12 @@ import { ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import AnimateOnScroll from '@/Components/Base/AnimateOnScroll.vue'
 import BaseButton from '@/Components/Base/BaseButton.vue'
+import { usePage } from "@inertiajs/vue3"
+
+const data = usePage().props.value
+const error = ref({})
 const isSubmitted = ref(false)
+
 const form = useForm({
   name: '',
   email: '',
@@ -11,6 +16,7 @@ const form = useForm({
   subject: '',
   message: ''
 })
+
 const subjects = [
   'Góp ý về dịch vụ',
   'Hỗ trợ đặt bàn',
@@ -18,27 +24,31 @@ const subjects = [
   'Tuyển dụng',
   'Khác'
 ]
+
 const submitForm = () => {
-axios.post('/lien-he/gui', form)
-    .then(res => {
-        if (res.data.success) {
-            isSubmitted.value = true
-        }
-    })
+  form.post('/contact/send', {
+    preserveScroll: true,
+    onSuccess: () => {
+      isSubmitted.value = true
+    },
+    onError: (errors) => {
+      console.error('Lỗi xử lý từ Laravel:', errors)
+    }
+  })
 }
 </script>
+
 <template>
   <section class="py-24 px-margin-mobile md:px-gutter">
     <div class="max-w-[1280px] mx-auto">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-        <!-- Left: Form -->
         <AnimateOnScroll animation="fade-right" :duration="700">
           <div>
             <h2 class="text-headline-md text-primary mb-4">Gửi Tin Nhắn Cho Chúng Tôi</h2>
             <p class="text-body-md text-on-surface-variant mb-8">
               Bạn có thắc mắc hoặc cần hỗ trợ? Hãy điền vào form bên dưới, chúng tôi sẽ phản hồi trong thời gian sớm nhất.
             </p>
-            <!-- Success Message -->
+            
             <div 
               v-if="isSubmitted"
               class="mb-8 p-6 bg-tertiary-container/30 border border-tertiary-container rounded-xl text-center"
@@ -47,8 +57,8 @@ axios.post('/lien-he/gui', form)
               <h3 class="font-serif text-headline-sm text-on-tertiary-container mb-1">Cảm ơn bạn!</h3>
               <p class="font-sans text-body-md text-on-tertiary-container">Tin nhắn của bạn đã được gửi thành công. Chúng tôi sẽ phản hồi sớm nhất có thể.</p>
             </div>
+
             <form v-else @submit.prevent="submitForm" class="space-y-6">
-              <!-- Name & Email -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
                   <label for="name" class="font-sans text-label-sm text-on-surface">Họ và tên *</label>
@@ -62,6 +72,7 @@ axios.post('/lien-he/gui', form)
                   />
                   <div v-if="form.errors.name" class="text-error text-sm">{{ form.errors.name }}</div>
                 </div>
+
                 <div class="space-y-2">
                   <label for="email" class="font-sans text-label-sm text-on-surface">Email *</label>
                   <input
@@ -75,7 +86,7 @@ axios.post('/lien-he/gui', form)
                   <div v-if="form.errors.email" class="text-error text-sm">{{ form.errors.email }}</div>
                 </div>
               </div>
-              <!-- Phone & Subject -->
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
                   <label for="phone" class="font-sans text-label-sm text-on-surface">Số điện thoại</label>
@@ -87,6 +98,7 @@ axios.post('/lien-he/gui', form)
                     class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl font-sans text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all duration-300"
                   />
                 </div>
+
                 <div class="space-y-2">
                   <label for="subject" class="font-sans text-label-sm text-on-surface">Chủ đề *</label>
                   <select
@@ -101,7 +113,7 @@ axios.post('/lien-he/gui', form)
                   <div v-if="form.errors.subject" class="text-error text-sm">{{ form.errors.subject }}</div>
                 </div>
               </div>
-              <!-- Message -->
+
               <div class="space-y-2">
                 <label for="message" class="font-sans text-label-sm text-on-surface">Tin nhắn *</label>
                 <textarea
@@ -114,7 +126,7 @@ axios.post('/lien-he/gui', form)
                 ></textarea>
                 <div v-if="form.errors.message" class="text-error text-sm">{{ form.errors.message }}</div>
               </div>
-              <!-- Submit Button -->
+
               <div class="flex justify-start pt-4">
                 <BaseButton 
                   type="submit" 
@@ -128,7 +140,7 @@ axios.post('/lien-he/gui', form)
             </form>
           </div>
         </AnimateOnScroll>
-        <!-- Right: Decorative Image -->
+
         <AnimateOnScroll animation="fade-left" :duration="700" :delay="200">
           <div class="hidden lg:block">
             <div class="rounded-xl overflow-hidden shadow-soft relative">

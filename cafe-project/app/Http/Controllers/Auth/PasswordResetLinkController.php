@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\User;
 
 class PasswordResetLinkController extends Controller
 {
@@ -36,6 +37,13 @@ class PasswordResetLinkController extends Controller
         // We will send the password reset link to this user. Once we have attempted
         // to send the link, we will examine the response then see the message we
         // need to show to the user. Finally, we'll send out a proper response.
+        $user = User::where('email', $request->email)->first();
+        if ($user && $user->google_id) {
+            return redirect()
+                ->route('login')
+                ->with('toast-warning', 'Tài khoản này đăng nhập bằng Google, không thể đặt lại mật khẩu.');
+        }
+
         $status = Password::sendResetLink(
             $request->only('email')
         );
