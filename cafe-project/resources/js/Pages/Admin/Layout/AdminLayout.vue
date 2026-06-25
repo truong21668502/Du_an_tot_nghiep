@@ -76,8 +76,8 @@ const menuGroups = [
         icon: "settings",
         children: [
             {
-                label: "Voucher",
-                href: "/quan-tri/voucher",
+                label: "Mã Giảm Giá",
+                href: "/quan-tri/ma-giam-gia",
                 icon: "confirmation_number",
             },
             { label: "Thương hiệu", href: "/quan-tri/thuong-hieu", icon: "store" },
@@ -127,7 +127,7 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                         class="w-8 h-8 rounded-full object-cover"
                     />
                     <span
-                        class="font-serif text-headline-sm text-primary truncate"
+                        class="font-sans text-headline-sm text-primary truncate"
                         >Nắng Coffee</span
                     >
                 </div>

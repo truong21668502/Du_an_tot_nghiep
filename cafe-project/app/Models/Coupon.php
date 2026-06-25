@@ -37,7 +37,7 @@ class Coupon extends Model
         'min_order_value'     => 'decimal:2',
         'usage_limit'         => 'integer',
         'used_count'          => 'integer',
-        'expiration_date'     => 'date', // Ép kiểu về Date để dễ xử lý so sánh ngày hết hạn
+        'expiration_date'     => 'datetime', // Ép kiểu về Date để dễ xử lý so sánh ngày hết hạn
         'created_at'          => 'datetime',
         'updated_at'          => 'datetime',
     ];

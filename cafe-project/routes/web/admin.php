@@ -5,8 +5,9 @@ use Inertia\Inertia;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\TableController;
-use App\Http\Controllers\Admin\ReservationController;
 use App\Http\Controllers\Admin\PostController;
+use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\Admin\CouponController;
 
 
 /*
@@ -42,9 +43,17 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::put('/ban/{table}', [TableController::class, 'update'])->name('tables.update');   // Cập nhật thông tin bàn
     Route::delete('/ban/{table}', [TableController::class, 'destroy'])->name('tables.destroy'); // Xóa bàn
 
-    // 2. THÊM VÀO ĐÂY: Quản lý đặt bàn (Khợp chính xác với URL bên Vue)
-    Route::get('/dat-ban', [ReservationController::class, 'index'])->name('reservations.index'); // Trang giám sát chính
-    Route::put('/dat-ban/ghi-de/{id}', [ReservationController::class, 'overrideStatus'])->name('reservations.override'); // Quyền Admin ghi đè trạng thái
+    // Quản lý thương hiệu
+    Route::get('/thuong-hieu', [BrandController::class, 'index'])->name('brands.index');
+    Route::post('/thuong-hieu', [BrandController::class, 'store'])->name('brands.store');
+    Route::put('/thuong-hieu/{brand}', [BrandController::class, 'update'])->name('brands.update');
+    Route::delete('/thuong-hieu/{brand}', [BrandController::class, 'destroy'])->name('brands.destroy');
+
+    // Quản lý mã giảm giá (Coupons)
+    Route::get('/ma-giam-gia', [CouponController::class, 'index'])->name('coupons.index');
+    Route::post('/ma-giam-gia', [CouponController::class, 'store'])->name('coupons.store');
+    Route::put('/ma-giam-gia/{coupon}', [CouponController::class, 'update'])->name('coupons.update');
+    Route::delete('/ma-giam-gia/{coupon}', [CouponController::class, 'destroy'])->name('coupons.destroy');
 
     // Quản lý users
     Route::get('/users', function () {
