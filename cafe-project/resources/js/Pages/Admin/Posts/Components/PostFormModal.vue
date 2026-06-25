@@ -2,6 +2,9 @@
 import { watch } from "vue";
 import { useForm } from "@inertiajs/vue3";
 
+import { QuillEditor } from '@vueup/vue-quill';
+import '@vueup/vue-quill/dist/vue-quill.snow.css';
+
 const props = defineProps({
     isOpen: { type: Boolean, required: true },
     editMode: { type: Boolean, default: false },
@@ -168,10 +171,12 @@ const generateSlug = () => {
                 <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/20 space-y-4">
                     <h4 class="text-label-large text-primary font-bold uppercase tracking-wider">3. Nội dung bài viết
                     </h4>
+
                     <div class="flex flex-col gap-1">
-                        <textarea v-model="form.content" rows="12"
-                            placeholder="Bắt đầu viết nội dung chi tiết tại đây..."
-                            class="px-4 py-3 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all"></textarea>
+                        <div class="bg-surface border border-outline-variant rounded-xl overflow-hidden">
+                            <QuillEditor v-model:content="form.content" contentType="html" theme="snow" toolbar="full"
+                                placeholder="Bắt đầu viết nội dung chi tiết (hỗ trợ H1, H2, In đậm, Hình ảnh)..." />
+                        </div>
                         <span v-if="form.errors.content"
                             class="text-body-small text-error flex items-center gap-0.5 mt-1">
                             <span class="material-symbols-outlined text-sm">error</span>{{ form.errors.content }}
@@ -227,5 +232,25 @@ const generateSlug = () => {
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #cccccc;
+}
+
+/* Thêm đoạn này vào dưới cùng của thẻ <style scoped> */
+:deep(.ql-toolbar.ql-snow) {
+    border: none !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+    background-color: #f8fafc;
+    /* Trắng xám nhẹ cho thanh công cụ */
+    font-family: inherit;
+}
+
+:deep(.ql-container.ql-snow) {
+    border: none !important;
+    min-height: 350px;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+:deep(.ql-editor) {
+    min-height: 350px;
 }
 </style>
