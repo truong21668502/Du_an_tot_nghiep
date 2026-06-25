@@ -8,6 +8,7 @@ use App\Http\Controllers\Customer\ProductController;
 use App\Http\Controllers\Customer\PostController;
 use App\Http\Controllers\Customer\PostCommentController;
 use App\Http\Controllers\Customer\TableOrderController;
+use App\Http\Controllers\Customer\ContactController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -47,11 +48,8 @@ Route::get('/lien-he', function () {
     return Inertia::render('Contact');
 })->name('contact');
 
-Route::post('/lien-he/gui', function () {
-    return response()->json([
-        'success' => true
-    ]);
-})->name('contact.send');
+Route::post('/contact/send', [ContactController::class, 'send'])->name('contact.send');
+
 
 // Blog
 Route::get('/bai-viet', [PostController::class, 'index'])->name('blog.index');
