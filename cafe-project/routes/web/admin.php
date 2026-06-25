@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\TableController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\PostCategoryController;
+use App\Http\Controllers\Admin\PostCommentController;
 
 
 /*
@@ -79,5 +81,15 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
         Route::get('/bai-viet/{post}/sua', [PostController::class, 'edit'])->name('posts.edit');
         Route::put('/bai-viet/{post}', [PostController::class, 'update'])->name('posts.update');
         Route::delete('/bai-viet/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
+
+        Route::get('/danh-muc-bai-viet', [PostCategoryController::class, 'index'])->name('post-categories.index');
+        Route::post('/danh-muc-bai-viet', [PostCategoryController::class, 'store'])->name('post-categories.store');
+        Route::put('/danh-muc-bai-viet/{postCategory}', [PostCategoryController::class, 'update'])->name('post-categories.update');
+        Route::delete('/danh-muc-bai-viet/{postCategory}', [PostCategoryController::class, 'destroy'])->name('post-categories.destroy');
+
+        // Quản lý Bình luận bài viết
+        Route::get('/binh-luan', [PostCommentController::class, 'index'])->name('post-comments.index');
+        Route::put('/binh-luan/{postComment}', [PostCommentController::class, 'update'])->name('post-comments.update'); // Để duyệt/ẩn bình luận
+        Route::delete('/binh-luan/{postComment}', [PostCommentController::class, 'destroy'])->name('post-comments.destroy');
     });
 });
