@@ -11,6 +11,8 @@ use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\PostCommentController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ImportReceiptController;
+use App\Http\Controllers\Admin\MaterialController;
 
 
 /*
@@ -99,5 +101,11 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
         Route::get('/binh-luan', [PostCommentController::class, 'index'])->name('post-comments.index');
         Route::put('/binh-luan/{postComment}', [PostCommentController::class, 'update'])->name('post-comments.update'); // Để duyệt/ẩn bình luận
         Route::delete('/binh-luan/{postComment}', [PostCommentController::class, 'destroy'])->name('post-comments.destroy');
+    });
+
+    Route::prefix('kho')->name('kho.')->group(function () {
+        Route::get('/', [MaterialController::class, 'index'])->name('index');
+        Route::get('/nhap', [ImportReceiptController::class, 'create'])->name('nhap.create');
+        Route::post('/nhap', [ImportReceiptController::class, 'store'])->name('nhap.store');
     });
 });
