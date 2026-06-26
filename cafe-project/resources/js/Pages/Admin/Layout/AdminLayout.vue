@@ -64,6 +64,14 @@ const menuGroups = [
         ],
     },
     {
+        label: "Quản lý kho",
+        icon: "warehouse",
+        children: [
+            { label: "Tồn kho", href: "/quan-tri/kho", icon: "inventory" },
+            { label: "Nhập hàng", href: "/quan-tri/kho/nhap", icon: "local_shipping" },
+        ],
+    },
+    {
         label: "Người dùng",
         icon: "group",
         children: [
@@ -91,136 +99,78 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
 <template>
     <div class="flex h-screen overflow-hidden bg-surface-container-low">
         <!-- Mobile overlay -->
-        <div
-            v-if="mobileOpen"
-            @click="mobileOpen = false"
-            class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden"
-        ></div>
+        <div v-if="mobileOpen" @click="mobileOpen = false"
+            class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden"></div>
 
         <!-- Sidebar -->
-        <aside
-            :class="[
-                'fixed md:sticky top-0 left-0 z-50 flex flex-col h-screen bg-surface border-r border-outline-variant/20 transition-all duration-300 overflow-y-auto',
-                collapsed ? 'w-20' : 'w-72',
-                mobileOpen
-                    ? 'translate-x-0'
-                    : '-translate-x-full md:translate-x-0',
-            ]"
-        >
+        <aside :class="[
+            'fixed md:sticky top-0 left-0 z-50 flex flex-col h-screen bg-surface border-r border-outline-variant/20 transition-all duration-300 overflow-y-auto',
+            collapsed ? 'w-20' : 'w-72',
+            mobileOpen
+                ? 'translate-x-0'
+                : '-translate-x-full md:translate-x-0',
+        ]">
             <!-- Logo -->
-            <div
-                class="flex items-center h-16 px-4 border-b border-outline-variant/20 flex-shrink-0"
-            >
-                <button
-                    @click="collapsed = !collapsed"
-                    class="hidden md:flex p-1.5 hover:bg-surface-container-low rounded-lg transition-colors mr-2"
-                >
-                    <span
-                        class="material-symbols-outlined text-on-surface-variant"
-                        >menu</span
-                    >
+            <div class="flex items-center h-16 px-4 border-b border-outline-variant/20 flex-shrink-0">
+                <button @click="collapsed = !collapsed"
+                    class="hidden md:flex p-1.5 hover:bg-surface-container-low rounded-lg transition-colors mr-2">
+                    <span class="material-symbols-outlined text-on-surface-variant">menu</span>
                 </button>
                 <div :class="collapsed ? 'hidden' : 'flex items-center gap-2'">
-                    <img
-                        src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1780996916/NangCoffee_logo_fullmau_wl8jbz.png"
-                        alt="Logo"
-                        class="w-8 h-8 rounded-full object-cover"
-                    />
-                    <span
-                        class="font-sans text-headline-sm text-primary truncate"
-                        >Nắng Coffee</span
-                    >
+                    <img src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1780996916/NangCoffee_logo_fullmau_wl8jbz.png"
+                        alt="Logo" class="w-8 h-8 rounded-full object-cover" />
+                    <span class="font-sans text-headline-sm text-primary truncate">Nắng Coffee</span>
                 </div>
-                <button
-                    @click="mobileOpen = false"
-                    class="md:hidden ml-auto p-1.5 hover:bg-surface-container-low rounded-lg"
-                >
+                <button @click="mobileOpen = false"
+                    class="md:hidden ml-auto p-1.5 hover:bg-surface-container-low rounded-lg">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
 
             <!-- Nav -->
             <nav class="flex-1 py-4 px-3 space-y-6">
-                <div
-                    v-for="group in menuGroups"
-                    :key="group.label"
-                    class="space-y-1"
-                >
-                    <p
-                        v-if="!collapsed"
-                        class="px-3 font-sans text-label-sm text-outline uppercase tracking-wider mb-2"
-                    >
+                <div v-for="group in menuGroups" :key="group.label" class="space-y-1">
+                    <p v-if="!collapsed"
+                        class="px-3 font-sans text-label-sm text-outline uppercase tracking-wider mb-2">
                         {{ group.label }}
                     </p>
-                    <a
-                        v-for="child in group.children"
-                        :key="child.href"
-                        :href="child.href"
-                        @click.prevent="navigateTo(child.href)"
-                        :class="[
+                    <a v-for="child in group.children" :key="child.href" :href="child.href"
+                        @click.prevent="navigateTo(child.href)" :class="[
                             'flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-label-md transition-all duration-200',
                             isActive(child.href)
                                 ? 'bg-primary-container/30 text-on-primary-container font-bold'
                                 : 'text-on-surface-variant hover:bg-surface-container-low hover:text-primary',
-                        ]"
-                        :title="collapsed ? child.label : ''"
-                    >
-                        <span
-                            class="material-symbols-outlined text-xl flex-shrink-0"
-                            >{{ child.icon }}</span
-                        >
+                        ]" :title="collapsed ? child.label : ''">
+                        <span class="material-symbols-outlined text-xl flex-shrink-0">{{ child.icon }}</span>
                         <span v-if="!collapsed" class="truncate">{{
                             child.label
-                        }}</span>
+                            }}</span>
                     </a>
                 </div>
             </nav>
 
             <!-- Bottom -->
-            <div
-                class="border-t border-outline-variant/20 p-3 space-y-1 flex-shrink-0"
-            >
-                <a
-                    v-for="link in bottomLinks"
-                    :key="link.href"
-                    :href="link.href"
-                    @click.prevent="navigateTo(link.href)"
+            <div class="border-t border-outline-variant/20 p-3 space-y-1 flex-shrink-0">
+                <a v-for="link in bottomLinks" :key="link.href" :href="link.href" @click.prevent="navigateTo(link.href)"
                     class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans text-label-md text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-all duration-200"
-                    :title="collapsed ? link.label : ''"
-                >
-                    <span
-                        class="material-symbols-outlined text-xl flex-shrink-0"
-                        >{{ link.icon }}</span
-                    >
+                    :title="collapsed ? link.label : ''">
+                    <span class="material-symbols-outlined text-xl flex-shrink-0">{{ link.icon }}</span>
                     <span v-if="!collapsed">{{ link.label }}</span>
                 </a>
             </div>
 
             <!-- User -->
-            <div
-                v-if="user"
-                class="border-t border-outline-variant/20 p-3 flex-shrink-0"
-            >
-                <div
-                    class="flex items-center gap-3 px-2"
-                    :class="collapsed ? 'justify-center' : ''"
-                >
+            <div v-if="user" class="border-t border-outline-variant/20 p-3 flex-shrink-0">
+                <div class="flex items-center gap-3 px-2" :class="collapsed ? 'justify-center' : ''">
                     <div
-                        class="w-9 h-9 rounded-full bg-primary-container/30 flex items-center justify-center flex-shrink-0"
-                    >
-                        <span class="material-symbols-outlined text-primary"
-                            >person</span
-                        >
+                        class="w-9 h-9 rounded-full bg-primary-container/30 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-primary">person</span>
                     </div>
                     <div v-if="!collapsed" class="flex-1 min-w-0">
-                        <p
-                            class="font-sans text-label-sm text-on-surface truncate"
-                        >
+                        <p class="font-sans text-label-sm text-on-surface truncate">
                             {{ user.name }}
                         </p>
-                        <p
-                            class="font-sans text-label-sm text-outline truncate"
-                        >
+                        <p class="font-sans text-label-sm text-outline truncate">
                             {{ user.email }}
                         </p>
                     </div>
@@ -232,32 +182,18 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
         <div class="flex-1 flex flex-col overflow-hidden">
             <!-- Top bar -->
             <header
-                class="h-16 bg-surface border-b border-outline-variant/20 flex items-center justify-between px-4 md:px-6 flex-shrink-0"
-            >
-                <button
-                    @click="mobileOpen = true"
-                    class="md:hidden p-2 hover:bg-surface-container-low rounded-lg"
-                >
+                class="h-16 bg-surface border-b border-outline-variant/20 flex items-center justify-between px-4 md:px-6 flex-shrink-0">
+                <button @click="mobileOpen = true" class="md:hidden p-2 hover:bg-surface-container-low rounded-lg">
                     <span class="material-symbols-outlined">menu</span>
                 </button>
                 <div class="flex items-center gap-3 ml-auto">
-                    <button
-                        class="p-2 hover:bg-surface-container-low rounded-full transition-colors relative"
-                    >
-                        <span
-                            class="material-symbols-outlined text-on-surface-variant"
-                            >notifications</span
-                        >
-                        <span
-                            class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"
-                        ></span>
+                    <button class="p-2 hover:bg-surface-container-low rounded-full transition-colors relative">
+                        <span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
                     </button>
-                    <a
-                        href="/dang-xuat"
-                        @click.prevent="router.post('/logout')"
+                    <a href="/dang-xuat" @click.prevent="router.post('/logout')"
                         class="p-2 hover:bg-error-container/20 rounded-full transition-colors text-on-surface-variant hover:text-error"
-                        title="Đăng xuất"
-                    >
+                        title="Đăng xuất">
                         <span class="material-symbols-outlined">logout</span>
                     </a>
                 </div>
