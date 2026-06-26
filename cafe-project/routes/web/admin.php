@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\PostCommentController;
+use App\Http\Controllers\Admin\UserController;
 
 
 /*
@@ -57,11 +58,18 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::put('/ma-giam-gia/{coupon}', [CouponController::class, 'update'])->name('coupons.update');
     Route::delete('/ma-giam-gia/{coupon}', [CouponController::class, 'destroy'])->name('coupons.destroy');
 
-    // Quản lý users
-    Route::get('/users', function () {
-        return Inertia::render('Admin/Users/Index');
-    })->name('users.index');
 
+    // Quản lý người dùng
+    Route::get('/nguoi-dung', [UserController::class, 'index'])->name('users.index');
+    Route::post('/nguoi-dung', [UserController::class, 'store'])->name('users.store');
+    Route::put('/nguoi-dung/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/nguoi-dung/{id}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+    
+    //Route mới phục vụ riêng cho Thùng rác:
+    Route::post('/nguoi-dung/{id}/restore', [UserController::class, 'restore'])->name('admin.users.restore');
+    Route::delete('/nguoi-dung/{id}/force-delete', [UserController::class, 'forceDelete'])->name('admin.users.forceDelete');
+
+    
     // Quản lý đơn hàng
     Route::get('/orders', function () {
         return Inertia::render('Admin/Orders/Index');

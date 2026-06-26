@@ -37,6 +37,12 @@ return new class extends Migration
                 
             $table->string('google_id', 255)->nullable()->comment('ID tài khoản Google (nếu đăng nhập bằng Google)');
 
+            $table->string('status_note', 255)->nullable()
+                ->comment('Ghi chú chi tiết lý do khi chuyển đổi trạng thái tài khoản (Ví dụ: Nghỉ thai sản, nghỉ lý do gì...)');
+
+            // Thêm dòng này ở cuối bảng để kích hoạt Xóa mềm
+            $table->softDeletes()->comment('Thời điểm xóa mềm tài khoản (Null là chưa xóa)');
+
             // kiểm tra email đã xác thực hay chưa (dùng cho logic đăng nhập/đăng ký bằng email)
             $table->boolean('is_email_verified')->default(false)->comment('Trạng thái xác thực email (0: Chưa, 1: Rồi)');
             // ghi nhớ đăng nhập (dùng cho tính năng "Remember Me" khi đăng nhập)

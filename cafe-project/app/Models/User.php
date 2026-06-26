@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Notifications\CustomResetPassword;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'full_name',
@@ -25,6 +26,7 @@ class User extends Authenticatable
         'status',
         'is_email_verified',
         'google_id',
+        'status_note'
     ];
 
     protected $casts = [
@@ -40,6 +42,9 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    // Khai báo kiểu dữ liệu ngày tháng cho deleted_at
+    protected $dates = ['deleted_at'];
 
     protected function casts(): array
     {
@@ -64,7 +69,7 @@ class User extends Authenticatable
         return $this->hasMany(Review::class);
     }
 
-     public function sendPasswordResetNotification($token)
+    public function sendPasswordResetNotification($token)
     {
         $this->notify(new CustomResetPassword($token));
     }

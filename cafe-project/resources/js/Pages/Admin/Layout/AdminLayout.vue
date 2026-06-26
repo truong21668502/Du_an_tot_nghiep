@@ -67,8 +67,7 @@ const menuGroups = [
         label: "Người dùng",
         icon: "group",
         children: [
-            { label: "Khách hàng", href: "/quan-tri/khach-hang", icon: "people" },
-            { label: "Nhân viên", href: "/quan-tri/nhan-vien", icon: "badge" },
+            { label: "Người dùng", href: "/quan-tri/nguoi-dung", icon: "people" },
         ],
     },
     {
