@@ -66,12 +66,12 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::post('/nguoi-dung', [UserController::class, 'store'])->name('users.store');
     Route::put('/nguoi-dung/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/nguoi-dung/{id}', [UserController::class, 'destroy'])->name('admin.users.destroy');
-    
+
     //Route mới phục vụ riêng cho Thùng rác:
     Route::post('/nguoi-dung/{id}/restore', [UserController::class, 'restore'])->name('admin.users.restore');
     Route::delete('/nguoi-dung/{id}/force-delete', [UserController::class, 'forceDelete'])->name('admin.users.forceDelete');
 
-    
+
     // Quản lý đơn hàng
     Route::get('/orders', function () {
         return Inertia::render('Admin/Orders/Index');
@@ -105,7 +105,13 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
 
     Route::prefix('kho')->name('kho.')->group(function () {
         Route::get('/', [MaterialController::class, 'index'])->name('index');
+
+        Route::get('/nhap/lich-su', [ImportReceiptController::class, 'index'])->name('nhap.index');
+        Route::get('/nhap/{importReceipt}', [ImportReceiptController::class, 'show'])->name('nhap.show');
         Route::get('/nhap', [ImportReceiptController::class, 'create'])->name('nhap.create');
         Route::post('/nhap', [ImportReceiptController::class, 'store'])->name('nhap.store');
+
+        Route::post('/nguyen-lieu/nhanh', [ImportReceiptController::class, 'quickStoreMaterial'])
+            ->name('nguyen-lieu.quick-store');
     });
 });

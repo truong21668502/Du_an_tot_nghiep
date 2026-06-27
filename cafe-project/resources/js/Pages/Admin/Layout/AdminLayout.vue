@@ -10,6 +10,7 @@ const mobileOpen = ref(false);
 
 const isActive = (path) => {
     if (path === "/quan-tri") return currentUrl.value === "/quan-tri";
+    if (path === "/quan-tri/kho/nhap") return currentUrl.value === path; // chỉ match chính xác
     return currentUrl.value.startsWith(path);
 };
 
@@ -69,6 +70,8 @@ const menuGroups = [
         children: [
             { label: "Tồn kho", href: "/quan-tri/kho", icon: "inventory" },
             { label: "Nhập hàng", href: "/quan-tri/kho/nhap", icon: "local_shipping" },
+            { label: "Lịch sử nhập hàng", href: "/quan-tri/kho/nhap/lich-su", icon: "history" },
+
         ],
     },
     {
@@ -143,7 +146,7 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                         <span class="material-symbols-outlined text-xl flex-shrink-0">{{ child.icon }}</span>
                         <span v-if="!collapsed" class="truncate">{{
                             child.label
-                            }}</span>
+                        }}</span>
                     </a>
                 </div>
             </nav>
