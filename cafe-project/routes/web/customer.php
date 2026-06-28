@@ -6,7 +6,7 @@ use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\Customer\FavoriteProductController;
-use App\Http\Controllers\Customer\CheckoutController;
+//use App\Http\Controllers\Customer\CheckoutController;
 
 /*
 |--------------------------------------------------------------------------

@@ -44,6 +44,19 @@ const completeOrder = (orderId) => {
     });
 };
 
+const cancelOrder = (orderId) => {
+    if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) {
+        router.patch(route('staff.orders.cancel', orderId), {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                orders.value = orders.value.filter(o => o.id !== orderId);
+                closeOrderModal();
+                toast.success(`Đã hủy đơn hàng #${orderId} thành công!`);
+            }
+        });
+    }
+};
+
 onMounted(() => {
     if (window.Echo) {
         window.Echo.channel('staff-orders')
@@ -134,11 +147,11 @@ const formatCurrency = (value) => {
                         <div class="p-6 overflow-y-auto flex-1 bg-surface-container-lowest hide-scrollbar">
                             <div class="flex justify-between mb-8 p-4 bg-surface rounded-xl border border-outline-variant/30">
                                 <div>
-                                    <p class="text-label-sm text-outline mb-1">VỊ TRÍ / KHÁCH</p>
+                                    <p class="text-label-sm text-outline mb-1 font-bold">VỊ TRÍ / KHÁCH</p>
                                     <p class="text-headline-sm font-bold text-on-surface">{{ selectedOrder?.table ? selectedOrder.table.table_name : 'Khách mang đi' }}</p>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-label-sm text-outline mb-1">TRẠNG THÁI ĐƠN</p>
+                                    <p class="text-label-sm text-outline mb-1 font-bold">TRẠNG THÁI ĐƠN</p>
                                     <p v-if="selectedOrder?.status === 'PENDING'" class="text-label-md text-error bg-error-container/30 px-3 py-1 rounded-md inline-block font-bold">CHỜ XỬ LÝ</p>
                                     <p v-else-if="selectedOrder?.status === 'PROCESSING'" class="text-label-md text-primary bg-primary-container/30 px-3 py-1 rounded-md inline-block font-bold">ĐANG XỬ LÝ</p>
                                 </div>
@@ -146,8 +159,8 @@ const formatCurrency = (value) => {
 
                             <div class="border border-outline-variant/30 rounded-xl overflow-hidden">
                                 <div class="bg-surface-container-low px-5 py-3 border-b border-outline-variant/30 flex justify-between items-center">
-                                    <p class="text-label-sm text-on-surface-variant">DANH SÁCH MÓN</p>
-                                    <p class="text-label-sm text-on-surface-variant hidden sm:block">TRẠNG THÁI PHA CHẾ</p>
+                                    <p class="text-label-sm text-on-surface-variant font-bold">DANH SÁCH MÓN</p>
+                                    <p class="text-label-sm text-on-surface-variant hidden sm:block font-bold">TRẠNG THÁI PHA CHẾ</p>
                                 </div>
                                 <ul class="divide-y divide-outline-variant/30">
                                     <li v-for="detail in selectedOrder?.order_details" :key="detail.id" class="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-surface-container-low/30">
@@ -181,9 +194,14 @@ const formatCurrency = (value) => {
                         </div>
 
                         <div class="px-6 py-5 bg-surface border-t border-outline-variant/30 flex gap-4 justify-end">
-                            <button @click="closeOrderModal" class="px-6 py-2.5 rounded-full text-label-md text-on-surface-variant hover:bg-surface-container">Đóng lại</button>
-                            <button v-if="selectedOrder?.status === 'PENDING'" @click="acceptOrder(selectedOrder.id)" class="px-8 py-2.5 rounded-full bg-primary text-on-primary text-label-md shadow-soft hover:bg-primary/90 flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">task_alt</span> Tiếp nhận đơn</button>
-                            <button v-else-if="selectedOrder?.status === 'PROCESSING'" @click="completeOrder(selectedOrder.id)" class="px-8 py-2.5 rounded-full bg-secondary text-on-secondary text-label-md shadow-soft hover:bg-secondary/90 flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">done_all</span> Đã hoàn thành</button>
+                            <button @click="closeOrderModal" class="px-6 py-2.5 rounded-full text-label-md font-bold text-on-surface-variant hover:bg-surface-container transition-colors">Đóng lại</button>
+                            
+                            <button v-if="selectedOrder?.status === 'PENDING'" @click="cancelOrder(selectedOrder.id)" class="px-6 py-2.5 rounded-full bg-error-container text-error font-bold text-label-md shadow-soft hover:bg-error/20 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[20px]">cancel</span> Hủy đơn
+                            </button>
+                            
+                            <button v-if="selectedOrder?.status === 'PENDING'" @click="acceptOrder(selectedOrder.id)" class="px-8 py-2.5 rounded-full bg-primary text-on-primary font-bold text-label-md shadow-soft hover:bg-primary/90 flex items-center gap-2">Tiếp nhận đơn</button>
+                            <button v-else-if="selectedOrder?.status === 'PROCESSING'" @click="completeOrder(selectedOrder.id)" class="px-8 py-2.5 rounded-full bg-secondary text-on-secondary font-bold text-label-md shadow-soft hover:bg-secondary/90 flex items-center gap-2">Đã hoàn thành</button>
                         </div>
                     </div>
                 </Transition>

@@ -22,7 +22,7 @@ class ImportReceipt extends Model
 
     // Ép kiểu dữ liệu cho các thuộc tính đặc thù
     protected $casts = [
-        'user_id'    => 'integer',
+        'user_id' => 'integer',
         'total_cost' => 'decimal:2',
     ];
 
@@ -41,6 +41,6 @@ class ImportReceipt extends Model
      */
     public function details()
     {
-        return $this->hasMany(ImportReceiptDetail::class, 'import_receipt_id');
+        return $this->hasMany(ImportReceiptDetail::class, 'receipt_id');
     }
 }

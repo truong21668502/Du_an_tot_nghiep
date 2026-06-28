@@ -6,44 +6,43 @@ use App\Http\Controllers\Controller;
 use App\Models\Table;
 use App\Events\TableStatusUpdated;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class TableController extends Controller
 {
+    public function index()
+    {
+        $tables = Table::with(['orders' => function($query) {
+            $query->where('payment_status', 'PENDING')
+                ->with(['orderDetails.product', 'orderDetails.variant'])
+                ->latest();
+        }])->orderBy('id', 'asc')->get(); 
+
+        return Inertia::render('Staff/Tables', [
+            'initialTables' => $tables
+        ]);
+    }
+    
     public function updateStatus(Request $request, Table $table)
     {
-        // Chỉ cho phép 2 trạng thái trống và đang sử dụng
         $request->validate([
             'status' => 'required|in:EMPTY,OCCUPIED'
         ]);
 
-        $oldStatus = $table->status;
-        $newStatus = $request->status;
-
-        $table->update(['status' => $newStatus]);
-
-        if ($oldStatus === 'RESERVED' && $newStatus === 'OCCUPIED') {
-            $table->reservations()
-                ->whereIn('status', ['PENDING', 'CONFIRMED'])
-                ->update(['status' => 'ARRIVED']);
-        }
-
-        if ($newStatus === 'EMPTY') {
-            // Chỉ hủy reservation đã qua giờ, giữ lại reservation tương lai
-            $table->reservations()
-                ->whereIn('status', ['PENDING', 'CONFIRMED'])
-                ->where('reservation_time', '<', now())
-                ->update(['status' => 'CANCELLED']);
-        }
-
-        $table->load([
-            'reservations' => function ($query) {
-                $query->whereIn('status', ['PENDING', 'CONFIRMED', 'ARRIVED'])
-                    ->with('user:id,full_name,phone_number')
-                    ->orderBy('reservation_time', 'asc');
-            }
+        // cập nhật trạng thái bàn mới
+        $table->update([
+            'status' => $request->status
         ]);
 
-        broadcast(new TableStatusUpdated($table))->toOthers();
+        // nạp lại danh sách đơn hàng chưa thanh toán để gửi về frontend
+        $table->load(['orders' => function($query) {
+            $query->where('payment_status', 'PENDING')
+                ->with(['orderDetails.product', 'orderDetails.variant'])
+                ->latest();
+        }]);
+
+        // bắn sự kiện realtime cập nhật bàn
+        broadcast(new TableStatusUpdated($table));
 
         return redirect()->back();
     }
