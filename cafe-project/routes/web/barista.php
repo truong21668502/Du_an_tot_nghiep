@@ -9,7 +9,7 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:BARISTA'])->prefix('pha-che')->name('barista.')->group(function () {
+Route::middleware(['auth', 'role:BARISTA,ADMIN'])->prefix('pha-che')->name('barista.')->group(function () {
     
     // Bảng điều khiển chung
     Route::get('/bang-dieu-khien', function () {

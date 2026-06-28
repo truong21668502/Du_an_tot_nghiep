@@ -14,7 +14,7 @@ use App\Http\Controllers\Customer\FavoriteProductController;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'verified', 'role:CUSTOMER'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:CUSTOMER,ADMIN'])->group(function () {
 
     Route::get('/ho-so', [ProfileController::class, 'info'])->name('profile.info');
     Route::get('/ho-so/mat-khau', [ProfileController::class, 'password'])->name('profile.password');

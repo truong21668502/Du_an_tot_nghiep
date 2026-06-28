@@ -94,6 +94,7 @@ class OrderController extends Controller
         return redirect()->back();
     }
 
+
     public function cancel(Order $order)
     {
         if ($order->status !== 'PENDING') {

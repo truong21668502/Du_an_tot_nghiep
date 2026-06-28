@@ -15,7 +15,7 @@ use App\Events\TableStatusUpdated;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:STAFF'])->prefix('nhan-vien')->name('staff.')->group(function () {
+Route::middleware(['auth', 'role:STAFF,ADMIN'])->prefix('nhan-vien')->name('staff.')->group(function () {
     
     // Route dashboard
     Route::get('/bang-dieu-khien', [DashboardController::class, 'index'])->name('dashboard');

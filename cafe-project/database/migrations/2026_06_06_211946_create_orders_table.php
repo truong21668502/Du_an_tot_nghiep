@@ -53,7 +53,8 @@ return new class extends Migration
                 
             // $table->enum('payment_status', ['PENDING', 'PAID', 'REFUNDED'])
             //     ->default('PENDING')
-            //     ->comment('Trạng thái thanh toán (PENDING: Chờ, PAID: Đã trả, REFUNDED: Đã hoàn tiền)');
+            //     ->comment('Trạng thái thanh toán (PENDING: Chờ, PAID: Đã trả, REFUNDED: Đã hoàn tiền )'); 
+            
                 
             $table->enum('order_type', ['DINE_IN', 'TAKE_AWAY'])
                 ->comment('Hình thức mua hàng (DINE_IN: Tại chỗ, TAKE_AWAY: Mang đi, DELIVERY: Giao hàng)');
