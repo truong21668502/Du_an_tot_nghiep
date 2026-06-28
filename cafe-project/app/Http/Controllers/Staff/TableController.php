@@ -6,12 +6,25 @@ use App\Http\Controllers\Controller;
 use App\Models\Table;
 use App\Events\TableStatusUpdated;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class TableController extends Controller
 {
+    public function index()
+    {
+        $tables = Table::with(['orders' => function($query) {
+            $query->where('payment_status', 'PENDING')
+                ->with(['orderDetails.product', 'orderDetails.variant'])
+                ->latest();
+        }])->orderBy('id', 'asc')->get(); 
+
+        return Inertia::render('Staff/Tables', [
+            'initialTables' => $tables
+        ]);
+    }
+    
     public function updateStatus(Request $request, Table $table)
     {
-        // validate dữ liệu gửi lên
         $request->validate([
             'status' => 'required|in:EMPTY,OCCUPIED'
         ]);

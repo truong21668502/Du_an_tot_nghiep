@@ -51,6 +51,20 @@ const completeOrder = (orderId) => {
     });
 };
 
+const cancelOrder = (orderId) => {
+    if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) {
+        router.patch(route('staff.orders.cancel', orderId), {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                // Xóa đơn khỏi danh sách hiển thị
+                orders.value = orders.value.filter(o => o.id !== orderId);
+                closeOrderModal();
+                toast.success(`Đã hủy đơn hàng #${orderId} thành công!`);
+            }
+        });
+    }
+};
+
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 };
@@ -326,8 +340,20 @@ onUnmounted(() => {
                                                 <span class="text-body-sm text-on-surface-variant ml-1" v-if="detail.variant?.size">(Size {{ detail.variant.size }})</span>
                                             </p>
                                         </div>
+                                        
                                         <div class="flex items-center gap-5 justify-between sm:justify-end">
-                                            <span class="text-label-md font-bold text-on-surface-variant w-20 text-right">{{ formatCurrency(detail?.unit_price * detail?.quantity) }}</span>
+                                            <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border"
+                                                :class="{
+                                                    'bg-surface-dim border-outline/20 text-on-surface-variant': detail?.barista_status === 'PENDING',
+                                                    'bg-secondary-container border-secondary/20 text-on-secondary-container': detail?.barista_status === 'PREPARING',
+                                                    'bg-primary-container border-primary/20 text-on-primary-container': detail?.barista_status === 'COMPLETED',
+                                                    'bg-error-container border-error/20 text-on-error-container': detail?.barista_status === 'CANCELLED'
+                                                }">
+                                                {{ detail?.barista_status === 'PENDING' ? 'Chờ pha' : detail?.barista_status === 'PREPARING' ? 'Đang làm' : detail?.barista_status === 'COMPLETED' ? 'Đã xong' : 'Đã hủy' }}
+                                            </span>
+                                            <span class="text-label-md font-bold text-on-surface-variant w-20 text-right">
+                                                {{ formatCurrency(detail?.unit_price * detail?.quantity) }}
+                                            </span>
                                         </div>
                                     </li>
                                 </ul>
@@ -341,6 +367,11 @@ onUnmounted(() => {
 
                         <div class="px-6 py-5 bg-surface border-t border-outline-variant/30 flex gap-4 justify-end">
                             <button @click="closeOrderModal" class="px-6 py-2.5 rounded-full text-label-md font-bold text-on-surface-variant hover:bg-surface-container transition-colors">Đóng lại</button>
+                            
+                            <button v-if="selectedOrder?.status === 'PENDING'" @click="cancelOrder(selectedOrder.id)" class="px-6 py-2.5 rounded-full bg-error-container text-error font-bold text-label-md shadow-soft hover:bg-error/20 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[20px]">cancel</span> Hủy đơn
+                            </button>
+
                             <button v-if="selectedOrder?.status === 'PENDING'" @click="acceptOrder(selectedOrder.id)" class="px-8 py-2.5 rounded-full bg-primary text-on-primary font-bold text-label-md shadow-soft hover:bg-primary/90 flex items-center gap-2">Tiếp nhận đơn</button>
                             <button v-else-if="selectedOrder?.status === 'PROCESSING'" @click="completeOrder(selectedOrder.id)" class="px-8 py-2.5 rounded-full bg-secondary text-on-secondary font-bold text-label-md shadow-soft hover:bg-secondary/90 flex items-center gap-2">Đã hoàn thành</button>
                         </div>
