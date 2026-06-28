@@ -3,7 +3,6 @@ import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { toast } from 'vue3-toastify'
 import BaseBadge from '@/Components/Base/BaseBadge.vue'
-
 const props = defineProps({
   item: {
     type: Object,

@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
 
 class Order extends Model
 {
@@ -20,6 +22,7 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'table_id',
+        'cart_token',
         'coupon_id',
         'total_amount',
         'discount_amount',
@@ -48,36 +51,32 @@ class Order extends Model
      * Mối quan hệ: Đơn hàng thuộc về một bàn cụ thể (nếu có)
      * Liên kết với bảng tables qua khóa ngoại 'table_id'
      */
-    public function table(): BelongsTo
+    public function cart(): BelongsTo
     {
-        return $this->belongsTo(Table::class, 'table_id', 'id');
+        return $this->belongsTo(Cart::class);
     }
 
-    /**
-     * Mối quan hệ: Đơn hàng thuộc về một Khách hàng (nếu có tài khoản)
-     */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(User::class);
     }
 
-    /**
-     * Mối quan hệ: Đơn hàng có thể áp dụng một mã giảm giá (nếu có)
-     */
+    public function table(): BelongsTo
+    {
+        return $this->belongsTo(Table::class);
+    }
+
     public function coupon(): BelongsTo
     {
-        return $this->belongsTo(Coupon::class, 'coupon_id', 'id');
+        return $this->belongsTo(Coupon::class);
     }
 
-    /**
-     * Mối quan hệ: Một đơn hàng có nhiều món ăn chi tiết (OrderDetails)
-     */
-    public function orderDetails(): HasMany
+    public function details(): HasMany
     {
-        return $this->hasMany(OrderDetail::class, 'order_id', 'id');
+        return $this->hasMany(OrderDetail::class);
     }
 
-    public function payment()
+    public function payment(): HasOne
     {
         return $this->hasOne(Payment::class);
     }

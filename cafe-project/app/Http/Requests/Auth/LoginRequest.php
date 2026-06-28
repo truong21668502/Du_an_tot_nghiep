@@ -8,12 +8,13 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Xác định người dùng có được phép gửi request hay không.
      */
     public function authorize(): bool
     {
@@ -21,7 +22,7 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Quy tắc kiểm tra dữ liệu.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -34,19 +35,50 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Attempt to authenticate the request's credentials.
+     * Thông báo lỗi.
+     */
+    public function messages(): array
+    {
+        return [
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không đúng định dạng.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+        ];
+    }
+
+    /**
+     * Tên hiển thị của các trường.
+     */
+    public function attributes(): array
+    {
+        return [
+            'email' => 'email',
+            'password' => 'mật khẩu',
+        ];
+    }
+
+    /**
+     * Xử lý đăng nhập.
      *
      * @throws ValidationException
      */
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
+        
+        $user = User::where('email', $this->email)->first();
+
+        if ($user && $user->google_id) {
+            throw ValidationException::withMessages([
+                'email' => 'Tài khoản này đã đăng ký bằng Google. Vui lòng đăng nhập bằng Google.',
+            ]);
+        }
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'email' => 'Email hoặc mật khẩu không chính xác.',
             ]);
         }
 
@@ -54,7 +86,7 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Ensure the login request is not rate limited.
+     * Kiểm tra giới hạn số lần đăng nhập.
      *
      * @throws ValidationException
      */
@@ -69,18 +101,17 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
+            'email' => "Bạn đã đăng nhập sai quá nhiều lần. Vui lòng thử lại sau {$seconds} giây.",
         ]);
     }
 
     /**
-     * Get the rate limiting throttle key for the request.
+     * Tạo khóa giới hạn đăng nhập.
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(
+            Str::lower($this->string('email')) . '|' . $this->ip()
+        );
     }
 }

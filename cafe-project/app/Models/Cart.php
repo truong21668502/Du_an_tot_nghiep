@@ -14,15 +14,20 @@ class Cart extends Model
     protected $table = 'carts';
     public $timestamps = true;
     
-    protected $fillable = ['user_id'];
+    protected $fillable = ['user_id', 'token'];
     
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
-    
+
     public function items(): HasMany
     {
         return $this->hasMany(CartItem::class);
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
     }
 }

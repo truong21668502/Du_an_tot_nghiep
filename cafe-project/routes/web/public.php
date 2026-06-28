@@ -9,6 +9,10 @@ use App\Http\Controllers\Customer\PostController;
 use App\Http\Controllers\Customer\PostCommentController;
 use App\Http\Controllers\Customer\TableOrderController;
 use App\Http\Controllers\Customer\ContactController;
+use App\Http\Controllers\Customer\CartController;
+use App\Http\Controllers\Customer\CheckoutController;
+use App\Http\Controllers\Customer\OrderController;
+use App\Http\Controllers\Customer\VnpayController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -16,14 +20,9 @@ use App\Http\Controllers\Customer\ContactController;
 */
 
 // Trang chủ
-Route::get('/', function () {
-    return Inertia::render('Home', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-})->name('home');
+use App\Http\Controllers\Customer\HomeController;
+
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 
 
@@ -37,6 +36,25 @@ Route::post('/ban/{qr_code}/order', [TableOrderController::class, 'store'])->nam
 Route::get('/ban/order/{order}/success', [TableOrderController::class, 'success'])->name('table.order.success');
 Route::get('/ban/order/{order}/payment', [TableOrderController::class, 'payment'])->name('table.order.payment');
 Route::post('/ban/order/{order}/confirm-payment', [TableOrderController::class, 'confirmPayment'])->name('table.order.confirm-payment');
+
+
+Route::prefix('gio-hang')->name('customer.cart.')->group(function () {
+    Route::get('/', [CartController::class, 'index'])->name('index');
+    Route::post('/', [CartController::class, 'add'])->name('add');
+    Route::patch('/{cartItem}', [CartController::class, 'update'])->name('update');
+    Route::delete('/{cartItem}', [CartController::class, 'remove'])->name('remove');
+    Route::delete('/', [CartController::class, 'clear'])->name('clear');
+    Route::post('/voucher', [CartController::class, 'applyVoucher'])->name('voucher.apply');
+    Route::delete('/voucher', [CartController::class, 'removeVoucher'])->name('voucher.remove');
+});
+
+Route::get('/thanh-toan', [CheckoutController::class, 'index'])->name('customer.checkout.index');
+
+Route::post('/orders', [OrderController::class, 'store'])->name('customer.orders.store');
+Route::get('/don-hang/{order}/pending', [OrderController::class, 'pending'])->name('customer.orders.pending');
+
+Route::get('/vnpay-ket-qua', [VnpayController::class, 'return'])->name('vnpay.return');
+
 
 // Về chúng tôi
 Route::get('/ve-chung-toi', function () {
@@ -66,6 +84,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/bai-viet/{postId}/binh-luan/{comment}', [PostCommentController::class, 'destroy'])
         ->name('comments.destroy');
 });
+
+
+
+
 
 // Real-time testing (public)
 Route::get('/realtime', function () {

@@ -34,8 +34,10 @@ class GoogleOneTapController extends Controller
         $name = $payload['name'];
         $avatar = $payload['picture'] ?? null;
 
-        // 4. Tìm user cũ hoặc tự động đăng ký user mới
+        //  Tìm user cũ hoặc tự động đăng ký user mới
         $user = User::where('email', $email)->first();
+
+        
 
         if (!$user) {
             $user = User::create([
@@ -45,7 +47,16 @@ class GoogleOneTapController extends Controller
                 // Nếu bạn có lưu avatar hoặc google_id, hãy bổ sung fillable vào Model User
                 // 'avatar' => $avatar,
                 'google_id' => $googleId,
+                'is_email_verified' => 1,
+                'email_verified_at' => NOW()
             ]);
+        }
+
+        if($user->status == 'banned'){
+            return redirect()->route('login')
+                ->with(
+                    'toast-warning','Tài khoản của bạn đã bị khóa.'
+                );
         }
 
         // 5. Đăng nhập user vào hệ thống (Sử dụng Session mặc định của Inertia)

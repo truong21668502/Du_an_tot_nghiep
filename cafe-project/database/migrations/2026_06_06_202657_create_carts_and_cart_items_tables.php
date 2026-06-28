@@ -17,10 +17,12 @@ return new class extends Migration
             
             // Khóa ngoại liên kết tới người dùng, đảm bảo UNIQUE (mỗi người 1 giỏ)
             $table->foreignId('user_id')
+                ->nullable()
                 ->unique()
                 ->constrained('users')
                 ->onDelete('cascade') // Nếu xóa tài khoản user, tự động xóa sạch giỏ hàng của họ
                 ->comment('Mã khách hàng sở hữu giỏ (Khóa ngoại UNIQUE → users.id)');
+            $table->string('token', 255)->comment('Dùng cho trường hợp user không đăng nhập')->unique()->nullable();  
                 
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();

@@ -1,9 +1,8 @@
 ﻿<script setup>
 import BaseButton from '@/Components/Base/BaseButton.vue'
-import { router, usePage } from '@inertiajs/vue3'
+import { router, usePage, Link } from '@inertiajs/vue3'
 defineProps({
   subtotal: { type: Number, required: true },
-  taxAmount: { type: Number, required: true },
   discount: { type: Number, default: 0 },
   total: { type: Number, required: true },
   formatPrice: { type: Function, required: true },
@@ -19,10 +18,6 @@ defineProps({
         <span class="font-sans text-body-md text-on-surface-variant">Tạm tính ({{ itemCount }} món)</span>
         <span class="font-sans text-body-md text-on-surface">{{ formatPrice(subtotal) }}</span>
       </div>
-      <div class="flex justify-between">
-        <span class="font-sans text-body-md text-on-surface-variant">Thuế VAT (8%)</span>
-        <span class="font-sans text-body-md text-on-surface">{{ formatPrice(taxAmount) }}</span>
-      </div>
       <div v-if="discount > 0" class="flex justify-between text-secondary">
         <span class="font-sans text-body-md">Giảm giá</span>
         <span class="font-sans text-body-md">-{{ formatPrice(discount) }}</span>
@@ -33,9 +28,12 @@ defineProps({
         <span class="font-serif text-headline-sm text-primary">{{ formatPrice(total) }}</span>
       </div>
     </div>
-    <BaseButton variant="primary" :disabled="loading" class="w-full justify-center" @click="router.get(route('checkout.index'))">
-      <span class="material-symbols-outlined text-lg">shopping_bag</span>
-      Đặt hàng
-    </BaseButton>
+    <Link :href="route('customer.checkout.index')">
+      <BaseButton variant="primary" :disabled="loading" class="w-full justify-center" >
+        <span class="material-symbols-outlined text-lg">shopping_bag</span>
+        Đặt hàng
+      </BaseButton>
+    </Link>
+    
   </div>
 </template>

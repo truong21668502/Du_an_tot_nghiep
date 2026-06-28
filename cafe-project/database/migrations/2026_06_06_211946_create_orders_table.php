@@ -21,7 +21,7 @@ return new class extends Migration
                 ->onDelete('restrict')
                 ->comment('Mã khách hàng (Khóa ngoại, NULL nếu là khách vãng lai)');
                 
-            // Khóa ngoại liên kết tới bàn ăn (Để NULL nếu khách mua mang về hoặc giao hàng)
+            // Khóa ngoại liên kết tới bàn ăn (Để NULL nếu khách mua mang về)
             $table->foreignId('table_id')
                 ->nullable()
                 ->constrained('tables')
@@ -34,6 +34,12 @@ return new class extends Migration
                 ->constrained('coupons')
                 ->onDelete('restrict')
                 ->comment('Mã giảm giá áp dụng cho đơn hàng (Khóa ngoại, NULL nếu không dùng)');
+                
+            $table->foreignId('cart_id')
+            ->nullable() // để ngỏ cho trường hợp sau này nhân viên tạo đơn tại quầy không qua giỏ hàng
+            ->constrained('carts')
+            ->restrictOnDelete()
+            ->comment('Giỏ hàng đã sinh ra đơn này (Khóa ngoại → carts.id)');
 
             // Các cột tính toán số tiền chuẩn kế toán DECIMAL(10,2)
             $table->decimal('total_amount', 10, 2)->comment('Tổng tiền ban đầu của các món ăn (Chưa giảm giá)');
@@ -41,15 +47,15 @@ return new class extends Migration
             $table->decimal('final_amount', 10, 2)->comment('Số tiền cuối cùng khách phải thanh toán (total - discount)');
             
             // Các chuỗi trạng thái và hình thức vận hành
-            $table->enum('payment_method', ['CASH', 'BANK_TRANSFER', 'MOMO', 'VNPAY'])
-                ->nullable()
-                ->comment('Phương thức thanh toán của khách hàng');
+            // $table->enum('payment_method', ['CASH', 'BANK_TRANSFER'])
+            //     ->nullable()
+            //     ->comment('Phương thức thanh toán của khách hàng');
                 
-            $table->enum('payment_status', ['PENDING', 'PAID', 'REFUNDED'])
-                ->default('PENDING')
-                ->comment('Trạng thái thanh toán (PENDING: Chờ, PAID: Đã trả, REFUNDED: Đã hoàn tiền)');
+            // $table->enum('payment_status', ['PENDING', 'PAID', 'REFUNDED'])
+            //     ->default('PENDING')
+            //     ->comment('Trạng thái thanh toán (PENDING: Chờ, PAID: Đã trả, REFUNDED: Đã hoàn tiền)');
                 
-            $table->enum('order_type', ['DINE_IN', 'TAKE_AWAY', 'DELIVERY'])
+            $table->enum('order_type', ['DINE_IN', 'TAKE_AWAY'])
                 ->comment('Hình thức mua hàng (DINE_IN: Tại chỗ, TAKE_AWAY: Mang đi, DELIVERY: Giao hàng)');
                 
             $table->enum('status', ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'])

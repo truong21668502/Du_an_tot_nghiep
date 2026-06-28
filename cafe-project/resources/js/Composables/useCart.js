@@ -17,10 +17,9 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
     }, 0)
   })
 
-  const taxAmount = computed(() => Math.round(subtotal.value * 0.08))
 
   const total = computed(() => {
-    return Math.max(0, subtotal.value + taxAmount.value - voucherDiscount.value)
+    return Math.max(0, subtotal.value - voucherDiscount.value)
   })
 
   const totalItems = computed(() => {
@@ -47,7 +46,7 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
 
   const updateItem = (itemId, quantity) => {
     loading.value = true
-    router.put(
+    router.patch(
       route('customer.cart.update', itemId),
       { quantity },
       {
@@ -178,7 +177,6 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
     voucherDiscount,
     appliedVoucher,
     subtotal,
-    taxAmount,
     total,
     totalItems,
     updateItem,

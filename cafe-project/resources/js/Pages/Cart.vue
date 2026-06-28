@@ -79,7 +79,6 @@ const {
             <AnimateOnScroll animation="fade-left" :duration="700" :delay="200">
               <CartSummary
                 :subtotal="subtotal"
-                :tax-amount="taxAmount"
                 :discount="voucherDiscount"
                 :total="total"
                 :format-price="formatPrice"

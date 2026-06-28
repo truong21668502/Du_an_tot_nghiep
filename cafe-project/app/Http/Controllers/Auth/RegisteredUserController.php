@@ -13,6 +13,7 @@ use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Http\Requests\Auth\RegisterRequest;
 
 class RegisteredUserController extends Controller
 {
@@ -29,13 +30,8 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(RegisterRequest $request): RedirectResponse
     {
-        $request->validate([
-            'full_name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
 
         $user = User::create([
             'full_name' => $request->full_name,
@@ -51,7 +47,7 @@ class RegisteredUserController extends Controller
             'ADMIN'   => redirect()->route('admin.dashboard'),
             'STAFF'   => redirect()->route('staff.dashboard'),
             'BARISTA' => redirect()->route('barista.dashboard'),
-            default   => redirect()->route('home'),
+            default   => redirect()->route('verification.notice'),
         };
     }
 }

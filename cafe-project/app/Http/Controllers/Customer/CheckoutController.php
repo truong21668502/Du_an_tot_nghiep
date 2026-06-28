@@ -1,220 +1,108 @@
 <?php
 
-// namespace App\Http\Controllers\Customer;
+namespace App\Http\Controllers\Customer;
 
-// use App\Events\OrderCreated;
-// use App\Events\OrderPaymentConfirmed;
-// use App\Http\Controllers\Controller;
-// use App\Models\Cart;
-// use App\Models\Order;
-// use App\Models\OrderDetail;
-// use App\Models\Payment;
-// use App\Models\UserAddress;
-// use Illuminate\Http\Request;
-// use Illuminate\Support\Facades\Auth;
-// use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use App\Models\Cart;
+use App\Models\Table;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Str;
 
-// class CheckoutController extends Controller
-// {
-//     public function index()
-//     {
-//         $cart = Cart::where('user_id', Auth::id())->with(['items.product', 'items.variant'])->first();
+class CheckoutController extends Controller
+{
+    private const COOKIE_NAME = 'cart_token';
+    private const COOKIE_LIFETIME_MINUTES = 60 * 24 * 30;
 
-//         if (!$cart || $cart->items->isEmpty()) {
-//             return redirect()->route('customer.cart.index')->with('toast-error', 'Giỏ hàng trống');
-//         }
+    public function index(Request $request)
+    {
+        $cart = $this->getOrCreateCart($request);
+        $cart->load('items.product.variants', 'items.variant');
 
-//         $addresses = UserAddress::where('user_id', Auth::id())->get();
+        return inertia('Checkout/Index', [
+            'cart' => ['id' => $cart->id],
+            'subtotal' => $this->calculateSubtotal($cart),
+            'voucher' => session('cart_voucher'),
+            'tables' => Table::where('status', 'EMPTY')->get(['id', 'table_name', 'area', 'capacity']),
+            'activeOrder' => $this->describeActiveOrder($cart),
+        ]);
+    }
 
-//         $voucherSession = session('cart_voucher');
-//         $voucherDiscount = $voucherSession['discount'] ?? 0;
+    private function getOrCreateCart(Request $request): Cart
+    {
+        if (Auth::check()) {
+            $cart = Cart::firstOrCreate(['user_id' => Auth::id()]);
+            $this->mergeGuestCartIntoUserCart($request, $cart);
+            return $cart;
+        }
 
-//         $subtotal = $cart->items->sum(fn($item) => ($item->variant->price ?? 0) * $item->quantity);
-//         $total = max(0, $subtotal - $voucherDiscount);
+        $token = $request->cookie(self::COOKIE_NAME);
+        if ($token && $cart = Cart::whereNull('user_id')->where('token', $token)->first()) {
+            return $cart;
+        }
 
-//         return inertia('Checkout/Index', [
-//             'cart' => [
-//                 'id' => $cart->id,
-//                 'items' => $cart->items->map(fn($item) => [
-//                     'id' => $item->id,
-//                     'product_name' => $item->product->product_name,
-//                     'image' => $item->product->image_url,
-//                     'size' => $item->variant->size ?? null,
-//                     'price' => (float) ($item->variant->price ?? 0),
-//                     'quantity' => $item->quantity,
-//                     'subtotal' => (float) ($item->variant->price ?? 0) * $item->quantity,
-//                 ]),
-//             ],
-//             'addresses' => $addresses->map(fn($a) => [
-//                 'id' => $a->id,
-//                 'receiver_name' => $a->receiver_name,
-//                 'receiver_phone' => $a->receiver_phone,
-//                 'address_detail' => $a->address_detail,
-//                 'ward' => $a->ward,
-//                 'city' => $a->city,
-//                 'is_default' => $a->is_default,
-//                 'full_address' => "{$a->address_detail}, {$a->ward}, {$a->city}",
-//             ]),
-//             'subtotal' => $subtotal,
-//             'voucherDiscount' => $voucherDiscount,
-//             'total' => $total,
-//             'paymentMethods' => [
-//                 ['id' => 'CASH', 'label' => 'Thanh toán khi nhận hàng (COD)', 'icon' => 'payments'],
-//                 ['id' => 'BANK_TRANSFER', 'label' => 'Chuyển khoản ngân hàng', 'icon' => 'account_balance'],
-//                 ['id' => 'MOMO', 'label' => 'Ví MoMo', 'icon' => 'wallet'],
-//                 ['id' => 'VNPAY', 'label' => 'VNPay', 'icon' => 'credit_card'],
-//             ],
-//         ]);
-//     }
+        $token = (string) Str::uuid();
+        $cart = Cart::create(['token' => $token]);
+        Cookie::queue(self::COOKIE_NAME, $token, self::COOKIE_LIFETIME_MINUTES);
+        return $cart;
+    }
 
-//     public function store(Request $request)
-//     {
-//         $request->validate([
-//             'address_id' => ['required', 'integer', 'exists:user_addresses,id'],
-//             'payment_method' => ['required', 'in:CASH,BANK_TRANSFER,MOMO,VNPAY'],
-//             'note' => ['nullable', 'string', 'max:500'],
-//         ]);
+    private function mergeGuestCartIntoUserCart(Request $request, Cart $userCart): void
+    {
+        $token = $request->cookie(self::COOKIE_NAME);
+        if (!$token) return;
 
-//         $cart = Cart::where('user_id', Auth::id())->with(['items.product', 'items.variant'])->first();
+        $guestCart = Cart::whereNull('user_id')->where('token', $token)->first();
+        if (!$guestCart || $guestCart->id === $userCart->id) return;
 
-//         if (!$cart || $cart->items->isEmpty()) {
-//             return back()->with('toast-error', 'Giỏ hàng trống');
-//         }
+        foreach ($guestCart->items as $guestItem) {
+            $userItem = $userCart->items()
+                ->where('product_id', $guestItem->product_id)
+                ->where('variant_id', $guestItem->variant_id)
+                ->first();
 
-//         $voucherSession = session('cart_voucher');
-//         $voucherDiscount = $voucherSession['discount'] ?? 0;
-//         $couponId = $voucherSession['coupon_id'] ?? null;
+            if ($userItem) {
+                $userItem->increment('quantity', $guestItem->quantity);
+            } else {
+                $guestItem->update(['cart_id' => $userCart->id]);
+            }
+        }
 
-//         $subtotal = $cart->items->sum(fn($item) => ($item->variant->price ?? 0) * $item->quantity);
-//         $total = max(0, $subtotal - $voucherDiscount);
+        if ($guestCart->orders()->exists()) {
+            $guestCart->items()->delete();
+        } else {
+            $guestCart->delete();
+        }
 
-//         $paymentMethod = $request->payment_method;
-//         $isOnline = in_array($paymentMethod, ['BANK_TRANSFER', 'MOMO', 'VNPAY']);
+        Cookie::queue(Cookie::forget(self::COOKIE_NAME));
+    }
 
-//         $address = UserAddress::findOrFail($request->address_id);
+    private function calculateSubtotal(Cart $cart): float
+    {
+        $cart->loadMissing('items.product.variants', 'items.variant');
 
-//         DB::beginTransaction();
-//         try {
-//             $order = Order::create([
-//                 'user_id' => Auth::id(),
-//                 'user_address_id' => $address->id,
-//                 'coupon_id' => $couponId,
-//                 'total_amount' => $subtotal,
-//                 'discount_amount' => $voucherDiscount,
-//                 'final_amount' => $total,
-//                 'payment_method' => $paymentMethod,
-//                 'payment_status' => 'PENDING',
-//                 'order_type' => 'DELIVERY',
-//                 'status' => 'PENDING',
-//             ]);
+        return (float) $cart->items->sum(function ($item) {
+            $price = $item->variant
+                ? (float) $item->variant->price
+                : (float) ($item->product->variants->min('price') ?? 0);
+            return $price * $item->quantity;
+        });
+    }
 
-//             foreach ($cart->items as $item) {
-//                 OrderDetail::create([
-//                     'order_id' => $order->id,
-//                     'product_id' => $item->product_id,
-//                     'variant_id' => $item->variant_id,
-//                     'quantity' => $item->quantity,
-//                     'unit_price' => $item->variant->price ?? 0,
-//                     'note' => $item->note,
-//                 ]);
-//             }
+    private function describeActiveOrder(Cart $cart): ?array
+    {
+        $order = $cart->orders()
+            ->whereIn('status', ['PENDING', 'PROCESSING'])
+            ->with('payment')
+            ->latest()
+            ->first();
 
-//             Payment::create([
-//                 'order_id' => $order->id,
-//                 'payment_method' => $paymentMethod,
-//                 'amount' => $total,
-//                 'payment_status' => 'PENDING',
-//             ]);
-
-//             $cart->items()->delete();
-//             session()->forget('cart_voucher');
-
-//             DB::commit();
-
-//             $order->load('payment');
-//             broadcast(new OrderCreated($order))->toOthers();
-
-//             if ($isOnline) {
-//                 return redirect()->route('checkout.payment', $order->id)->with('toast-success', 'Đơn hàng đã được tạo');
-//             }
-
-//             return redirect()->route('checkout.success', $order->id)->with('toast-success', 'Đặt hàng thành công');
-//         } catch (\Exception $e) {
-//             DB::rollBack();
-//             return back()->with('toast-error', 'Có lỗi xảy ra: ' . $e->getMessage());
-//         }
-//     }
-
-//     public function success(Order $order)
-//     {
-//         if ($order->user_id !== Auth::id()) abort(403);
-
-//         return inertia('Checkout/Success', [
-//             'order' => [
-//                 'id' => $order->id,
-//                 'order_code' => 'DH' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
-//                 'final_amount' => $order->final_amount,
-//                 'payment_method' => $order->payment_method,
-//                 'status' => $order->status,
-//                 'created_at' => $order->created_at,
-//             ],
-//         ]);
-//     }
-
-//     public function payment(Order $order)
-//     {
-//         if ($order->user_id !== Auth::id()) abort(403);
-//         if ($order->payment_method === 'CASH') abort(404);
-
-//         $qrUrl = $this->generateQrUrl($order);
-
-//         return inertia('Checkout/Payment', [
-//             'order' => [
-//                 'id' => $order->id,
-//                 'order_code' => 'DH' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
-//                 'final_amount' => $order->final_amount,
-//                 'payment_method' => $order->payment_method,
-//                 'status' => $order->status,
-//             ],
-//             'qrUrl' => $qrUrl,
-//             'bankInfo' => [
-//                 'account_number' => config('services.bank.account_number'),
-//                 'short_name' => config('services.bank.short_name'),
-//                 'account_name' => config('services.bank.account_name'),
-//             ],
-//         ]);
-//     }
-
-//     public function confirmPayment(Order $order)
-//     {
-//         if ($order->user_id !== Auth::id()) abort(403);
-
-//         broadcast(new OrderPaymentConfirmed($order))->toOthers();
-
-//         return redirect()->route('checkout.confirming', $order->id)->with('toast-success', 'Xác nhận thanh toán thành công');
-//     }
-
-//     public function confirming(Order $order)
-//     {
-//         if ($order->user_id !== Auth::id()) abort(403);
-
-//         return inertia('Checkout/Confirming', [
-//             'order' => [
-//                 'id' => $order->id,
-//                 'order_code' => 'DH' . str_pad($order->id, 8, '0', STR_PAD_LEFT),
-//                 'final_amount' => $order->final_amount,
-//                 'status' => $order->status,
-//             ],
-//         ]);
-//     }
-
-//     private function generateQrUrl(Order $order): string
-//     {
-//         $accountNumber = config('services.bank.account_number');
-//         $bankName = config('services.bank.short_name');
-//         $amount = $order->final_amount;
-//         $orderCode = 'DH' . str_pad($order->id, 8, '0', STR_PAD_LEFT);
-
-//         return "https://img.vietqr.io/image/{$bankName}-{$accountNumber}-compact2.png?amount={$amount}&addInfo={$orderCode}";
-//     }
-// }
+        return $order ? [
+            'id' => $order->id,
+            'status' => $order->status,
+            'payment_method' => $order->payment?->payment_method,
+            'payment_status' => $order->payment?->payment_status,
+        ] : null;
+    }
+}

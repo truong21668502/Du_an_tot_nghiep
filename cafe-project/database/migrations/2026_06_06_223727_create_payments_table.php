@@ -21,7 +21,7 @@ return new class extends Migration
                 ->onDelete('restrict') // Chặn xóa đơn hàng nếu đã có bản ghi thanh toán tài chính liên quan
                 ->comment('Mã đơn hàng được thanh toán (Khóa ngoại UNIQUE → orders.id)');
                 
-            $table->enum('payment_method', ['CASH', 'BANK_TRANSFER', 'MOMO', 'VNPAY'])
+            $table->enum('payment_method', ['CASH', 'BANK_TRANSFER'])
                 ->comment('Phương thức thanh toán sử dụng');
                 
             $table->string('transaction_id', 100)

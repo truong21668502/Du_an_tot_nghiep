@@ -41,6 +41,8 @@ return new class extends Migration
             $table->boolean('is_email_verified')->default(false)->comment('Trạng thái xác thực email (0: Chưa, 1: Rồi)');
             // ghi nhớ đăng nhập (dùng cho tính năng "Remember Me" khi đăng nhập)
             $table->rememberToken()->comment('Token ghi nhớ đăng nhập (dùng cho tính năng "Remember Me")');
+
+            $table->timestamp('email_verified_at')->nullable();
             
             // Thời gian tạo và cập nhật chuẩn DB
             $table->timestamp('created_at')->useCurrent()->comment('Thời gian tạo tài khoản');

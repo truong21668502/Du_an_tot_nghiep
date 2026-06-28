@@ -41,9 +41,19 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        $request->session()->regenerate();
-
         $user = $request->user();
+
+        if ($user->status === 'banned') {
+            Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')
+                ->with('toast-warning', 'Tài khoản của bạn đã bị khóa.');
+        }
+
+        $request->session()->regenerate();
 
         return match ($user->role) {
             'ADMIN'   => redirect()->route('admin.dashboard'),
@@ -58,7 +68,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        if(Auth::user()->role !== "CUSTOMER"){
+        if (Auth::user()->role !== "CUSTOMER") {
             Auth::guard('web')->logout();
 
             $request->session()->invalidate();

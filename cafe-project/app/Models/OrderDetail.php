@@ -39,30 +39,18 @@ class OrderDetail extends Model
         'updated_at' => 'datetime',
     ];
 
-    /**
-     * Mối quan hệ: Chi tiết này thuộc về một Đơn hàng tổng (Order)
-     * Liên kết qua khóa ngoại 'order_id'
-     */
     public function order(): BelongsTo
     {
-        return $this->belongsTo(Order::class, 'order_id', 'id');
+        return $this->belongsTo(Order::class);
     }
 
-    /**
-     * Mối quan hệ: Chi tiết này liên kết tới một Sản phẩm gốc (Product)
-     * Liên kết qua khóa ngoại 'product_id'
-     */
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class, 'product_id', 'id');
+        return $this->belongsTo(Product::class);
     }
 
-    /**
-     * Mối quan hệ: Chi tiết này liên kết tới một Biến thể kích cỡ cụ thể (ProductVariant)
-     * Liên kết qua khóa ngoại 'variant_id'
-     */
     public function variant(): BelongsTo
     {
-        return $this->belongsTo(ProductVariant::class, 'variant_id', 'id');
+        return $this->belongsTo(ProductVariant::class);
     }
 }
