@@ -10,6 +10,9 @@ use App\Models\Cart;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Table;
+use App\Events\OrderCreated;
+use App\Events\TableStatusUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
@@ -74,7 +77,21 @@ class OrderController extends Controller
                 session()->forget('cart_voucher');
             }
 
-            return $order->load('details', 'payment');
+            if ($order->table_id) {
+                $table = Table::find($order->table_id);
+
+                if ($table) {
+                    $table->update([
+                        'status' => 'OCCUPIED'
+                    ]);
+
+                    broadcast(new TableStatusUpdated($table));
+                }
+            }
+            // Bắn event real-time cho staff
+            $order->load('table', 'details.product', 'details.variant', 'payment');
+            broadcast(new OrderCreated($order));
+            return $order;
         });
     }
 
