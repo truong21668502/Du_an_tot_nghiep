@@ -20,6 +20,10 @@ return new class extends Migration
                 ->constrained('users')
                 ->onDelete('restrict')
                 ->comment('Mã khách hàng (Khóa ngoại, NULL nếu là khách vãng lai)');
+            
+            $table->string('cart_token', 64)
+                ->nullable()
+                ->comment('Token định danh khách vãng lai (NULL nếu khách đã đăng nhập)');
                 
             // Khóa ngoại liên kết tới bàn ăn (Để NULL nếu khách mua mang về)
             $table->foreignId('table_id')
@@ -35,26 +39,13 @@ return new class extends Migration
                 ->onDelete('restrict')
                 ->comment('Mã giảm giá áp dụng cho đơn hàng (Khóa ngoại, NULL nếu không dùng)');
                 
-            $table->foreignId('cart_id')
-            ->nullable() // để ngỏ cho trường hợp sau này nhân viên tạo đơn tại quầy không qua giỏ hàng
-            ->constrained('carts')
-            ->restrictOnDelete()
-            ->comment('Giỏ hàng đã sinh ra đơn này (Khóa ngoại → carts.id)');
 
             // Các cột tính toán số tiền chuẩn kế toán DECIMAL(10,2)
             $table->decimal('total_amount', 10, 2)->comment('Tổng tiền ban đầu của các món ăn (Chưa giảm giá)');
             $table->decimal('discount_amount', 10, 2)->default(0.00)->comment('Số tiền được giảm trừ từ coupon');
             $table->decimal('final_amount', 10, 2)->comment('Số tiền cuối cùng khách phải thanh toán (total - discount)');
-            
-            // Các chuỗi trạng thái và hình thức vận hành
-            // $table->enum('payment_method', ['CASH', 'BANK_TRANSFER'])
-            //     ->nullable()
-            //     ->comment('Phương thức thanh toán của khách hàng');
-                
-            // $table->enum('payment_status', ['PENDING', 'PAID', 'REFUNDED'])
-            //     ->default('PENDING')
-            //     ->comment('Trạng thái thanh toán (PENDING: Chờ, PAID: Đã trả, REFUNDED: Đã hoàn tiền )'); 
-            
+
+            $table->string('note', 255)->nullable()->comment('Ghi chú của khách hàng');
                 
             $table->enum('order_type', ['DINE_IN', 'TAKE_AWAY'])
                 ->comment('Hình thức mua hàng (DINE_IN: Tại chỗ, TAKE_AWAY: Mang đi, DELIVERY: Giao hàng)');
@@ -62,6 +53,7 @@ return new class extends Migration
             $table->enum('status', ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'])
                 ->default('PENDING')
                 ->comment('Trạng thái đơn hàng (PENDING: Chờ duyệt, PROCESSING: Đang pha chế, COMPLETED: Hoàn thành, CANCELLED: Đã hủy)');
+            $table->string('cancel_reason', 255)->nullable()->comment('Lý do hủy');
                 
             // $table->text('delivery_address')->nullable()->comment('Địa chỉ nhận hàng (Chỉ bắt buộc nếu order_type là DELIVERY)');
 

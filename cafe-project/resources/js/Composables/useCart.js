@@ -54,7 +54,7 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
         preserveState: true,
         onSuccess: (page) => {
           updatePageData(page)
-          toast.success('Đã cập nhật giỏ hàng')
+          // toast.success('Đã cập nhật giỏ hàng')
         },
         onError: (err) => {
           errors.value = err
@@ -158,7 +158,7 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
         onSuccess: (page) => {
           updatePageData(page)
           voucherCode.value = ''
-          toast.success('Đã xóa mã giảm giá')
+          // toast.success('Đã xóa mã giảm giá')
         },
         onError: (err) => {
           errors.value = err

@@ -25,7 +25,6 @@ class CheckoutController extends Controller
             'subtotal' => $this->calculateSubtotal($cart),
             'voucher' => session('cart_voucher'),
             'tables' => Table::where('status', 'EMPTY')->get(['id', 'table_name', 'area', 'capacity']),
-            'activeOrder' => $this->describeActiveOrder($cart),
         ]);
     }
 
@@ -69,12 +68,8 @@ class CheckoutController extends Controller
             }
         }
 
-        if ($guestCart->orders()->exists()) {
-            $guestCart->items()->delete();
-        } else {
-            $guestCart->delete();
-        }
-
+        $guestCart->items()->delete();
+        $guestCart->delete();
         Cookie::queue(Cookie::forget(self::COOKIE_NAME));
     }
 
@@ -88,21 +83,5 @@ class CheckoutController extends Controller
                 : (float) ($item->product->variants->min('price') ?? 0);
             return $price * $item->quantity;
         });
-    }
-
-    private function describeActiveOrder(Cart $cart): ?array
-    {
-        $order = $cart->orders()
-            ->whereIn('status', ['PENDING', 'PROCESSING'])
-            ->with('payment')
-            ->latest()
-            ->first();
-
-        return $order ? [
-            'id' => $order->id,
-            'status' => $order->status,
-            'payment_method' => $order->payment?->payment_method,
-            'payment_status' => $order->payment?->payment_status,
-        ] : null;
     }
 }

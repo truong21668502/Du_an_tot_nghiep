@@ -18,7 +18,7 @@
                 <p style="margin: 0; color: #555; font-style: italic;">"{{ $data['message'] }}"</p>
             </div>
             <p style="color: #555; line-height: 1.8; font-size: 15px;">
-                Chúng tôi sẽ phản hồi lại bạn trong thời gian sớm nhất qua email <strong>{{ $data['email'] }}</strong>.
+                Chúng tôi sẽ phản hồi lại bạn trong thời gian sớm nhất qua email <strong> truong21668502@gmail.com </strong>.
             </p>
             <p style="color: #555; line-height: 1.8; font-size: 15px;">
                 Nếu bạn có bất kỳ câu hỏi nào khác, đừng ngần ngại liên hệ với chúng tôi.
