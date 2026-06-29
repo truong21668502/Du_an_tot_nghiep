@@ -6,7 +6,7 @@ const teamMembers = [
         name: "Nguyễn Đình Tú",
         role: "Nhà sáng lập & CEO",
         bio: "Hơn 15 năm kinh nghiệm trong ngành cà phê, từng tu nghiệp tại Ý và Nhật Bản. Người đặt nền móng cho triết lý cà phê thủ công tại Cà Phê Mới.",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAJ0vv5WLyfbJokI9s7WdH-IN_UQrBJuzAKaR3HQtGdhCJKL8yyjBCJXCGrfuP3hlaLAhxD9stXOhPkKwss2yxQeGB2eYnyuKJAFX_DCBLDui0_8ssJnFjRyeXg-pbwSDssT5YD8o9SLEzclAMSKgvqLdeunCDEuZhjWRIy_HOQBoubABuxCFxfrKe6R8zhJKFAIKYLZqaCU3z8-SVOrv_DERg4IAwOXuOZ7jdAl5x3un4x516UkEBraiNNo_3pvR3VpdCZyvXxuHQ",
+        image: "https://res.cloudinary.com/dltgjdf9t/image/upload/v1782728289/CEO_T%C3%BA_gvofoc.jpg",
         socials: [
             { platform: "instagram", icon: "camera_alt", url: "#" },
             { platform: "linkedin", icon: "person", url: "#" },
@@ -16,24 +16,24 @@ const teamMembers = [
         name: "Nguyễn Phi Trường",
         role: "Master Barista",
         bio: "Vô địch Vietnam Barista Championship 2022, chuyên gia về latte art và sensory. Đam mê sáng tạo những công thức độc đáo.",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBnYIVuagvWZwGm_-cS5-PkD8P_e29W3Ku0yDMYDo_gCGUxQiFiG_YOjSY763srXCb2xdWAF_V9LOccPOFzz8AcmxfaMYEx3p6d9OQEZyHx09p4rM2xClVApijoLarn-D5dzD3Dg38WdOcB0Ci1qTdZ8mF2iGQZ5uW4RsJV-uZRHl8C6yuyX_GLc2fkloTZ4oT5Ue-7YSIs0F8v_vFHm3-J06SyptkfMI1HCpRp-GKB993nw48ltECIjFvFl15_xb275UVLLsMkBhs",
+        image: "https://res.cloudinary.com/dltgjdf9t/image/upload/v1782728290/CEO_Tr%C6%B0%E1%BB%9Dng_hppgle.jpg",
         socials: [{ platform: "instagram", icon: "camera_alt", url: "#" }],
     },
     {
         name: "Nguyễn Lý Đoàn Lộc",
         role: "Giám đốc Vận hành",
         bio: "Chuyên gia quản lý chuỗi F&B với 10 năm kinh nghiệm. Đảm bảo trải nghiệm khách hàng xuất sắc tại mọi chi nhánh.",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuC0ROgDxflemzx77EG_feRH9j54-YWVCrCrn8vH6v7ZFSBC5cY1qiUnvc4rGb1-9weim9CG8gQUxV9ER25fmp4kFXJp5TYYU-U6xJSCN9YI7uiMgw8NQHtOy8seV-0y_mAc9X2GemnquX1L0rrRpdgcDQ9H-QCdo0mpT1YKpFYkkztkYTWRUaNCMJuYTIEkswsx7xS47jVbmONY3k8QeX2hrXgUIQKA4_Fgi20US5KWi_RauMBM-H1L-G07cghzZCq5yeaQ99EVJ5k",
+        image: "https://res.cloudinary.com/dltgjdf9t/image/upload/v1782728289/CEO_L%E1%BB%99c_yxtebr.jpg",
         socials: [
             { platform: "linkedin", icon: "person", url: "#" },
             { platform: "twitter", icon: "alternate_email", url: "#" },
         ],
     },
     {
-        name: "Trần Thị Như Ý",
+        name: "Lê Hà Như Ý",
         role: "Giám đốc Sáng tạo",
         bio: "Kiến trúc sư không gian và trải nghiệm thương hiệu. Tạo nên bản sắc thẩm mỹ độc đáo, mang đậm dấu ấn cá nhân cho Cà Phê Mới.",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDwp3Yuwh1x5ufA3swqMLYNKhuB6Q4qtKo08gLWDe_bxwfh9aGagWp5ARF7KPfHjUm0rJH1-DDH9kXGEAKWZ2w6befKghAmcQTPv0bnnYPLgj31brxVmJ1Wkq-hTgylwH4SXB7I5ShhKbi68i1Ap7L-JNXl8OiV-3wMeFiUWxqOXt1kohOiakwb1joksNENk1aVBtYomgj6y0Gshl9zMfoA7jmeQSHrjKHz-PJjaT_UV2zjqO9D-kIMUUObR5lCuF_VVMMoH8npCQc",
+        image: "https://res.cloudinary.com/dltgjdf9t/image/upload/v1782728290/CEO_%C3%9D_r3g6ho.jpg",
         socials: [
             { platform: "instagram", icon: "camera_alt", url: "#" },
             { platform: "behance", icon: "palette", url: "#" },
@@ -43,7 +43,7 @@ const teamMembers = [
         name: "Trần Nhật Duy",
         role: "Bếp trưởng Bánh ngọt",
         bio: "Cựu học viên Le Cordon Bleu Paris. Mang hương vị bánh ngọt Pháp tinh tế kết hợp cùng nguyên liệu địa phương Việt Nam.",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDioBp9YsnihFc9mZ1ekWpk6xtNrgipcVIIfZeONW3YpZ1Fb1sih8O28f-321mGr0gYQP1AlD5kjnNXt7RMw9FWbS7MrkKSKg2XJKPpFv1MAkiKUyNC2BxWbsEgaVfHSljwnoMLzH48HeAfvNHSujr78nbD_ikNOoUiaCUBgEFqac8yahsIH4R8USHbWOAunnHamRKK97iXjCNc2kxnSVr4NohFvHjZNR4abtv_0_nWmlHG2VrgrOLFNcQ4ifXwp-yq6WsjOzH-fgs",
+        image: "https://res.cloudinary.com/dltgjdf9t/image/upload/v1782728290/CEO_Duy_joknat.png",
         socials: [
             { platform: "instagram", icon: "camera_alt", url: "#" },
             { platform: "facebook", icon: "thumb_up", url: "#" },
