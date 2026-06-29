@@ -22,7 +22,7 @@ Route::middleware(['auth', 'role:STAFF,ADMIN'])->prefix('nhan-vien')->name('staf
 
     // Route quản lý đơn hàng
     Route::get('/don-hang', [OrderController::class, 'index'])->name('orders.index');
-    Route::post('/don-hang', [OrderController::class, 'store'])->name('orders.store'); // Sửa name cho đồng bộ
+    Route::post('/don-hang', [OrderController::class, 'store'])->name('orders.store');
     Route::patch('/don-hang/{order}/accept', [OrderController::class, 'accept'])->name('orders.accept');
     Route::patch('/don-hang/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
     Route::patch('/don-hang/{order}/huy', [OrderController::class, 'cancel'])->name('orders.cancel');
@@ -37,7 +37,6 @@ Route::middleware(['auth', 'role:STAFF,ADMIN'])->prefix('nhan-vien')->name('staf
             'total_amount' => 20000, 
             'discount_amount' => 0,
             'final_amount' => 20000, 
-            'payment_status' => 'PENDING',
             'order_type' => 'DINE_IN',
             'table_id' => 1, 
             'status' => 'PENDING', 

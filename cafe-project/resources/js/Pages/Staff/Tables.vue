@@ -43,9 +43,9 @@ const getGroupedOrderDetails = (ordersList) => {
     const grouped = {};
     
     ordersList.forEach(order => {
-        if (!order.order_details) return;
+        if (!order.details) return;
         
-        order.order_details.forEach(detail => {
+        order.details.forEach(detail => {
             const key = `${detail.product_id}_${detail.variant_id || 'default'}`;
             
             if (!grouped[key]) {
@@ -246,8 +246,8 @@ onUnmounted(() => {
                                         <div class="flex justify-between pt-1 items-center">
                                             <span class="text-on-surface-variant">Thanh toán:</span>
                                             <span class="text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"
-                                                    :class="selectedTable.orders.every(o => o.payment_status === 'PAID') ? 'bg-secondary-container text-secondary' : 'bg-error-container text-error'">
-                                                {{ selectedTable.orders.every(o => o.payment_status === 'PAID') ? 'ĐÃ THANH TOÁN' : (selectedTable.orders.some(o => o.payment_status === 'PAID') ? 'ĐÃ TT MỘT PHẦN' : 'CHƯA THANH TOÁN') }}
+                                                    :class="selectedTable.orders.every(o => o.payment?.payment_status === 'PAID') ? 'bg-secondary-container text-secondary' : 'bg-error-container text-error'">
+                                                {{ selectedTable.orders.every(o => o.payment?.payment_status === 'PAID') ? 'ĐÃ THANH TOÁN' : (selectedTable.orders.some(o => o.payment?.payment_status === 'PAID') ? 'ĐÃ TT MỘT PHẦN' : 'CHƯA THANH TOÁN') }}
                                             </span>
                                         </div>
                                     </div>
@@ -265,14 +265,14 @@ onUnmounted(() => {
                             <div class="space-y-3">
                                 <button v-if="selectedTable?.status === 'EMPTY'"
                                     @click="updateTableStatus(selectedTable.id, 'OCCUPIED')"
-                                    class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-2 border-outline-variant text-on-surface hover:bg-surface-container transition-colors text-label-sm font-bold uppercase tracking-wider">
-                                    <span class="material-symbols-outlined text-[20px]">login</span> KHÁCH VÀO BÀN
+                                    class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:opacity-90 shadow-sm transition-all">
+                                    <span class="material-symbols-outlined text-[20px]">login</span> Khách vào bàn
                                 </button>
 
                                 <button v-if="selectedTable?.status === 'OCCUPIED'"
                                     @click="updateTableStatus(selectedTable.id, 'EMPTY')"
-                                    class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-2 border-outline-variant text-on-surface hover:bg-surface-container transition-colors text-label-sm font-bold uppercase tracking-wider">
-                                    <span class="material-symbols-outlined text-[20px]">cleaning_services</span> KHÁCH VỀ - DỌN BÀN
+                                    class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-2 border-outline-variant font-bold text-on-surface hover:bg-surface-container transition-colors text-label-md">
+                                    <span class="material-symbols-outlined text-[20px]">cleaning_services</span> Khách về - Dọn bàn
                                 </button>
                             </div>
 

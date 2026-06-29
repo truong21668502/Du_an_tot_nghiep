@@ -60,8 +60,12 @@ const cancelOrder = (orderId) => {
 onMounted(() => {
     if (window.Echo) {
         window.Echo.channel('staff-orders')
-            .listen('.OrderCreated', (e) => {
-                orders.value.push(e.order);
+            .listen('.order.created', (e) => {
+                const exists = orders.value.some(order => order.id === e.order.id);
+
+                if (!exists) {
+                    orders.value.push(e.order);
+                }
             });
     }
 });
@@ -111,7 +115,7 @@ const formatCurrency = (value) => {
                     </div>
                     
                     <ul class="space-y-2 mb-4">
-                        <li v-for="detail in order.order_details" :key="detail.id" class="flex justify-between items-start text-body-md">
+                        <li v-for="detail in order.details" :key="detail.id" class="flex justify-between items-start text-body-md">
                             <div class="flex-1 pr-4">
                                 <span class="font-bold text-primary">{{ detail.quantity }}x</span> 
                                 <span class="text-on-surface ml-1">{{ detail.product?.product_name }}</span>
@@ -163,7 +167,7 @@ const formatCurrency = (value) => {
                                     <p class="text-label-sm text-on-surface-variant hidden sm:block font-bold">TRẠNG THÁI PHA CHẾ</p>
                                 </div>
                                 <ul class="divide-y divide-outline-variant/30">
-                                    <li v-for="detail in selectedOrder?.order_details" :key="detail.id" class="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-surface-container-low/30">
+                                    <li v-for="detail in selectedOrder?.details" :key="detail.id" class="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-surface-container-low/30">
                                         <div class="flex-1">
                                             <p class="text-body-lg text-on-surface"><span class="font-bold text-primary mr-2">{{ detail?.quantity }}x</span> {{ detail?.product?.product_name }}</p>
                                             <div v-if="detail?.note" class="mt-2 flex items-start gap-1 text-tertiary bg-surface-container px-3 py-1.5 rounded-lg border border-outline-variant/20 inline-block">
