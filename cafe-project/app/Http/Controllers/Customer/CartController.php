@@ -237,6 +237,18 @@ class CartController extends Controller
             );
         }
 
+        // THÊM: Kiểm tra user đã dùng coupon này chưa
+        if (Auth::check()) {
+            $alreadyUsed = \App\Models\CouponUser::where('user_id', Auth::id())
+                ->where('coupon_id', $coupon->id)
+                ->where('is_used', true)
+                ->exists();
+
+            if ($alreadyUsed) {
+                throw new VoucherException('Bạn đã sử dụng mã giảm giá này rồi');
+            }
+        }
+
         return $coupon;
     }
 

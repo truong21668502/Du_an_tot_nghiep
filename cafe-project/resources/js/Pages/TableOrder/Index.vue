@@ -120,6 +120,10 @@ const handleSubmitOrder = () => {
     }
   })
 }
+
+const cartPage = () => {
+  return router.get(route('customer.cart.index'));
+}
 </script>
 
 <template>
@@ -132,7 +136,7 @@ const handleSubmitOrder = () => {
           <p class="font-sans text-label-sm text-on-surface-variant">{{ table?.area }} · {{ table?.capacity }} người</p>
         </div>
         <button 
-          @click="showCart = true" 
+          @click="cartPage" 
           class="relative p-2 rounded-full hover:bg-surface-container-high transition-colors"
         >
           <span class="material-symbols-outlined text-2xl text-primary">shopping_bag</span>
@@ -194,7 +198,7 @@ const handleSubmitOrder = () => {
       class="fixed bottom-4 left-4 right-4 z-30 max-w-[500px] mx-auto"
     >
       <button 
-        @click="showCart = true" 
+        @click="cartPage" 
         class="w-full py-4 bg-primary text-on-primary rounded-2xl shadow-lg font-sans text-label-md hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
       >
         <span class="material-symbols-outlined">shopping_bag</span>

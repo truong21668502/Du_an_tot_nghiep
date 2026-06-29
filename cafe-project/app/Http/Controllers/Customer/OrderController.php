@@ -121,7 +121,7 @@ class OrderController extends Controller
         return Order::create([
             'user_id' => Auth::id(),
             'cart_token' => Auth::check() ? null : $cart->token, // SỬA: Lấy token từ giỏ hàng
-            'table_id' => $data['table_id'] ?? null,
+            'table_id' => $data['table_id'] ?? session('table_id'),
             'coupon_id' => $couponId,
             'total_amount' => $subtotal,
             'discount_amount' => $discountAmount,

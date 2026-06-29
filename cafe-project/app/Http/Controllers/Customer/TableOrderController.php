@@ -14,6 +14,12 @@ class TableOrderController extends Controller
     {
         $table = Table::where('qr_code', $qrCode)->firstOrFail();
 
+        session([
+            'table_id' => $table->id,
+            'table_name' => $table->table_name,
+            'table_qr_code' => $qrCode,
+        ]);
+
         $categories = Category::whereHas('products', function ($q) {
             $q->where('is_active', 'Đang bán');
         })->get(['id', 'category_name', 'slug']);

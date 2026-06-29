@@ -3,21 +3,21 @@ import AnimateOnScroll from "@/Components/Base/AnimateOnScroll.vue";
 
 const milestones = [
     {
-        year: "2018",
+        year: "2020",
         title: "Khởi Đầu Từ Đam Mê",
         description:
             "Cà Phê Mới được thành lập từ tình yêu sâu sắc với cà phê thủ công và khát vọng mang đến những trải nghiệm cà phê đích thực cho cộng đồng.",
         image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBEbAMcohLwkWjEzkiWvcyYSUUDW_zom2KjQUEoKtE4e8YvSaGz5LRdX5n_PH8AlNVlEMIvcdRq4JTkX9e9cN2bGF5DqFhh-QkTOT3QxFoLCl5GvMKGeboJp1WX2k_RGSulNrG3aMvB09aHb6PCX_MDLXe6cdoumAuHStJyQT5m5TBaDAngLRXryRuMkPoV-HCNJhTEmCc2IXhOIkVo8KS8qfpx9t4EBzyrYQWb7hldppVhMn__JrUF2uLhLr_b2mTFKp6OigV6gQY",
     },
     {
-        year: "2020",
+        year: "2024",
         title: "Mở Rộng Không Gian",
         description:
             "Chúng tôi mở rộng không gian với thiết kế ấm cúng, tạo nên góc nhỏ yên bình cho những tâm hồn yêu thích sự tĩnh lặng và sáng tạo.",
         image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBc5gGat6KGg5Frk9AyGVuzWHh2fhv6s0dv1okXFbq-CByXlSt76QtYK47ULBFwhM1yPj0i0k017UTcPuwrZVk1ygrUJqzcTjfKBo2kS5rtT2_DaiU_M2kMOTPLcedIZGGAew5Sd8klWtj37OKU89hF_Y38pNfSxxY9vTT2E6b6Rt_CCaWSSUhdNav2pgAyoY3-sxo5VkHVFwdD_5B7r92N68Kq2mhj6u6eW3NVUla0LFZPgSCNMW862p8DqJrdbNSPYkRwxJLJjhQ",
     },
     {
-        year: "2022",
+        year: "2026",
         title: "Kết Nối Cộng Đồng",
         description:
             "Ra mắt nền tảng đặt món trực tuyến, workshop pha chế và các sự kiện cà phê, kết nối những người yêu cà phê trên khắp cả nước.",

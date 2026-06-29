@@ -15,12 +15,17 @@ const discountAmount = computed(() => voucher.value?.discount_amount || voucher.
 const finalAmount = computed(() => Math.max(0, subtotal.value - discountAmount.value))
 const loading = ref(false)
 const errors = ref({})
-const selectedTableId = ref(null)
+const sessionTable = computed(() => page.props.sessionTable || null)
+const sessionOrderType = computed(() => page.props.sessionOrderType || null)
+const selectedTableId = ref(sessionTable.value?.id || null)
 const selectedPaymentMethod = ref('CASH')
 const note = ref('')
 onMounted(() => {
   if (tables.value.length > 0) selectedTableId.value = tables.value[0].id
 })
+
+
+
 const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 const submitOrder = () => {
   loading.value = true
@@ -52,7 +57,7 @@ const submitOrder = () => {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 space-y-6">
           <AnimateOnScroll animation="fade-right" :duration="700" :delay="100">
-            <div class="bg-surface rounded-2xl border border-outline-variant/20 p-6 md:p-8">
+            <div v-if="!sessionTable" class="bg-surface rounded-2xl border border-outline-variant/20 p-6 md:p-8">
               <h2 class="font-serif text-headline-sm text-primary mb-4">Chọn bàn</h2>
               <div v-if="tables.length === 0" class="text-center py-6">
                 <p class="font-sans text-body-md text-on-surface-variant">Hiện không có bàn trống</p>
@@ -104,7 +109,7 @@ const submitOrder = () => {
                   <hr class="border-outline-variant/20" />
                   <div class="flex justify-between"><span class="font-serif text-headline-sm text-primary">Tổng cộng</span><span class="font-serif text-headline-sm text-primary">{{ formatPrice(finalAmount) }}</span></div>
                 </div>
-                <BaseButton variant="primary" class="w-full justify-center" :disabled="loading || !selectedTableId || !!activeOrder" @click="submitOrder">
+                <BaseButton variant="primary" class="w-full justify-center" :disabled="loading || (!sessionTable && !selectedTableId) || !!activeOrder" @click="submitOrder">
                   <span v-if="loading" class="material-symbols-outlined animate-spin text-lg">refresh</span>
                   {{ loading ? 'Đang xử lý...' : selectedPaymentMethod === 'BANK_TRANSFER' ? 'Thanh toán VNPay' : 'Đặt món' }}
                 </BaseButton>
