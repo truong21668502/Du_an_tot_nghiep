@@ -65,6 +65,14 @@ const cancelOrder = (orderId) => {
     }
 };
 
+const confirmPayment = (orderId) => {
+    if (confirm('Khách đã thanh toán tiền mặt xong?')) {
+        router.patch(route('staff.orders.confirm-payment', orderId), {}, {
+            preserveScroll: true
+        });
+    }
+}
+
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 };
@@ -102,6 +110,24 @@ const closeTableModal = () => {
 
 // cập nhật trạng thái bàn trống hoặc có khách
 const updateTableStatus = (tableId, newStatus) => {
+    // Nếu nhân viên định dọn bàn (chuyển về EMPTY)
+    if (newStatus === 'EMPTY') {
+        const table = tables.value.find(t => t.id === tableId);
+        
+        // Kiểm tra xem bàn này có đơn nào chưa thanh toán (PENDING) không
+        const hasUnpaidOrders = table?.orders?.some(o => o.payment?.payment_status !== 'PAID');
+        
+        if (hasUnpaidOrders) {
+            toast.error('❌ KHÔNG THỂ DỌN BÀN: Bàn này vẫn còn đơn hàng chưa thanh toán!');
+            return;
+        }
+        
+        if (!confirm('Bạn có chắc chắn khách đã về và muốn dọn bàn này?')) {
+            return;
+        }
+    }
+
+    // Qua được các kiểm tra, tiến hành gọi API để cập nhật trạng thái bàn
     router.patch(route('staff.tables.update-status', tableId), { status: newStatus }, {
         preserveScroll: true,
         onSuccess: () => {
@@ -189,6 +215,22 @@ onMounted(() => {
                             }
                         }
                     }
+                }
+            });
+
+        // kênh lắng nghe sự kiện khi có đơn hàng được thanh toán
+        window.Echo.channel('staff-orders')
+            .listen('.order.payment-confirmed', (e) => {
+                // Tìm đơn hàng trong danh sách đang hiển thị
+                const index = orders.value.findIndex(o => o.id === e.id);
+                if (index !== -1) {
+                    orders.value[index].payment.payment_status = e.payment_status;
+                    orders.value[index].status = e.status;
+                    
+                    // Hoặc nếu bạn muốn ẩn luôn đơn đó đi vì đã xong:
+                    // orders.value.splice(index, 1);
+                    
+                    toast.success(`Đơn ${e.order_code} đã thanh toán xong!`);
                 }
             });
     }
@@ -366,6 +408,10 @@ onUnmounted(() => {
 
                         <div class="px-6 py-5 bg-surface border-t border-outline-variant/30 flex gap-4 justify-end">
                             <button @click="closeOrderModal" class="px-6 py-2.5 rounded-full text-label-md font-bold text-on-surface-variant hover:bg-surface-container transition-colors">Đóng lại</button>
+                            
+                            <button v-if="selectedOrder?.payment?.payment_method === 'CASH' && selectedOrder?.payment?.payment_status === 'PENDING'" @click="confirmPayment(selectedOrder.id)" class="px-6 py-2.5 rounded-full bg-green-600 text-white font-bold text-label-md shadow-soft hover:bg-green-700 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[20px]">payments</span> Xác nhận thu tiền
+                            </button>
                             
                             <button v-if="selectedOrder?.status === 'PENDING'" @click="cancelOrder(selectedOrder.id)" class="px-6 py-2.5 rounded-full bg-error-container text-error font-bold text-label-md shadow-soft hover:bg-error/20 flex items-center gap-2">
                                 <span class="material-symbols-outlined text-[20px]">cancel</span> Hủy đơn

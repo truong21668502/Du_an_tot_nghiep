@@ -57,6 +57,14 @@ const cancelOrder = (orderId) => {
     }
 };
 
+const confirmPayment = (orderId) => {
+    if (confirm('Khách đã thanh toán tiền mặt xong?')) {
+        router.patch(route('staff.orders.confirm-payment', orderId), {}, {
+            preserveScroll: true
+        });
+    }
+}
+
 onMounted(() => {
     if (window.Echo) {
         window.Echo.channel('staff-orders')
@@ -199,6 +207,10 @@ const formatCurrency = (value) => {
 
                         <div class="px-6 py-5 bg-surface border-t border-outline-variant/30 flex gap-4 justify-end">
                             <button @click="closeOrderModal" class="px-6 py-2.5 rounded-full text-label-md font-bold text-on-surface-variant hover:bg-surface-container transition-colors">Đóng lại</button>
+                            
+                            <button v-if="selectedOrder?.payment?.payment_method === 'CASH' && selectedOrder?.payment?.payment_status === 'PENDING'" @click="confirmPayment(selectedOrder.id)" class="px-6 py-2.5 rounded-full bg-green-600 text-white font-bold text-label-md shadow-soft hover:bg-green-700 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[20px]">payments</span> Xác nhận thu tiền
+                            </button>
                             
                             <button v-if="selectedOrder?.status === 'PENDING'" @click="cancelOrder(selectedOrder.id)" class="px-6 py-2.5 rounded-full bg-error-container text-error font-bold text-label-md shadow-soft hover:bg-error/20 flex items-center gap-2">
                                 <span class="material-symbols-outlined text-[20px]">cancel</span> Hủy đơn

@@ -11,24 +11,23 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $activeOrders = Order::with(['table', 'details.product'])
-            ->whereIn('status', ['PENDING', 'PROCESSING']) 
+        // Đơn đang hoạt động (Chỉ lấy đơn Đang chờ và Đang làm để pha chế)
+        $orders = Order::with(['table', 'details.product', 'details.variant', 'payment'])
+            ->whereIn('status', ['PENDING', 'PROCESSING'])
             ->orderBy('created_at', 'asc')
             ->get();
-        
-        // Lấy danh sách các bàn và các đơn hàng liên quan, chỉ lấy những đơn hàng có trạng thái "PENDING" trong bảng payments
-        $tables = Table::with(['orders' => function($query) {
-            // Thay vì kiểm tra trực tiếp, ta dùng whereHas để kiểm tra bảng payments
-            $query->whereHas('payment', function($q) {
-                    $q->where('payment_status', 'PENDING');
-                })
-                ->with(['details.product', 'details.variant', 'payment']) // Load thêm bảng payment
-                ->latest(); 
-        }])->orderBy('id', 'asc')->get();
 
-        return Inertia::render('Staff/Dashboard', [
-            'initialOrders' => $activeOrders,
-            'initialTables' => $tables 
+        $tables = Table::with(['orders' => function ($query) {
+            $query->where(function ($q) {
+                $q->whereIn('status', ['PENDING', 'PROCESSING', 'COMPLETED']);
+            })
+            ->with(['details.product', 'details.variant', 'payment']); 
+        }])->get();
+
+        // Truyền dữ liệu sang Inertia Vue
+        return inertia('Staff/Dashboard', [
+            'initialOrders' => $orders,
+            'initialTables' => $tables,
         ]);
     }
 }

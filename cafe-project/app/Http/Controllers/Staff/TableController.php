@@ -12,14 +12,10 @@ class TableController extends Controller
 {
     public function index()
     {
+        // Lấy tất cả bàn và nạp tất cả các đơn hàng liên quan
         $tables = Table::with(['orders' => function($query) {
-            // Dùng whereHas để lọc các đơn có payment_status = PENDING trong bảng payments
-            $query->whereHas('payment', function($q) {
-                    $q->where('payment_status', 'PENDING');
-                })
-                // Nhớ load thêm 'payment' để giao diện Vue có thể truy xuất
-                ->with(['details.product', 'details.variant', 'payment'])
-                ->latest();
+            $query->with(['details.product', 'details.variant', 'payment'])
+                    ->latest();
         }])->orderBy('id', 'asc')->get(); 
 
         return Inertia::render('Staff/Tables', [
@@ -37,14 +33,10 @@ class TableController extends Controller
             'status' => $request->status
         ]);
 
-        // nạp lại danh sách đơn hàng chưa thanh toán để gửi về frontend
+        // Nạp lại tất cả đơn hàng cho bàn này sau khi update status
         $table->load(['orders' => function($query) {
-            // Dùng whereHas để lọc các đơn có payment_status = PENDING trong bảng payments
-            $query->whereHas('payment', function($q) {
-                    $q->where('payment_status', 'PENDING');
-                })
-                ->with(['details.product', 'details.variant', 'payment'])
-                ->latest();
+            $query->with(['details.product', 'details.variant', 'payment'])
+                    ->latest();
         }]);
 
         broadcast(new TableStatusUpdated($table));

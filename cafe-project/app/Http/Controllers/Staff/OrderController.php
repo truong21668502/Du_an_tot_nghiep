@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\Table; 
 use App\Events\OrderCreated; 
 use App\Events\TableStatusUpdated;
+use App\Events\OrderPaymentConfirmed;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -88,21 +90,39 @@ class OrderController extends Controller
     public function complete(Order $order)
     {
         $order->update(['status' => 'COMPLETED']);
-        
-        if ($order->table_id) {
-            $remainingOrders = Order::where('table_id', $order->table_id)
-                                    ->whereIn('status', ['PENDING', 'PROCESSING'])
-                                    ->count();
-            if ($remainingOrders === 0) {
-                $table = Table::find($order->table_id);
-                $table->update(['status' => 'EMPTY']);
-                broadcast(new TableStatusUpdated($table));
-            }
-        }
-
         return redirect()->back();
     }
 
+    public function confirmPayment(Order $order)
+    {
+        $order->load('payment');
+
+        if ($order->payment && $order->payment->payment_status === 'PAID') {
+            return back()->with('error', 'Đơn hàng này đã được thanh toán!');
+        }
+
+        DB::beginTransaction();
+        try {
+            // Cập nhật trạng thái tiền
+            if ($order->payment) {
+                $order->payment->update([
+                    'payment_status' => 'PAID',
+                    'payment_time' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            // Bắn sự kiện để Frontend tự update icon thanh toán
+            broadcast(new OrderPaymentConfirmed($order));
+
+            return back()->with('success', 'Đã xác nhận thu tiền mặt!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Lỗi thanh toán: ' . $e->getMessage());
+        }
+    }
 
     public function cancel(Order $order)
     {
