@@ -128,9 +128,8 @@ const getGroupedOrderDetails = (ordersList) => {
     const grouped = {};
     
     ordersList.forEach(order => {
-        if (!order.order_details) return;
-        
-        order.order_details.forEach(detail => {
+        if (!order.details) return;
+        order.details.forEach(detail => {
             const key = `${detail.product_id}_${detail.variant_id || 'default'}`;
             
             if (!grouped[key]) {
@@ -253,9 +252,9 @@ onUnmounted(() => {
                                 <span v-else-if="order?.status === 'PROCESSING'" class="text-label-sm font-bold text-primary bg-primary-container text-on-primary-container px-3 py-1 rounded-full whitespace-nowrap">Đang xử lý</span>
                             </div>
                             <p class="text-body-md text-on-surface-variant truncate">
-                                <span class="font-bold text-primary">{{ order?.order_details?.length || 0 }} món:</span>
-                                <span v-for="(detail, index) in order?.order_details" :key="detail.id">
-                                    {{ detail?.product?.product_name }}<span v-if="index < order.order_details.length - 1">, </span>
+                                <span class="font-bold text-primary">{{ order?.details?.length || 0 }} món:</span>
+                                <span v-for="(detail, index) in order?.details" :key="detail.id">
+                                    {{ detail?.product?.product_name }}<span v-if="index < order.details.length - 1">, </span>
                                 </span>
                             </p>
                         </div>
@@ -332,7 +331,7 @@ onUnmounted(() => {
                                     <p class="text-label-sm text-on-surface-variant font-bold">DANH SÁCH MÓN</p>
                                 </div>
                                 <ul class="divide-y divide-outline-variant/30">
-                                    <li v-for="detail in selectedOrder?.order_details" :key="detail.id" class="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-surface-container-low/30">
+                                    <li v-for="detail in selectedOrder?.details" :key="detail.id" class="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-surface-container-low/30">
                                         <div class="flex-1">
                                             <p class="text-body-lg text-on-surface">
                                                 <span class="font-bold text-primary mr-2">{{ detail?.quantity }}x</span>
@@ -436,8 +435,8 @@ onUnmounted(() => {
                                         <div class="flex justify-between pt-1 items-center">
                                             <span class="text-on-surface-variant">Thanh toán:</span>
                                             <span class="text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"
-                                                    :class="selectedTable.orders.every(o => o.payment_status === 'PAID') ? 'bg-secondary-container text-secondary' : 'bg-error-container text-error'">
-                                                {{ selectedTable.orders.every(o => o.payment_status === 'PAID') ? 'Đã TT toàn bộ' : (selectedTable.orders.some(o => o.payment_status === 'PAID') ? 'Đã TT một phần' : 'Chưa thanh toán') }}
+                                                    :class="selectedTable.orders.every(o => o.payment?.payment_status === 'PAID') ? 'bg-secondary-container text-secondary' : 'bg-error-container text-error'">
+                                                {{ selectedTable.orders.every(o => o.payment?.payment_status === 'PAID') ? 'Đã TT toàn bộ' : (selectedTable.orders.some(o => o.payment?.payment_status === 'PAID') ? 'Đã TT một phần' : 'Chưa thanh toán') }}
                                             </span>
                                         </div>
                                     </div>

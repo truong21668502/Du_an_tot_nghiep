@@ -10,6 +10,9 @@ use App\Models\Cart;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Table;
+use App\Events\OrderCreated;
+use App\Events\TableStatusUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
@@ -70,14 +73,24 @@ class OrderController extends Controller
             $order = $this->createOrder($cart, $data, $subtotal, $discountAmount, $couponId, $request);
             $this->syncOrderDetails($order, $cart);
             $this->syncPayment($order, $data['payment_method']);
-                    // THÊM: Cập nhật trạng thái bàn thành OCCUPIED nếu có chọn bàn
+            
+            // THÊM: Cập nhật trạng thái bàn thành OCCUPIED nếu có chọn bàn
             if ($data['table_id']) {
-                \App\Models\Table::where('id', $data['table_id'])->update(['status' => 'OCCUPIED']);
+                $table = Table::where('id', $data['table_id'])->first();
+                if ($table) {
+                    $table->update(['status' => 'OCCUPIED']);
+                    // Bắn event real-time cho staff khi cập nhật bàn
+                    broadcast(new TableStatusUpdated($table));
+                }
             }
 
             // Luôn xóa giỏ hàng sau khi tạo đơn thành công
             $cart->items()->delete();
             session()->forget('cart_voucher');
+
+            // Bắn event real-time cho staff khi tạo đơn hàng mới
+            $order->load('table', 'details.product', 'details.variant', 'payment');
+            broadcast(new OrderCreated($order));
 
             return $order->load('details', 'payment');
         });

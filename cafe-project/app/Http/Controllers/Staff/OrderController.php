@@ -14,7 +14,7 @@ class OrderController extends Controller
 {
     public function index()
     {
-        $activeOrders = Order::with(['table', 'orderDetails.product', 'orderDetails.variant'])
+        $activeOrders = Order::with(['table','details.product','details.variant','payment'])
             ->whereIn('status', ['PENDING', 'PROCESSING']) 
             ->orderBy('created_at', 'asc')
             ->get();
@@ -32,19 +32,19 @@ class OrderController extends Controller
             'total_amount' => 'required|numeric',
         ]);
 
+        // Tạo đơn hàng
         $order = Order::create([
             'order_type' => $request->order_type,
             'table_id' => $request->order_type === 'DINE_IN' ? $request->table_id : null,
-            'payment_method' => $request->payment_method,
-            'payment_status' => $request->payment_status,
             'status' => 'PENDING',
             'total_amount' => $request->total_amount,
             'final_amount' => $request->total_amount,
             'discount_amount' => 0,
         ]);
 
+        // Tạo chi tiết món
         foreach($request->items as $item) {
-            $order->orderDetails()->create([
+            $order->details()->create([
                 'product_id' => $item['product_id'],
                 'variant_id' => $item['variant_id'],
                 'quantity' => $item['quantity'],
@@ -53,6 +53,14 @@ class OrderController extends Controller
             ]);
         }
 
+        // Tạo bảng ghi vào payment
+        $order->payment()->create([
+            'payment_method' => $request->payment_method ?? 'CASH',
+            'payment_status' => $request->payment_status ?? 'PENDING',
+            'amount' => $request->total_amount,
+        ]);
+
+        // Cập nhật lại trạng thái bàn
         if ($order->table_id) {
             $table = Table::find($order->table_id);
             if ($table) {
@@ -61,7 +69,8 @@ class OrderController extends Controller
             }
         }
         
-        broadcast(new OrderCreated($order->load(['table', 'orderDetails.product', 'orderDetails.variant'])));
+        // Load thêm quan hệ 'payment' để bắn qua Vue
+        broadcast(new OrderCreated($order->load(['table', 'details.product', 'details.variant', 'payment'])));
 
         return redirect()->back()->with('success', 'Đơn hàng đã được tạo!');
     }
