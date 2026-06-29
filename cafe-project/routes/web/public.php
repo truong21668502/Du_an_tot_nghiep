@@ -31,21 +31,19 @@ Route::get('/thuc-don', [ProductController::class, 'index'])->name('customer.men
 Route::get('/thuc-don/{slug}', [ProductController::class, 'show'])->name('product.show');
 
 //!!! quan trong không rờ lung tung!!!
-Route::get('/ban/{qr_code}', [TableOrderController::class, 'show'])->name('table.order');
-Route::post('/ban/{qr_code}/order', [TableOrderController::class, 'store'])->name('table.order.store');
-Route::get('/ban/order/{order}/success', [TableOrderController::class, 'success'])->name('table.order.success');
-Route::get('/ban/order/{order}/payment', [TableOrderController::class, 'payment'])->name('table.order.payment');
-Route::post('/ban/order/{order}/confirm-payment', [TableOrderController::class, 'confirmPayment'])->name('table.order.confirm-payment');
+Route::get('/ban/{qr_code}', [TableOrderController::class, 'index'])->name('table.order');
 
 
 Route::prefix('gio-hang')->name('customer.cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index');
     Route::post('/', [CartController::class, 'add'])->name('add');
-    Route::patch('/{cartItem}', [CartController::class, 'update'])->name('update');
-    Route::delete('/{cartItem}', [CartController::class, 'remove'])->name('remove');
+
     Route::delete('/', [CartController::class, 'clear'])->name('clear');
     Route::post('/voucher', [CartController::class, 'applyVoucher'])->name('voucher.apply');
     Route::delete('/voucher', [CartController::class, 'removeVoucher'])->name('voucher.remove');
+
+        Route::patch('/{cartItem}', [CartController::class, 'update'])->name('update');
+    Route::delete('/{cartItem}', [CartController::class, 'remove'])->name('remove');
 });
 
 Route::get('/thanh-toan', [CheckoutController::class, 'index'])->name('customer.checkout.index');
@@ -68,6 +66,9 @@ Route::get('/lien-he', function () {
 
 Route::post('/contact/send', [ContactController::class, 'send'])->name('contact.send');
 
+route::get('/cc' , function () {
+    return Inertia::render('cc');
+});
 
 // Blog
 Route::get('/bai-viet', [PostController::class, 'index'])->name('blog.index');

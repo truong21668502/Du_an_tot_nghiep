@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Log;
 
 class VnpayController extends Controller
 {
+    private const COOKIE_NAME = 'cart_token';
+
     public function return(Request $request)
     {
         $inputData = $request->query();
@@ -23,7 +25,7 @@ class VnpayController extends Controller
         }
 
         $orderId = strtok($inputData['vnp_TxnRef'] ?? '', '_');
-        $order = is_numeric($orderId) ? Order::with('payment', 'cart')->find((int) $orderId) : null;
+        $order = is_numeric($orderId) ? Order::with('payment')->find((int) $orderId) : null;
 
         if (!$order) {
             return inertia('Payment/Result', [
@@ -31,6 +33,18 @@ class VnpayController extends Controller
                 'message' => 'Không tìm thấy đơn hàng tương ứng',
                 'order' => null,
             ]);
+        }
+
+        // Bảo mật: Kiểm tra cart_token nếu là đơn của khách vãng lai
+        if (!$order->user_id) {
+            $cookieToken = $request->cookie(self::COOKIE_NAME);
+            if (!$cookieToken || $order->cart_token !== $cookieToken) {
+                return inertia('Payment/Result', [
+                    'status' => 'error',
+                    'message' => 'Bạn không có quyền truy cập đơn hàng này',
+                    'order' => null,
+                ]);
+            }
         }
 
         $expected = (int) round($order->final_amount * 100);
@@ -47,11 +61,9 @@ class VnpayController extends Controller
 
         $isSuccess = ($inputData['vnp_ResponseCode'] ?? null) === '00';
 
-        if ($isSuccess) {
-            return $this->handlePaymentSuccess($order, $inputData);
-        }
-
-        return $this->handlePaymentFailed($order);
+        return $isSuccess
+            ? $this->handlePaymentSuccess($order, $inputData)
+            : $this->handlePaymentFailed($order);
     }
 
     private function handlePaymentSuccess(Order $order, array $inputData)
@@ -65,11 +77,6 @@ class VnpayController extends Controller
                 ]);
 
                 $order->update(['status' => 'PROCESSING']);
-
-                if ($order->cart) {
-                    $order->cart->items()->delete();
-                    session()->forget('cart_voucher');
-                }
             });
         }
 
@@ -80,47 +87,36 @@ class VnpayController extends Controller
         ]);
     }
 
-    private function handlePaymentFailed(Order $order)
+    private function isValidSignature(array $inputData): bool
     {
-        $order->payment->update(['payment_status' => 'FAILED']);
+        $hashSecret = config('services.vnpay.hash_secret');
+        $secureHash = $inputData['vnp_SecureHash'] ?? null;
+        
+        //  Loại bỏ các tham số không tham gia tạo chữ ký
+        unset($inputData['vnp_SecureHash'], $inputData['vnp_SecureHashType']);
 
-        return inertia('Payment/Result', [
-            'status' => 'error',
-            'message' => 'Thanh toán thất bại hoặc đã bị hủy',
-            'order' => $order->only('id', 'final_amount'),
-        ]);
-    }
-
-private function isValidSignature(array $inputData): bool
-{
-    $hashSecret = config('services.vnpay.hash_secret');
-    $secureHash = $inputData['vnp_SecureHash'] ?? null;
-    
-    //  Loại bỏ các tham số không tham gia tạo chữ ký
-    unset($inputData['vnp_SecureHash'], $inputData['vnp_SecureHashType']);
-
-    //  Sắp xếp mảng theo alphabet của key
-    ksort($inputData);
-    
-    //  Tự xây dựng chuỗi hash data theo chuẩn VNPay
-    $hashData = "";
-    $i = 0;
-    foreach ($inputData as $key => $value) {
-        // Chỉ lấy các tham số có giá trị thực (không null và không rỗng)
-        if ($value !== null && strlen($value) > 0) {
-            if ($i == 1) {
-                $hashData .= '&' . urlencode($key) . "=" . urlencode($value);
-            } else {
-                $hashData .= urlencode($key) . "=" . urlencode($value);
-                $i = 1;
+        //  Sắp xếp mảng theo alphabet của key
+        ksort($inputData);
+        
+        //  Tự xây dựng chuỗi hash data theo chuẩn VNPay
+        $hashData = "";
+        $i = 0;
+        foreach ($inputData as $key => $value) {
+            // Chỉ lấy các tham số có giá trị thực (không null và không rỗng)
+            if ($value !== null && strlen($value) > 0) {
+                if ($i == 1) {
+                    $hashData .= '&' . urlencode($key) . "=" . urlencode($value);
+                } else {
+                    $hashData .= urlencode($key) . "=" . urlencode($value);
+                    $i = 1;
+                }
             }
         }
+
+        // Tạo chữ ký mong đợi
+        $expectedHash = hash_hmac('sha512', $hashData, $hashSecret);
+
+        // So sánh an toàn chuỗi
+        return $secureHash && hash_equals($expectedHash, $secureHash);
     }
-
-    // Tạo chữ ký mong đợi
-    $expectedHash = hash_hmac('sha512', $hashData, $hashSecret);
-
-    // So sánh an toàn chuỗi
-    return $secureHash && hash_equals($expectedHash, $secureHash);
-}
 }

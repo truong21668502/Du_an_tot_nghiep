@@ -22,6 +22,7 @@ class PlaceOrderRequest extends FormRequest
                 'exists:tables,id',
             ],
             'payment_method' => ['required', Rule::in(['CASH', 'BANK_TRANSFER'])],
+            'note' => ['nullable', 'string', 'max:255'], // THÊM
         ];
     }
 

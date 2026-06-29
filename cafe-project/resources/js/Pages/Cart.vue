@@ -7,6 +7,7 @@ import CartItem from './Cart/Partials/CartItem.vue'
 import CartSummary from './Cart/Partials/CartSummary.vue'
 import VoucherInput from './Cart/Partials/VoucherInput.vue'
 import AnimateOnScroll from '@/Components/Base/AnimateOnScroll.vue'
+import { router } from '@inertiajs/vue3'
 
 defineOptions({ layout: MainLayout })
 

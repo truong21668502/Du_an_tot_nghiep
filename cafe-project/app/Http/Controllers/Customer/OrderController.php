@@ -30,7 +30,7 @@ class OrderController extends Controller
         $cart = $this->getOrCreateCart($request);
 
         try {
-            $order = $this->placeOrder($cart, $request->validated());
+            $order = $this->placeOrder($cart, $request->validated(), $request);
         } catch (CartException $e) {
             return back()->withErrors(['order' => $e->getMessage()]);
         }
@@ -40,78 +40,60 @@ class OrderController extends Controller
             : Inertia::location($this->buildVnpayUrl($order, $request->ip()));
     }
 
-    public function pending(Order $order)
+    public function pending(Request $request, Order $order)
     {
+        // Bảo mật: Kiểm tra quyền xem đơn hàng
+        if (!$order->user_id) {
+            // Đơn của khách vãng lai → phải khớp cart_token
+            $cookieToken = $request->cookie(self::COOKIE_NAME);
+            abort_if(!$cookieToken || $order->cart_token !== $cookieToken, 403, 'Bạn không có quyền xem đơn hàng này.');
+        } else {
+            // Đơn của user đã đăng nhập → phải đúng user_id
+            abort_if($order->user_id !== Auth::id(), 403);
+        }
+
         return inertia('Orders/Pending', [
             'order' => $order->load('details.product', 'details.variant', 'payment', 'table'),
         ]);
     }
 
-    // ─── Order logic ───────────────────────────────────────────
+    // ─── Order Logic ───────────────────────────────────────────
 
-    private function placeOrder(Cart $cart, array $data): Order
+    private function placeOrder(Cart $cart, array $data, Request $request): Order
     {
         $cart->loadMissing('items.product.variants', 'items.variant');
-        $this->assertCartNotEmpty($cart);
 
-        return DB::transaction(function () use ($cart, $data) {
-            $activeOrder = Order::with('payment')
-                ->where('cart_id', $cart->id)
-                ->whereIn('status', ['PENDING', 'PROCESSING'])
-                ->lockForUpdate()
-                ->first();
-
-            $this->assertCartIsFreeForNewOrder($activeOrder);
-
-            [$subtotal, $discountAmount, $couponId] = $this->calculateAmounts($cart);
-
-            $order = $activeOrder
-                ? $this->updateOrder($activeOrder, $data, $subtotal, $discountAmount, $couponId)
-                : $this->createOrder($cart, $data, $subtotal, $discountAmount, $couponId);
-
-            $this->syncOrderDetails($order, $cart);
-            $this->syncPayment($order, $data['payment_method']);
-
-            if ($data['payment_method'] === 'CASH') {
-                $cart->items()->delete();
-                session()->forget('cart_voucher');
-            }
-
-            if ($order->table_id) {
-                $table = Table::find($order->table_id);
-
-                if ($table) {
-                    $table->update([
-                        'status' => 'OCCUPIED'
-                    ]);
-
-                    broadcast(new TableStatusUpdated($table));
-                }
-            }
-            // Bắn event real-time cho staff
-            $order->load('table', 'details.product', 'details.variant', 'payment');
-            broadcast(new OrderCreated($order));
-            return $order;
-        });
-    }
-
-    private function assertCartNotEmpty(Cart $cart): void
-    {
         if ($cart->items->isEmpty()) {
             throw new CartException('Giỏ hàng đang trống, không thể đặt hàng');
         }
-    }
 
-    private function assertCartIsFreeForNewOrder(?Order $activeOrder): void
-    {
-        if (!$activeOrder) return;
+        return DB::transaction(function () use ($cart, $data, $request) {
+            [$subtotal, $discountAmount, $couponId] = $this->calculateAmounts($cart);
 
-        $isResumableVnpay = $activeOrder->status === 'PENDING'
-            && $activeOrder->payment?->payment_method === 'BANK_TRANSFER';
+            $order = $this->createOrder($cart, $data, $subtotal, $discountAmount, $couponId, $request);
+            $this->syncOrderDetails($order, $cart);
+            $this->syncPayment($order, $data['payment_method']);
+            
+            // THÊM: Cập nhật trạng thái bàn thành OCCUPIED nếu có chọn bàn
+            if ($data['table_id']) {
+                $table = Table::where('id', $data['table_id'])->first();
+                if ($table) {
+                    $table->update(['status' => 'OCCUPIED']);
+                    // Bắn event real-time cho staff khi cập nhật bàn
+                    broadcast(new TableStatusUpdated($table));
+                }
+            }
 
-        if (!$isResumableVnpay) {
-            throw new CartException('Giỏ hàng này đang có một đơn hàng chưa hoàn thành, vui lòng xử lý xong đơn đó trước.');
-        }
+            // Luôn xóa giỏ hàng sau khi tạo đơn thành công
+            $cart->items()->delete();
+            session()->forget('cart_voucher');
+
+            // Bắn event real-time cho staff khi tạo đơn hàng mới
+            $order->load('table', 'details.product', 'details.variant', 'payment');
+            broadcast(new OrderCreated($order));
+
+            return $order->load('details', 'payment');
+        });
     }
 
     private function calculateAmounts(Cart $cart): array
@@ -134,39 +116,24 @@ class OrderController extends Controller
         return [$subtotal, $discountAmount, $couponId];
     }
 
-    private function createOrder(Cart $cart, array $data, float $subtotal, float $discountAmount, ?int $couponId): Order
+    private function createOrder(Cart $cart, array $data, float $subtotal, float $discountAmount, ?int $couponId, Request $request): Order
     {
         return Order::create([
-            'cart_id' => $cart->id,
-            'user_id' => $cart->user_id,
-            'table_id' => $data['table_id'] ?? null,
+            'user_id' => Auth::id(),
+            'cart_token' => Auth::check() ? null : $cart->token, // SỬA: Lấy token từ giỏ hàng
+            'table_id' => $data['table_id'] ?? session('table_id'),
             'coupon_id' => $couponId,
             'total_amount' => $subtotal,
             'discount_amount' => $discountAmount,
             'final_amount' => $subtotal - $discountAmount,
             'order_type' => $data['order_type'],
             'status' => 'PENDING',
+            'note' => $data['note'] ?? null, // THÊM: Lưu ghi chú
         ]);
-    }
-
-    private function updateOrder(Order $order, array $data, float $subtotal, float $discountAmount, ?int $couponId): Order
-    {
-        $order->update([
-            'table_id' => $data['table_id'] ?? null,
-            'coupon_id' => $couponId,
-            'total_amount' => $subtotal,
-            'discount_amount' => $discountAmount,
-            'final_amount' => $subtotal - $discountAmount,
-            'order_type' => $data['order_type'],
-        ]);
-
-        return $order;
     }
 
     private function syncOrderDetails(Order $order, Cart $cart): void
     {
-        $order->details()->delete();
-
         foreach ($cart->items as $item) {
             $price = $item->variant
                 ? (float) $item->variant->price
@@ -185,19 +152,15 @@ class OrderController extends Controller
 
     private function syncPayment(Order $order, string $paymentMethod): Payment
     {
-        return Payment::updateOrCreate(
-            ['order_id' => $order->id],
-            [
-                'payment_method' => $paymentMethod,
-                'amount' => $order->final_amount,
-                'payment_status' => 'PENDING',
-                'transaction_id' => null,
-                'payment_time' => null,
-            ]
-        );
+        return Payment::create([
+            'order_id' => $order->id,
+            'payment_method' => $paymentMethod,
+            'amount' => $order->final_amount,
+            'payment_status' => 'PENDING',
+        ]);
     }
 
-    // ─── Cart logic ────────────────────────────────────────────
+    // ─── Cart Logic ────────────────────────────────────────────
 
     private function getOrCreateCart(Request $request): Cart
     {
@@ -239,12 +202,8 @@ class OrderController extends Controller
             }
         }
 
-        if ($guestCart->orders()->exists()) {
-            $guestCart->items()->delete();
-        } else {
-            $guestCart->delete();
-        }
-
+        $guestCart->items()->delete();
+        $guestCart->delete();
         Cookie::queue(Cookie::forget(self::COOKIE_NAME));
     }
 
@@ -260,7 +219,7 @@ class OrderController extends Controller
         });
     }
 
-    // ─── Coupon logic ──────────────────────────────────────────
+    // ─── Coupon Logic ──────────────────────────────────────────
 
     private function validateCoupon(string $code, float $subtotal): Coupon
     {
@@ -301,7 +260,7 @@ class OrderController extends Controller
         return round(min($discount, $subtotal), 2);
     }
 
-    // ─── VNPay logic ───────────────────────────────────────────
+    // ─── VNPay Logic ───────────────────────────────────────────
 
     private function buildVnpayUrl(Order $order, string $ip): string
     {
@@ -347,5 +306,4 @@ class OrderController extends Controller
 
         return $baseUrl . '?' . $query . '&vnp_SecureHash=' . $secureHash;
     }
-
 }

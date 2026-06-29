@@ -4,9 +4,6 @@ namespace App\Http\Controllers\Customer;
 
 use App\Exceptions\VoucherException;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Customer\AddToCartRequest;
-use App\Http\Requests\Customer\ApplyVoucherRequest;
-use App\Http\Requests\Customer\UpdateCartItemRequest;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Coupon;
@@ -45,23 +42,34 @@ class CartController extends Controller
         ]);
     }
 
-    public function add(AddToCartRequest $request)
+    public function add(Request $request)
     {
         $cart = $this->getOrCreateCart($request);
-        $this->addItem($cart, $request->validated());
+        $this->addItem($cart, $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'variant_id' => 'required|exists:product_variants,id',
+            'quantity' => 'integer|min:1',
+            'note' => 'nullable|string',
+        ]));
+    $cart->load([
+        'items.product.category',
+        'items.product.images',
+        'items.product.variants',
+        'items.variant',
+    ]);
 
         return back()->with('toast-success', 'Đã thêm sản phẩm vào giỏ hàng');
     }
 
-    public function update(UpdateCartItemRequest $request, CartItem $cartItem)
+    public function update(Request $request, CartItem $cartItem)
     {
         $cart = $this->getOrCreateCart($request);
-        $this->authorizeCartItem($cartItem, $cart);
+        abort_if($cartItem->cart_id !== $cart->id, 403);
 
-        $cartItem->update([
-            'quantity' => $request->validated('quantity'),
-            'note' => $request->validated('note') ?? $cartItem->note,
-        ]);
+        $cartItem->update($request->validate([
+            'quantity' => 'required|integer|min:1',
+            'note' => 'nullable|string',
+        ]));
 
         return back()->with('success', 'Đã cập nhật giỏ hàng');
     }
@@ -69,7 +77,7 @@ class CartController extends Controller
     public function remove(Request $request, CartItem $cartItem)
     {
         $cart = $this->getOrCreateCart($request);
-        $this->authorizeCartItem($cartItem, $cart);
+        abort_if($cartItem->cart_id !== $cart->id, 403);
         $cartItem->delete();
 
         return back()->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng');
@@ -84,13 +92,16 @@ class CartController extends Controller
         return back()->with('success', 'Đã xóa toàn bộ giỏ hàng');
     }
 
-    public function applyVoucher(ApplyVoucherRequest $request)
+    public function applyVoucher(Request $request)
     {
         $cart = $this->getOrCreateCart($request);
         $subtotal = $this->calculateSubtotal($cart);
+        if (!Auth::check()) {
+            return back()->withErrors(['voucher' => 'Vui lòng đăng nhập để sử dụng mã giảm giá']);
+        }   
 
         try {
-            $coupon = $this->validateCoupon($request->validated('code'), $subtotal);
+            $coupon = $this->validateCoupon($request->validate(['code' => 'required|string'])['code'], $subtotal);
         } catch (VoucherException $e) {
             return back()->withErrors(['voucher' => $e->getMessage()]);
         }
@@ -113,7 +124,7 @@ class CartController extends Controller
         return redirect()->route('customer.cart.index')->with('success', 'Đã xóa mã giảm giá');
     }
 
-    // ─── Cart logic ────────────────────────────────────────────
+    // ─── Cart Logic ────────────────────────────────────────────
 
     private function getOrCreateCart(Request $request): Cart
     {
@@ -159,12 +170,8 @@ class CartController extends Controller
             }
         }
 
-        if ($guestCart->orders()->exists()) {
-            $guestCart->items()->delete();
-        } else {
-            $guestCart->delete();
-        }
-
+        $guestCart->items()->delete();
+        $guestCart->delete();
         Cookie::queue(Cookie::forget(self::COOKIE_NAME));
     }
 
@@ -207,7 +214,7 @@ class CartController extends Controller
             : (float) ($item->product->variants->min('price') ?? 0);
     }
 
-    // ─── Coupon logic ──────────────────────────────────────────
+    // ─── Coupon Logic ──────────────────────────────────────────
 
     private function validateCoupon(string $code, float $subtotal): Coupon
     {
@@ -228,6 +235,18 @@ class CartController extends Controller
             throw new VoucherException(
                 'Đơn hàng tối thiểu ' . number_format($coupon->min_order_value) . 'đ để áp dụng mã này'
             );
+        }
+
+        // THÊM: Kiểm tra user đã dùng coupon này chưa
+        if (Auth::check()) {
+            $alreadyUsed = \App\Models\CouponUser::where('user_id', Auth::id())
+                ->where('coupon_id', $coupon->id)
+                ->where('is_used', true)
+                ->exists();
+
+            if ($alreadyUsed) {
+                throw new VoucherException('Bạn đã sử dụng mã giảm giá này rồi');
+            }
         }
 
         return $coupon;
@@ -277,10 +296,5 @@ class CartController extends Controller
                 'subtotal' => $price * $item->quantity,
             ];
         });
-    }
-
-    private function authorizeCartItem(CartItem $cartItem, Cart $cart): void
-    {
-        abort_if($cartItem->cart_id !== $cart->id, 403);
     }
 }
