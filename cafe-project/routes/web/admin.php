@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\PostCommentController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\UserVoucherController;
 use App\Http\Controllers\Admin\ImportReceiptController;
 use App\Http\Controllers\Admin\MaterialController;
 use App\Http\Controllers\Admin\StockAdjustmentController;
@@ -30,10 +31,10 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     })->name('dashboard');
 
     //xử lý quản lý danh mục
-    Route::get('/danh-muc', [CategoryController::class, 'index'])->name('category.index');          // Trang danh sách
-    Route::post('/danh-muc', [CategoryController::class, 'store'])->name('category.store');          // Xử lý lưu mới
-    Route::put('/danh-muc/{category}', [CategoryController::class, 'update'])->name('category.update');      // Xử lý cập nhật
-    Route::delete('/danh-muc/{category}', [CategoryController::class, 'destroy'])->name('category.destroy'); // Xử lý xóa
+    Route::get('/danh-muc', [CategoryController::class, 'index'])->name('category.index');
+    Route::post('/danh-muc', [CategoryController::class, 'store'])->name('category.store');
+    Route::put('/danh-muc/{category}', [CategoryController::class, 'update'])->name('category.update');
+    Route::delete('/danh-muc/{category}', [CategoryController::class, 'destroy'])->name('category.destroy');
 
     // Quản lý sản phẩm
     Route::get('/san-pham', [ProductController::class, 'index'])->name('products.index');
@@ -44,10 +45,10 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::delete('/hinh-anh-phu/{image}', [App\Http\Controllers\Admin\ProductController::class, 'destroyImage'])->name('products.destroyImage');
 
     // Quản lý bàn ăn / bàn cà phê
-    Route::get('/ban', [TableController::class, 'index'])->name('tables.index');            // Tải danh sách & bộ lọc
-    Route::post('/ban', [TableController::class, 'store'])->name('tables.store');          // Lưu bàn mới
-    Route::put('/ban/{table}', [TableController::class, 'update'])->name('tables.update');   // Cập nhật thông tin bàn
-    Route::delete('/ban/{table}', [TableController::class, 'destroy'])->name('tables.destroy'); // Xóa bàn
+    Route::get('/ban', [TableController::class, 'index'])->name('tables.index');
+    Route::post('/ban', [TableController::class, 'store'])->name('tables.store');
+    Route::put('/ban/{table}', [TableController::class, 'update'])->name('tables.update');
+    Route::delete('/ban/{table}', [TableController::class, 'destroy'])->name('tables.destroy');
 
     // Quản lý thương hiệu
     Route::get('/thuong-hieu', [BrandController::class, 'index'])->name('brands.index');
@@ -68,9 +69,14 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::put('/nguoi-dung/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/nguoi-dung/{id}', [UserController::class, 'destroy'])->name('admin.users.destroy');
 
-    //Route mới phục vụ riêng cho Thùng rác:
+    //Route mới phục vụ riêng cho Thùng rác người dùng:
     Route::post('/nguoi-dung/{id}/restore', [UserController::class, 'restore'])->name('admin.users.restore');
     Route::delete('/nguoi-dung/{id}/force-delete', [UserController::class, 'forceDelete'])->name('admin.users.forceDelete');
+
+    // Quản lý Ví Voucher khách hàng
+    Route::get('/vi-voucher', [UserVoucherController::class, 'index'])->name('userVouchers.index');
+    Route::delete('/vi-voucher/{id}', [UserVoucherController::class, 'destroy'])->name('userVouchers.destroy');
+    Route::post('/vi-voucher', [UserVoucherController::class, 'store'])->name('userVouchers.store');
 
 
     // Quản lý đơn hàng
