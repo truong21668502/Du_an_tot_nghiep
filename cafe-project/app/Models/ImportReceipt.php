@@ -17,13 +17,18 @@ class ImportReceipt extends Model
         'user_id',
         'supplier_name',
         'total_cost',
-        'note'
+        'note',
+        'status',
+        'cancelled_at',
+        'cancelled_by',
+        'cancel_reason',
     ];
 
     // Ép kiểu dữ liệu cho các thuộc tính đặc thù
     protected $casts = [
         'user_id' => 'integer',
         'total_cost' => 'decimal:2',
+        'cancelled_at' => 'datetime',
     ];
 
     /**
@@ -42,5 +47,15 @@ class ImportReceipt extends Model
     public function details()
     {
         return $this->hasMany(ImportReceiptDetail::class, 'receipt_id');
+    }
+
+    public function cancelledBy()
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
     }
 }

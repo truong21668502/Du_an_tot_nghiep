@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\PostCommentController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ImportReceiptController;
 use App\Http\Controllers\Admin\MaterialController;
+use App\Http\Controllers\Admin\StockAdjustmentController;
 
 
 /*
@@ -106,12 +107,19 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::prefix('kho')->name('kho.')->group(function () {
         Route::get('/', [MaterialController::class, 'index'])->name('index');
 
-        Route::get('/nhap/lich-su', [ImportReceiptController::class, 'index'])->name('nhap.index');
-        Route::get('/nhap/{importReceipt}', [ImportReceiptController::class, 'show'])->name('nhap.show');
         Route::get('/nhap', [ImportReceiptController::class, 'create'])->name('nhap.create');
         Route::post('/nhap', [ImportReceiptController::class, 'store'])->name('nhap.store');
+        Route::get('/nhap/lich-su', [ImportReceiptController::class, 'index'])->name('nhap.index');
+        Route::get('/nhap/{importReceipt}/sua', [ImportReceiptController::class, 'edit'])->name('nhap.edit');
+        Route::put('/nhap/{importReceipt}', [ImportReceiptController::class, 'update'])->name('nhap.update');
+        Route::delete('/nhap/{importReceipt}', [ImportReceiptController::class, 'destroy'])->name('nhap.destroy');
+        Route::get('/nhap/{importReceipt}', [ImportReceiptController::class, 'show'])->name('nhap.show');
 
         Route::post('/nguyen-lieu/nhanh', [ImportReceiptController::class, 'quickStoreMaterial'])
             ->name('nguyen-lieu.quick-store');
+
+        Route::get('/dieu-chinh-ton', [StockAdjustmentController::class, 'index'])->name('dieu-chinh.index');
+        Route::get('/dieu-chinh-ton/tao', [StockAdjustmentController::class, 'create'])->name('dieu-chinh.create');
+        Route::post('/dieu-chinh-ton', [StockAdjustmentController::class, 'store'])->name('dieu-chinh.store');
     });
 });

@@ -57,6 +57,7 @@ async function openDetail(id) {
     loadingDetail.value = true
     detailError.value = null
     selectedReceipt.value = null
+    showCancelForm.value = false
 
     try {
         const res = await axios.get(route('admin.kho.nhap.show', id))
@@ -71,6 +72,7 @@ async function openDetail(id) {
 function closeModal() {
     showModal.value = false
     selectedReceipt.value = null
+    showCancelForm.value = false
 }
 
 function lineTotal(item) {
@@ -86,6 +88,42 @@ function userDisplayName(user) {
     if (!user) return '—'
     return user.name || user.full_name || user.username || user.email || '—'
 }
+
+// ====== HUỶ PHIẾU NHẬP ======
+const cancelling = ref(false)
+const showCancelForm = ref(false)
+const cancelReason = ref('')
+
+function openCancelForm() {
+    console.log('openCancelForm — selectedReceipt hiện tại:', selectedReceipt.value)
+    showCancelForm.value = true
+    cancelReason.value = ''
+}
+
+async function confirmCancel() {
+
+    if (!selectedReceipt.value) {
+        console.warn('selectedReceipt là null/undefined, dừng lại')
+        return
+    }
+
+    cancelling.value = true
+    try {
+        const url = route('admin.kho.nhap.destroy', selectedReceipt.value.id)
+
+        await axios.delete(url, {
+            data: { cancel_reason: cancelReason.value },
+        })
+        closeModal()
+        router.reload({ only: ['receipts'] })
+    } catch (e) {
+        alert('Có lỗi khi huỷ phiếu, vui lòng thử lại.')
+    } finally {
+        cancelling.value = false
+    }
+}
+
+const statusLabel = (status) => status === 'cancelled' ? 'Đã huỷ' : 'Đang hiệu lực'
 </script>
 
 <template>
@@ -148,6 +186,7 @@ function userDisplayName(user) {
                                 <th class="p-4">Nhà cung cấp</th>
                                 <th class="p-4">Người tạo</th>
                                 <th class="p-4 text-right">Tổng tiền</th>
+                                <th class="px-4 py-3 font-medium text-center">Trạng thái</th>
                                 <th class="p-4 text-center w-32">Hành động</th>
                             </tr>
                         </thead>
@@ -158,14 +197,21 @@ function userDisplayName(user) {
                                 </td>
                             </tr>
                             <tr v-for="r in receipts.data" :key="r.id"
-                                class="hover:bg-surface-container-low/50 transition-colors">
+                                class="hover:bg-surface-container-low/50 transition-colors"
+                                :class="r.status === 'cancelled' ? 'opacity-60' : ''">
                                 <td class="p-4 font-mono font-bold text-on-surface-variant">#{{ r.id }}</td>
                                 <td class="p-4">{{ formatDate(r.created_at) }}</td>
                                 <td class="p-4 font-bold text-primary hover:text-primary-dark">{{ r.supplier_name || '—'
-                                }}</td>
+                                    }}</td>
                                 <td class="p-4">{{ userDisplayName(r.user) }}</td>
                                 <td class="p-4 text-right font-bold text-primary font-mono text-label-large">
                                     {{ formatNum(r.total_cost) }}₫
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium"
+                                        :class="r.status === 'cancelled' ? 'bg-gray-100 text-gray-500' : 'bg-green-50 text-green-600'">
+                                        {{ statusLabel(r.status) }}
+                                    </span>
                                 </td>
                                 <td class="p-4 text-center">
                                     <button @click="openDetail(r.id)"
@@ -206,7 +252,7 @@ function userDisplayName(user) {
                             <span class="material-symbols-outlined text-primary">receipt_long</span>
                             Chi tiết phiếu nhập <span v-if="selectedReceipt" class="text-primary ml-1">#{{
                                 selectedReceipt.id
-                            }}</span>
+                                }}</span>
                         </h2>
                         <button @click="closeModal"
                             class="p-2 text-on-surface-variant hover:bg-surface-container-high hover:text-error rounded-full transition-colors flex items-center justify-center">
@@ -228,6 +274,23 @@ function userDisplayName(user) {
 
                         <div v-else-if="selectedReceipt" class="p-6 space-y-6">
 
+                            <!-- Trạng thái phiếu đã huỷ -->
+                            <div v-if="selectedReceipt.status === 'cancelled'"
+                                class="bg-surface-container-low border border-error/20 rounded-xl p-4 flex items-start gap-3">
+                                <span class="material-symbols-outlined text-error">cancel</span>
+                                <div>
+                                    <p class="text-body-medium font-bold text-on-surface">Phiếu nhập này đã bị huỷ</p>
+                                    <p class="text-body-small text-on-surface-variant mt-0.5">
+                                        Lý do: {{ selectedReceipt.cancel_reason || '—' }}
+                                    </p>
+                                    <p class="text-label-small text-on-surface-variant/70 mt-0.5">
+                                        Huỷ lúc: {{ formatDate(selectedReceipt.cancelled_at) }}
+                                        <span v-if="selectedReceipt.cancelled_by">
+                                            bởi {{ userDisplayName(selectedReceipt.cancelled_by) }}</span>
+                                    </p>
+                                </div>
+                            </div>
+
                             <div
                                 class="grid grid-cols-2 md:grid-cols-4 gap-5 bg-surface-container-low border border-outline-variant/20 rounded-xl p-5 shadow-sm">
                                 <div class="flex flex-col gap-1">
@@ -244,7 +307,7 @@ function userDisplayName(user) {
                                 <div class="flex flex-col gap-1">
                                     <p class="text-label-medium font-bold text-on-surface-variant">Người tạo</p>
                                     <p class="text-body-medium text-on-surface">{{ userDisplayName(selectedReceipt.user)
-                                    }}</p>
+                                        }}</p>
                                 </div>
                                 <div class="flex flex-col gap-1">
                                     <p class="text-label-medium font-bold text-on-surface-variant">Tổng chi phí</p>
@@ -315,10 +378,48 @@ function userDisplayName(user) {
                                     </table>
                                 </div>
                             </div>
+
+                            <!-- Form xác nhận huỷ phiếu -->
+                            <div v-if="showCancelForm"
+                                class="bg-surface-container-low border border-error/30 rounded-xl p-5 space-y-3">
+                                <p class="text-body-medium font-bold text-error flex items-center gap-2">
+                                    <span class="material-symbols-outlined">warning</span>
+                                    Xác nhận huỷ phiếu nhập #{{ selectedReceipt.id }}?
+                                </p>
+                                <p class="text-body-small text-on-surface-variant">
+                                    Toàn bộ tồn kho đã cộng từ phiếu này sẽ được hoàn lại. Hành động này không thể tự
+                                    động hoàn tác.
+                                </p>
+                                <input v-model="cancelReason" type="text" placeholder="Lý do huỷ (tuỳ chọn)"
+                                    class="w-full border border-outline-variant bg-surface rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-error/20 transition-all" />
+                                <div class="flex justify-end gap-2 pt-1">
+                                    <button @click="showCancelForm = false"
+                                        class="px-4 py-2 text-label-medium font-bold text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors">
+                                        Không, giữ lại
+                                    </button>
+                                    <button @click="confirmCancel" :disabled="cancelling"
+                                        class="px-4 py-2 bg-error text-on-error font-bold text-label-medium rounded-xl hover:bg-error/90 disabled:opacity-50 transition-colors">
+                                        {{ cancelling ? 'Đang huỷ...' : 'Xác nhận huỷ phiếu' }}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="px-6 py-4 border-t border-outline-variant/20 flex justify-end flex-shrink-0 bg-surface">
+                    <div
+                        class="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-between flex-shrink-0 bg-surface">
+                        <div v-if="selectedReceipt?.status === 'active' && !showCancelForm" class="flex gap-2">
+                            <Link :href="route('admin.kho.nhap.edit', selectedReceipt.id)"
+                                class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-primary/10 text-primary hover:bg-primary/20 font-bold rounded-full transition-colors font-sans text-label-large">
+                                <span class="material-symbols-outlined text-[18px]">edit</span> Sửa phiếu
+                            </Link>
+                            <button @click="openCancelForm"
+                                class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-error/10 text-error hover:bg-error/20 font-bold rounded-full transition-colors font-sans text-label-large">
+                                <span class="material-symbols-outlined text-[18px]">delete</span> Huỷ phiếu
+                            </button>
+                        </div>
+                        <div v-else></div>
+
                         <button @click="closeModal"
                             class="px-6 py-2.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-bold rounded-full transition-colors font-sans text-label-large">
                             Đóng cửa sổ

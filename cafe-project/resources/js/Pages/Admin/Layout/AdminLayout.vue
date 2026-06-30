@@ -71,7 +71,7 @@ const menuGroups = [
             { label: "Tồn kho", href: "/quan-tri/kho", icon: "inventory" },
             { label: "Nhập hàng", href: "/quan-tri/kho/nhap", icon: "local_shipping" },
             { label: "Lịch sử nhập hàng", href: "/quan-tri/kho/nhap/lich-su", icon: "history" },
-
+            { label: "Kiểm kê tồn kho", href: "/quan-tri/kho/dieu-chinh-ton", icon: "rule" },
         ],
     },
     {
@@ -146,7 +146,7 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                         <span class="material-symbols-outlined text-xl flex-shrink-0">{{ child.icon }}</span>
                         <span v-if="!collapsed" class="truncate">{{
                             child.label
-                        }}</span>
+                            }}</span>
                     </a>
                 </div>
             </nav>

@@ -18,14 +18,15 @@ class ImportReceiptDetail extends Model
         'material_id',
         'quantity',
         'unit_price',
+        'stock_change',
     ];
 
-    // Ép kiểu dữ liệu cho các thuộc tính số thập phân và số nguyên
     protected $casts = [
-        'receipt_id'  => 'integer',
+        'receipt_id' => 'integer',
         'material_id' => 'integer',
-        'quantity'    => 'decimal:2',
-        'unit_price'  => 'decimal:2',
+        'quantity' => 'decimal:2',
+        'unit_price' => 'decimal:2',
+        'stock_change' => 'decimal:2',
     ];
 
     /**
