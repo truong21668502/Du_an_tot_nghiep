@@ -32,7 +32,7 @@ export function useProduct(initialProduct = null) {
   const addToCart = (note = '') => {
     if (!canAddToCart.value) return
     loading.value = true
-    router.post('/cart/add', {
+    router.post(route('customer.cart.add'), {
       product_id: product.value.id,
       variant_id: selectedVariant.value.id,
       quantity: selectedQuantity.value,

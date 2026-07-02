@@ -45,7 +45,7 @@ const selectVariant = (variant) => {
 }
 
 const goToDetail = () => {
-  router.get(route('customer.product.show', props.item.slug || props.item.id), {}, {
+  router.get(route('product.show', props.item.slug || props.item.id), {}, {
     preserveScroll: true,
   })
 }

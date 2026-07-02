@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Customer\StoreAddressRequest;
+use App\Http\Requests\Customer\UpdateAddressRequest;
 use App\Http\Requests\Customer\UpdateAvatarRequest;
 use App\Http\Requests\Customer\UpdatePasswordRequest;
 use App\Http\Requests\Customer\UpdateProfileRequest;
 use App\Models\Order;
+use App\Models\UserAddress;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -53,6 +56,16 @@ class ProfileController extends Controller
         ]);
     }
 
+    public function addresses()
+    {
+        $addresses = UserAddress::where('user_id', Auth::id())->get();
+
+        return inertia('Profile/Partials/Addresses', [
+            'user' => $this->getUserData(),
+            'addresses' => $this->formatAddresses($addresses),
+        ]);
+    }
+
     public function update(UpdateProfileRequest $request)
     {
         Auth::user()->update($request->validated());
@@ -96,6 +109,49 @@ class ProfileController extends Controller
         return redirect()->route('profile.orders')->with('toast-success', 'Hủy đơn hàng thành công');
     }
 
+    public function storeAddress(StoreAddressRequest $request)
+    {
+        $user = Auth::user();
+        $data = $request->validated();
+        $data['user_id'] = $user->id;
+
+        if ($request->boolean('is_default')) {
+            UserAddress::where('user_id', $user->id)->update(['is_default' => false]);
+        }
+
+        UserAddress::create($data);
+        return redirect()->route('profile.addresses')->with('toast-success', 'Thêm địa chỉ thành công');
+    }
+
+    public function updateAddress(UpdateAddressRequest $request, UserAddress $address)
+    {
+        if ($address->user_id !== Auth::id()) abort(403);
+
+        if ($request->boolean('is_default')) {
+            UserAddress::where('user_id', Auth::id())->update(['is_default' => false]);
+        }
+
+        $address->update($request->validated());
+        return redirect()->route('profile.addresses')->with('toast-success', 'Cập nhật địa chỉ thành công');
+    }
+
+    public function deleteAddress(UserAddress $address)
+    {
+        if ($address->user_id !== Auth::id()) abort(403);
+
+        $address->delete();
+        return redirect()->route('profile.addresses')->with('toast-success', 'Xóa địa chỉ thành công');
+    }
+
+    public function setDefaultAddress(UserAddress $address)
+    {
+        if ($address->user_id !== Auth::id()) abort(403);
+
+        UserAddress::where('user_id', Auth::id())->update(['is_default' => false]);
+        $address->update(['is_default' => true]);
+        return redirect()->route('profile.addresses')->with('toast-success', 'Đã đặt làm địa chỉ mặc định');
+    }
+
     private function getUserData(): array
     {
         $user = Auth::user();
@@ -109,6 +165,19 @@ class ProfileController extends Controller
             'date_of_birth' => $user->date_of_birth,
             'avatar' => $user->avatar ?? null,
         ];
+    }
+
+    private function formatAddresses($addresses): array
+    {
+        return $addresses->map(fn($a) => [
+            'id' => $a->id,
+            'receiver_name' => $a->receiver_name,
+            'receiver_phone' => $a->receiver_phone,
+            'address_detail' => $a->address_detail,
+            'ward' => $a->ward,
+            'city' => $a->city,
+            'is_default' => $a->is_default,
+        ])->values()->toArray();
     }
 
     private function formatOrder($order): array

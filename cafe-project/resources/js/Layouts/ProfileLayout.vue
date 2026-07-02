@@ -11,6 +11,7 @@ const tabs = [
     { key: 'info', label: 'Thông tin cá nhân', icon: 'person', route: 'profile.info' },
     { key: 'password', label: 'Đổi mật khẩu', icon: 'lock', route: 'profile.password' },
     { key: 'orders', label: 'Đơn hàng của tôi', icon: 'receipt_long', route: 'profile.orders' },
+    { key: 'addresses', label: 'Địa chỉ giao hàng', icon: 'location_on', route: 'profile.addresses' },
 ]
 
 const currentUrl = computed(() => page.url)
