@@ -35,7 +35,6 @@ const menuGroups = [
         label: "Quản lý bán hàng",
         icon: "storefront",
         children: [
-            { label: "Bàn", href: "/quan-tri/ban", icon: "table_bar" },
             {
                 label: "Đơn hàng",
                 href: "/quan-tri/don-hang",
@@ -75,14 +74,14 @@ const menuGroups = [
         ],
     },
     {
-        label: "Người dùng",
+        label: "Quản lý tài khoản",
         icon: "group",
         children: [
             { label: "Người dùng", href: "/quan-tri/nguoi-dung", icon: "people" },
         ],
     },
     {
-        label: "Hệ thống",
+        label: "Kinh doanh",
         icon: "settings",
         children: [
             {
@@ -90,6 +89,18 @@ const menuGroups = [
                 href: "/quan-tri/ma-giam-gia",
                 icon: "confirmation_number",
             },
+            {
+                label: "Voucher khách hàng",
+                href: "/quan-tri/vi-voucher",
+                icon: "wallet",
+            },
+        ],
+    },
+    {
+        label: "Cấu hình quán",
+        icon: "settings",
+        children: [
+            { label: "Bàn", href: "/quan-tri/ban", icon: "table_bar" },
             { label: "Thương hiệu", href: "/quan-tri/thuong-hieu", icon: "store" },
         ],
     },

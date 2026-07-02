@@ -48,10 +48,10 @@ const getVariantStatus = (variant) => {
         <button @click="emit('update:selected-quantity', Math.min(selectedVariant.quantity, selectedQuantity + 1))" :disabled="selectedQuantity >= selectedVariant.quantity" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors disabled:opacity-40"><span class="material-symbols-outlined text-sm">add</span></button>
       </div>
     </div>
-    <div class="space-y-2">
+    <!-- <div class="space-y-2">
       <label class="block font-sans text-label-sm text-on-surface">Ghi chú</label>
       <input :value="note" @input="emit('update:note', $event.target.value)" type="text" placeholder="Ít đá, nhiều đường..." class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl font-sans text-body-md focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all" />
-    </div>
+    </div> -->
     <BaseButton variant="primary" class="w-full justify-center" :disabled="!canAddToCart || loading" @click="emit('add-to-cart')">
       <span v-if="loading" class="material-symbols-outlined animate-spin text-lg">refresh</span>
       <span v-else class="material-symbols-outlined text-lg">shopping_cart</span>
