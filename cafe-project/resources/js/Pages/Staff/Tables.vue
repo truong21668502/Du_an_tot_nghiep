@@ -11,7 +11,6 @@ const props = defineProps({
 
 const tables = ref(props.initialTables || []);
 
-// xử lý mở đóng modal
 const selectedTable = ref(null);
 const isTableModalOpen = ref(false);
 
@@ -25,29 +24,102 @@ const closeTableModal = () => {
     setTimeout(() => selectedTable.value = null, 300);
 };
 
-// hàm định dạng tiền tệ
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 };
 
-// hàm tính tổng tiền của tất cả các đơn trên một bàn
+const printBill = (table) => {
+    if (!table || !table.orders || table.orders.length === 0) {
+        toast.warning('Không có đơn hàng nào để in!');
+        return;
+    }
+
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    const total = calculateTotalAmount(table.orders);
+    const items = getGroupedOrderDetails(table.orders);
+    const now = new Date().toLocaleString('vi-VN');
+
+    let itemsHtml = items.map(item => `
+        <tr>
+            <td style="padding: 6px 0; border-bottom: 1px dashed #ccc;">
+                <div style="font-weight: bold;">${item.product?.product_name}</div>
+                <div style="font-size: 12px; color: #555;">Size: ${item.variant?.size || '---'}</div>
+            </td>
+            <td style="padding: 6px 0; text-align: center; border-bottom: 1px dashed #ccc;">${item.quantity}</td>
+            <td style="padding: 6px 0; text-align: right; border-bottom: 1px dashed #ccc;">${formatCurrency(item.unit_price * item.quantity)}</td>
+        </tr>
+    `).join('');
+
+    const html = `
+        <html>
+            <head>
+                <title>In hóa đơn - ${table.table_name}</title>
+                <style>
+                    body { font-family: 'Courier New', Courier, monospace; width: 300px; margin: 0 auto; padding: 20px 10px; color: #000; }
+                    h2 { text-align: center; margin: 0 0 5px 0; font-size: 22px; text-transform: uppercase; }
+                    p { text-align: center; margin: 0 0 10px 0; font-size: 13px; }
+                    .divider { border-top: 1px dashed #000; margin: 12px 0; }
+                    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+                    th { text-align: left; border-bottom: 1px dashed #000; padding-bottom: 6px; }
+                    th.center { text-align: center; }
+                    th.right { text-align: right; }
+                    .total-row { font-weight: bold; font-size: 18px; margin-top: 10px; display: flex; justify-content: space-between; }
+                    .footer { text-align: center; margin-top: 25px; font-size: 12px; font-style: italic; }
+                </style>
+            </head>
+            <body>
+                <h2>Nắng Coffee</h2>
+                <p>137 Nguyễn Thị Thập, Liên Chiểu, Đà Nẵng</p>
+                <div class="divider"></div>
+                <p style="text-align: left; font-size: 14px;">
+                    <strong>Bàn: ${table.table_name}</strong><br/>
+                    Thời gian: ${now}
+                </p>
+                <div class="divider"></div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Món</th>
+                            <th class="center">SL</th>
+                            <th class="right">TT</th>
+                        </tr>
+                    </thead>
+                    <tbody>${itemsHtml}</tbody>
+                </table>
+                <div class="divider"></div>
+                <div class="total-row">
+                    <span>Tổng cộng:</span>
+                    <span>${formatCurrency(total)}</span>
+                </div>
+                <div class="divider"></div>
+                <div class="footer">
+                    Cảm ơn quý khách và hẹn gặp lại!<br/>
+                    Wifi: NangCoffee / Pass: 12345678
+                </div>
+            </body>
+        </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
+};
+
 const calculateTotalAmount = (tableOrders) => {
     if (!tableOrders || tableOrders.length === 0) return 0;
     return tableOrders.reduce((sum, order) => sum + Number(order.final_amount || 0), 0);
 };
 
-// hàm gộp các món ăn trùng tên và trùng size
 const getGroupedOrderDetails = (ordersList) => {
     if (!ordersList || ordersList.length === 0) return [];
-    
     const grouped = {};
-    
     ordersList.forEach(order => {
         if (!order.details) return;
-        
         order.details.forEach(detail => {
             const key = `${detail.product_id}_${detail.variant_id || 'default'}`;
-            
             if (!grouped[key]) {
                 grouped[key] = { ...detail, quantity: Number(detail.quantity) };
             } else {
@@ -55,11 +127,9 @@ const getGroupedOrderDetails = (ordersList) => {
             }
         });
     });
-    
     return Object.values(grouped);
 };
 
-// gom nhóm bàn theo khu vực
 const groupedTables = computed(() => {
     return tables.value.reduce((acc, table) => {
         const area = table.area || 'Khu vực khác';
@@ -69,66 +139,66 @@ const groupedTables = computed(() => {
     }, {});
 });
 
-// cập nhật trạng thái bàn (trống hoặc có khách)
+const totalTables = computed(() => tables.value.length);
+const occupiedTables = computed(() => tables.value.filter(t => t.status === 'OCCUPIED').length);
+const formatCurrencyShort = (value) => {
+    if (!value) return '0đ';
+    if (value >= 1000000) return (value / 1000000).toFixed(1) + 'tr';
+    if (value >= 1000) return (value / 1000) + 'k';
+    return value + 'đ';
+};
+
+const tableHasPendingOrder = (table) => {
+    if (!table || !table.orders) return false;
+    return table.orders.some(o => o.status === 'PENDING');
+};
+
+const emptyTables = computed(() => tables.value.filter(t => t.status === 'EMPTY').length);
+
 const updateTableStatus = (tableId, newStatus) => {
     router.patch(route('staff.tables.update-status', tableId), { status: newStatus }, {
         preserveScroll: true,
         onSuccess: () => {
-            // cập nhật lại ui nội bộ nhanh chóng
             const table = tables.value.find(t => t.id === tableId);
             if (table) {
                 table.status = newStatus;
-                // nếu dọn bàn, xóa mảng đơn hàng đi cho sạch
                 if (newStatus === 'EMPTY') table.orders = [];
             }
-
-            // hiện thông báo
             if (newStatus === 'OCCUPIED') {
                 toast.success(`Đã xếp khách vào ${table.table_name}`);
             } else {
                 toast.info(`Đã dọn dẹp ${table.table_name}`);
             }
-
             closeTableModal();
         }
     });
 };
 
-// lắng nghe sự kiện real-time
 onMounted(() => {
     if (window.Echo) {
-        // kênh cập nhật trạng thái bàn
         window.Echo.channel('cafe-tables')
             .listen('.TableUpdated', (e) => {
                 const index = tables.value.findIndex(t => t.id === e.id);
                 if (index !== -1) {
                     tables.value[index].status = e.status;
                     if (e.status === 'EMPTY') tables.value[index].orders = [];
-
-                    // cập nhật luôn modal nếu nó đang mở trúng bàn vừa có thay đổi
                     if (isTableModalOpen.value && selectedTable.value?.id === e.id) {
                         selectedTable.value.status = e.status;
                     }
                 }
             });
 
-        // kênh lắng nghe đơn hàng (giúp sơ đồ bàn cũng nhận được data hóa đơn lập tức)
         window.Echo.channel('staff-orders')
-            .listen('.order.created', (e) => { 
+            .listen('.order.created', (e) => {
                 if (e.order && e.order.table_id) {
                     const tableIndex = tables.value.findIndex(t => t.id === e.order.table_id);
                     if (tableIndex !== -1) {
                         tables.value[tableIndex].status = 'OCCUPIED';
-                        
-                        if (!tables.value[tableIndex].orders) {
-                            tables.value[tableIndex].orders = [];
-                        }
-                        
+                        if (!tables.value[tableIndex].orders) tables.value[tableIndex].orders = [];
                         const orderExists = tables.value[tableIndex].orders.some(o => o.id === e.order.id);
                         if (!orderExists) {
                             tables.value[tableIndex].orders.push(e.order);
-                            // rung chuông thông báo nhẹ
-                            toast.success(`đơn mới ở ${tables.value[tableIndex].table_name}!`, { autoClose: 3000 });
+                            toast.success(`Đơn mới ở ${tables.value[tableIndex].table_name}!`, { autoClose: 3000 });
                         }
                     }
                 }
@@ -148,134 +218,247 @@ onUnmounted(() => {
     <Head title="Sơ đồ bàn - Nắng Coffee" />
 
     <StaffLayout>
-        <div class="mb-10">
-            <p class="text-label-md text-primary tracking-wider mb-2">QUẢN LÝ</p>
-            <h2 class="text-display-lg-mobile md:text-display-lg text-on-background">Sơ đồ mặt bằng</h2>
-        </div>
+        <!-- Page Header -->
+        <div class="mb-8 flex items-end justify-between gap-4 flex-wrap">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="inline-block w-1.5 h-5 rounded-full bg-primary"></span>
+                    <p class="text-[12px] font-bold uppercase tracking-[0.15em] text-primary">Quản lý</p>
+                </div>
+                <h2 class="text-display-lg-mobile md:text-display-lg text-on-background font-serif">Sơ đồ mặt bằng</h2>
+            </div>
 
-        <div v-for="(areaTables, areaName) in groupedTables" :key="areaName" class="mb-10">
-            <h3 class="text-headline-sm text-outline border-b-2 border-outline-variant/30 pb-3 mb-6 flex items-center gap-2">
-                <span class="material-symbols-outlined text-[24px]">apartment</span>
-                {{ areaName }}
-            </h3>
-
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                <div v-for="table in areaTables" :key="table.id" @click="openTableModal(table)"
-                    class="aspect-square rounded-2xl flex flex-col items-center justify-between p-3 cursor-pointer transition-all duration-300 shadow-sm border-2 relative overflow-hidden"
-                    :class="table.status === 'EMPTY'
-                        ? 'bg-surface-container border-transparent hover:bg-surface-container-high'
-                        : 'bg-primary-container/20 border-primary shadow-primary/20 hover:bg-primary-container/30'">
-
-                    <div class="flex-1 flex flex-col items-center justify-center w-full px-1">
-                        <span class="font-serif text-headline-md font-bold mb-1 text-center break-words line-clamp-3 w-full"
-                            :class="table.status === 'EMPTY' ? 'text-on-surface-variant' : 'text-primary'">
-                            {{ table.table_name.replace('Bàn ', '') }}
-                        </span>
-
-                        <span class="text-label-sm flex items-center gap-1 mt-1"
-                            :class="table.status === 'EMPTY' ? 'text-on-surface-variant/70' : 'text-primary/80'">
-                            <span class="material-symbols-outlined text-[14px]">group</span>
-                            {{ table.capacity }}
-                        </span>
-                    </div>
-
-                    <span class="text-[11px] font-bold uppercase tracking-wider mt-2 px-3 py-1 rounded-full text-center"
-                        :class="table.status === 'EMPTY' ? 'bg-surface-dim text-on-surface-variant' : 'bg-primary text-on-primary'">
-                        {{ table.status === 'EMPTY' ? 'Trống' : 'Có Khách' }}
-                    </span>
+            <!-- Stats row -->
+            <div class="flex items-center gap-2 pb-1 flex-wrap">
+                <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low border border-outline-variant/20 text-[13px] font-medium text-on-surface-variant">
+                    <span class="material-symbols-outlined text-[17px] text-on-surface-variant/60">table_restaurant</span>
+                    <span>Tổng: <strong class="text-on-surface">{{ totalTables }}</strong></span>
+                </div>
+                <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary/8 border border-primary/20 text-[13px] font-medium text-primary">
+                    <span class="w-2 h-2 rounded-full bg-primary"></span>
+                    <span>Có khách: <strong>{{ occupiedTables }}</strong></span>
+                </div>
+                <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low border border-outline-variant/20 text-[13px] font-medium text-on-surface-variant">
+                    <span class="w-2 h-2 rounded-full bg-on-surface-variant/30"></span>
+                    <span>Trống: <strong class="text-on-surface">{{ emptyTables }}</strong></span>
                 </div>
             </div>
-            
         </div>
 
-        <Transition name="fade">
-            <div v-if="isTableModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
-                <div class="absolute inset-0 bg-inverse-surface/60 backdrop-blur-sm" @click="closeTableModal"></div>
-                <Transition name="slide-up">
-                    <div v-if="isTableModalOpen" class="relative bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
+        <!-- Floor plan canvas -->
+        <div class="relative rounded-2xl border border-outline-variant/20 overflow-hidden bg-surface-container-low" style="background: repeating-linear-gradient(0deg, transparent, transparent 31px, color-mix(in srgb, var(--color-outline-variant) 20%, transparent) 31px, color-mix(in srgb, var(--color-outline-variant) 20%, transparent) 32px), repeating-linear-gradient(90deg, transparent, transparent 31px, color-mix(in srgb, var(--color-outline-variant) 20%, transparent) 31px, color-mix(in srgb, var(--color-outline-variant) 20%, transparent) 32px), var(--color-surface-container-low);">
+            
+            <!-- Background Image Placeholder (Can be customized by user) -->
+            <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=2000" 
+                alt="Cafe Background"
+                class="absolute inset-0 w-full h-full object-cover opacity-[0.04] pointer-events-none mix-blend-multiply" />
 
-                        <div class="px-6 py-5 border-b border-outline-variant/30 flex justify-between items-center"
+            <div class="relative z-10 p-6 space-y-8">
+                <div v-for="(areaTables, areaName) in groupedTables" :key="areaName">
+
+                    <!-- Area label -->
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="flex items-center gap-2 bg-surface/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-outline-variant/20">
+                            <span class="material-symbols-outlined text-on-surface-variant/60 text-[15px]">location_on</span>
+                            <span class="text-[12px] font-bold text-on-surface-variant uppercase tracking-[0.12em]">{{ areaName }}</span>
+                        </div>
+                        <div class="flex-1 h-px bg-outline-variant/15"></div>
+                        <div class="flex items-center gap-2 text-[12px] text-on-surface-variant bg-surface/80 backdrop-blur-sm px-3 py-1 rounded-full border border-outline-variant/15">
+                            <span class="w-2 h-2 rounded-full bg-primary animate-pulse" v-if="areaTables.filter(t => t.status === 'OCCUPIED').length > 0"></span>
+                            <span>{{ areaTables.filter(t => t.status === 'OCCUPIED').length }} có khách</span>
+                            <span class="text-outline-variant/60">·</span>
+                            <span>{{ areaTables.filter(t => t.status === 'EMPTY').length }} trống</span>
+                        </div>
+                    </div>
+
+                    <!-- Table grid — restaurant floor style -->
+                    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-4">
+                        <button v-for="table in areaTables" :key="table.id"
+                            @click="openTableModal(table)"
+                            class="relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
                             :class="[
-                                selectedTable?.status === 'EMPTY' ? 'bg-surface text-on-surface' : 'bg-primary-container text-on-primary-container'
+                                table.status === 'OCCUPIED' 
+                                    ? (tableHasPendingOrder(table) 
+                                        ? 'bg-error/5 border-error/40 shadow-sm' 
+                                        : 'bg-primary/5 border-primary/30 shadow-sm') 
+                                    : 'bg-surface-container-lowest border-outline-variant/30 hover:border-primary/40'
                             ]">
-                            <div>
-                                <h3 class="font-serif text-headline-md font-bold">{{ selectedTable?.table_name }}</h3>
-                                <p class="text-label-md mt-1 opacity-80 uppercase tracking-widest">
-                                    {{ selectedTable?.area }} • {{ selectedTable?.capacity }} NGƯỜI
-                                </p>
+                            
+                            <!-- Notification Bell -->
+                            <div v-if="tableHasPendingOrder(table)"
+                                class="absolute -top-2 -right-2 w-7 h-7 rounded-full text-on-error bg-error flex items-center justify-center shadow-lg animate-bounce">
+                                <span class="material-symbols-outlined text-[16px]">notifications</span>
                             </div>
-                            <button @click="closeTableModal" class="p-2 hover:bg-black/10 rounded-full transition-colors">
-                                <span class="material-symbols-outlined">close</span>
-                            </button>
+
+                            <!-- Table Icon -->
+                            <span class="material-symbols-outlined text-[36px] mb-2 transition-colors"
+                                :class="table.status === 'OCCUPIED' ? (tableHasPendingOrder(table) ? 'text-error' : 'text-primary') : 'text-on-surface-variant/30'">
+                                table_restaurant
+                            </span>
+
+                            <!-- Table Name -->
+                            <span class="font-bold text-[14px] mb-1.5 text-center leading-tight transition-colors"
+                                :class="table.status === 'OCCUPIED' ? (tableHasPendingOrder(table) ? 'text-error' : 'text-on-surface') : 'text-on-surface-variant'">
+                                {{ table.table_name }}
+                            </span>
+
+                            <!-- Chairs -->
+                            <div class="flex flex-wrap justify-center gap-0.5 mb-2 px-2">
+                                <span v-for="i in table.capacity" :key="i" 
+                                    class="material-symbols-outlined text-[15px] transition-colors"
+                                    :class="table.status === 'OCCUPIED' ? (tableHasPendingOrder(table) ? 'text-error/40' : 'text-primary/40') : 'text-outline-variant/50'">
+                                    chair
+                                </span>
+                            </div>
+
+                            <!-- Amount if occupied -->
+                            <div v-if="table.status === 'OCCUPIED' && table.orders?.length"
+                                class="mt-auto pt-2 border-t w-full text-center transition-colors"
+                                :class="tableHasPendingOrder(table) ? 'border-error/20' : 'border-primary/20'">
+                                <span class="font-bold text-[13px]"
+                                    :class="tableHasPendingOrder(table) ? 'text-error' : 'text-primary'">
+                                    {{ formatCurrencyShort(calculateTotalAmount(table.orders)) }}
+                                </span>
+                            </div>
+                            
+                            <div v-else-if="table.status === 'OCCUPIED'"
+                                class="mt-auto pt-2 border-t w-full text-center transition-colors border-primary/20">
+                                <span class="font-medium text-[11px] text-primary/60">Chưa gọi món</span>
+                            </div>
+                            
+                            <!-- Empty state placeholder -->
+                            <div v-else class="mt-auto pt-2 border-t w-full text-center transition-colors border-outline-variant/20">
+                                <span class="font-medium text-[11px] text-on-surface-variant/50">Trống</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TABLE DETAIL MODAL ===== -->
+        <Transition name="fade">
+            <div v-if="isTableModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeTableModal"></div>
+                <Transition name="slide-up">
+                    <div v-if="isTableModalOpen"
+                        class="relative bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col border border-outline-variant/20">
+
+                        <!-- Header -->
+                        <div class="px-6 py-5 flex justify-between items-center gap-3 border-b border-outline-variant/20"
+                            :class="selectedTable?.status === 'OCCUPIED' ? 'bg-primary/8' : 'bg-surface'">
+                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0"
+                                    :class="selectedTable?.status === 'OCCUPIED'
+                                        ? 'bg-primary/15 border-primary/30'
+                                        : 'bg-surface-container-high border-outline-variant/20'">
+                                    <span class="material-symbols-outlined text-[20px]"
+                                        :class="selectedTable?.status === 'OCCUPIED' ? 'text-primary' : 'text-on-surface-variant'">
+                                        table_restaurant
+                                    </span>
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 class="font-serif text-headline-sm font-bold text-on-surface truncate">{{ selectedTable?.table_name }}</h3>
+                                    <p class="text-[12px] text-on-surface-variant mt-0.5 uppercase tracking-wider truncate">
+                                        {{ selectedTable?.area }} • {{ selectedTable?.capacity }} người
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <span class="text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider whitespace-nowrap"
+                                    :class="selectedTable?.status === 'OCCUPIED'
+                                        ? 'bg-primary text-on-primary'
+                                        : 'bg-surface-container-high text-on-surface-variant border border-outline-variant/20'">
+                                    {{ selectedTable?.status === 'OCCUPIED' ? '● Có khách' : '○ Trống' }}
+                                </span>
+                                <button @click="closeTableModal"
+                                    class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container text-on-surface-variant transition-colors flex-shrink-0">
+                                    <span class="material-symbols-outlined text-[20px]">close</span>
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="p-6 bg-surface-container-lowest max-h-[75vh] overflow-y-auto hide-scrollbar">
+                        <!-- Body -->
+                        <div class="p-5 space-y-4 max-h-[70vh] overflow-y-auto hide-scrollbar">
 
+                            <!-- Order details (if occupied) -->
                             <template v-if="selectedTable?.status === 'OCCUPIED' && selectedTable?.orders && selectedTable.orders.length > 0">
-                                <div class="mb-6 border border-outline-variant/30 p-4 rounded-xl">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <p class="text-label-sm text-on-surface font-bold tracking-wider flex items-center gap-1 uppercase">
-                                            <span class="material-symbols-outlined text-[18px]">receipt_long</span>
-                                            THÔNG TIN ĐƠN HÀNG
-                                        </p>
-                                        <span v-if="selectedTable.orders.length > 1" class="text-[10px] bg-secondary text-on-secondary px-2 py-0.5 rounded-full font-bold">
+                                <div class="rounded-xl border border-outline-variant/20 overflow-hidden">
+                                    <div class="bg-surface-container-low px-4 py-2.5 flex justify-between items-center border-b border-outline-variant/20">
+                                        <span class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                                            <span class="material-symbols-outlined text-[14px]">receipt_long</span>
+                                            Thông tin đơn hàng
+                                        </span>
+                                        <span v-if="selectedTable.orders.length > 1"
+                                            class="text-[10px] bg-secondary text-on-secondary px-2 py-0.5 rounded-full font-bold">
                                             {{ selectedTable.orders.length }} đơn
                                         </span>
                                     </div>
-                                    
-                                    <div class="flex flex-col gap-2 text-body-md">
-                                        <div class="border-b border-outline-variant/20 pb-3 space-y-3 max-h-[30vh] overflow-y-auto pr-1">
-                                            <div v-for="(detail, index) in getGroupedOrderDetails(selectedTable.orders)" :key="'grouped-' + index" class="flex justify-between items-start gap-3">
-                                                <div class="flex-1 flex flex-col">
-                                                    <span class="text-on-surface text-[15px]">{{ detail.product?.product_name }}</span>
-                                                    <span class="text-[12px] text-on-surface-variant mt-0.5">
-                                                        Size: {{ detail.variant?.size || '---' }} • Đơn giá: {{ formatCurrency(detail.unit_price) }}
-                                                    </span>
+
+                                    <div class="p-4 space-y-3">
+                                        <div class="max-h-[28vh] overflow-y-auto space-y-2 hide-scrollbar">
+                                            <div v-for="(detail, index) in getGroupedOrderDetails(selectedTable.orders)"
+                                                :key="'grouped-' + index"
+                                                class="flex justify-between items-start gap-3 py-2 border-b border-outline-variant/10 last:border-0">
+                                                <div class="flex-1">
+                                                    <p class="text-[14px] text-on-surface font-medium">{{ detail.product?.product_name }}</p>
+                                                    <p class="text-[12px] text-on-surface-variant mt-0.5">
+                                                        Size {{ detail.variant?.size || '---' }} • {{ formatCurrency(detail.unit_price) }}
+                                                    </p>
                                                 </div>
-                                                <span class="font-bold text-on-surface mt-0.5">x{{ detail.quantity }}</span>
+                                                <span class="font-bold text-on-surface text-[14px] flex-shrink-0">×{{ detail.quantity }}</span>
                                             </div>
                                         </div>
 
-                                        <div class="flex justify-between border-b border-outline-variant/20 py-2 items-center">
-                                            <span class="text-on-surface-variant">Tổng cộng:</span>
-                                            <span class="font-bold text-on-surface text-label-lg">
+                                        <div class="flex justify-between items-center pt-2 border-t border-outline-variant/20">
+                                            <span class="text-[13px] text-on-surface-variant font-medium">Tổng cộng:</span>
+                                            <span class="font-bold text-primary text-label-lg">
                                                 {{ formatCurrency(calculateTotalAmount(selectedTable.orders)) }}
                                             </span>
                                         </div>
 
-                                        <div class="flex justify-between pt-1 items-center">
-                                            <span class="text-on-surface-variant">Thanh toán:</span>
-                                            <span class="text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"
-                                                    :class="selectedTable.orders.every(o => o.payment?.payment_status === 'PAID') ? 'bg-secondary-container text-secondary' : 'bg-error-container text-error'">
-                                                {{ selectedTable.orders.every(o => o.payment?.payment_status === 'PAID') ? 'ĐÃ THANH TOÁN' : (selectedTable.orders.some(o => o.payment?.payment_status === 'PAID') ? 'ĐÃ TT MỘT PHẦN' : 'CHƯA THANH TOÁN') }}
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-[13px] text-on-surface-variant">Thanh toán:</span>
+                                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider"
+                                                :class="selectedTable.orders.every(o => o.payment?.payment_status === 'PAID')
+                                                    ? 'bg-secondary-container text-secondary'
+                                                    : 'bg-error/10 text-error border border-error/20'">
+                                                {{ selectedTable.orders.every(o => o.payment?.payment_status === 'PAID')
+                                                    ? '✓ Đã thanh toán'
+                                                    : selectedTable.orders.some(o => o.payment?.payment_status === 'PAID')
+                                                        ? '◑ Một phần'
+                                                        : '○ Chưa thanh toán' }}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
                             </template>
 
-                            <div class="mb-6 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 flex items-center justify-between">
-                                <span class="text-body-md text-on-surface-variant font-medium">Trạng thái bàn:</span>
-                                <span class="text-label-sm font-bold uppercase tracking-wider px-3 py-1.5 rounded-md"
-                                    :class="selectedTable?.status === 'EMPTY' ? 'bg-surface-dim text-on-surface-variant' : 'bg-[#5c4d40] text-white'">
-                                    {{ selectedTable?.status === 'EMPTY' ? 'BÀN TRỐNG' : 'ĐANG CÓ KHÁCH' }}
-                                </span>
+                            <!-- Empty table hint -->
+                            <div v-if="selectedTable?.status === 'EMPTY'"
+                                class="flex items-center gap-3 p-4 rounded-xl bg-surface-container-low border border-outline-variant/20">
+                                <span class="material-symbols-outlined text-on-surface-variant/40 text-[24px]">chair</span>
+                                <p class="text-[13px] text-on-surface-variant">Bàn đang trống, chưa có khách.</p>
                             </div>
 
-                            <div class="space-y-3">
+                            <!-- Action buttons -->
+                            <div class="space-y-2.5">
+                                <button v-if="selectedTable?.status === 'OCCUPIED' && selectedTable?.orders && selectedTable.orders.length > 0"
+                                    @click="printBill(selectedTable)"
+                                    class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-bold text-label-md hover:bg-surface-container-highest transition-all">
+                                    <span class="material-symbols-outlined text-[20px]">print</span> In hóa đơn
+                                </button>
                                 <button v-if="selectedTable?.status === 'EMPTY'"
                                     @click="updateTableStatus(selectedTable.id, 'OCCUPIED')"
-                                    class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:opacity-90 shadow-sm transition-all">
-                                    <span class="material-symbols-outlined text-[20px]">login</span> Khách vào bàn
+                                    class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:bg-primary/90 transition-all shadow-sm">
+                                    <span class="material-symbols-outlined text-[18px]">login</span> Khách vào bàn
                                 </button>
-
                                 <button v-if="selectedTable?.status === 'OCCUPIED'"
                                     @click="updateTableStatus(selectedTable.id, 'EMPTY')"
-                                    class="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border-2 border-outline-variant font-bold text-on-surface hover:bg-surface-container transition-colors text-label-md">
-                                    <span class="material-symbols-outlined text-[20px]">cleaning_services</span> Khách về - Dọn bàn
+                                    class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-outline-variant/40 font-bold text-on-surface hover:bg-surface-container transition-all text-label-md">
+                                    <span class="material-symbols-outlined text-[18px]">cleaning_services</span> Khách về — Dọn bàn
                                 </button>
                             </div>
-
                         </div>
                     </div>
                 </Transition>
@@ -289,28 +472,23 @@ onUnmounted(() => {
 .fade-leave-active {
     transition: opacity 0.2s ease;
 }
-
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
 }
-
 .slide-up-enter-active,
 .slide-up-leave-active {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
 .slide-up-enter-from,
 .slide-up-leave-to {
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
+    transform: translateY(24px) scale(0.96);
 }
-
 .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
-
 .hide-scrollbar::-webkit-scrollbar {
     display: none;
 }

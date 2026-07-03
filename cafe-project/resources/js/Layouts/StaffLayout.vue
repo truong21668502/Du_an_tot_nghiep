@@ -29,19 +29,27 @@ router.on('navigate', () => {
     isMobileMenuOpen.value = false
 })
 
-// ngày giờ thực
+// ngày giờ thực — tách giờ riêng để hiển thị lớn
 const currentTime = ref('')
+const currentHour = ref('')
 
 let timeInterval = null
 
 const updateTime = () => {
+    const now = new Date();
     currentTime.value = new Intl.DateTimeFormat('vi-VN', {
         timeZone: 'Asia/Ho_Chi_Minh',
         weekday: 'long',
         day: '2-digit',
         month: 'long',
         year: 'numeric'
-    }).format(new Date())
+    }).format(now)
+    currentHour.value = new Intl.DateTimeFormat('vi-VN', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).format(now)
 }
 
 onMounted(() => {
@@ -182,27 +190,46 @@ const submitNewOrder = () => {
 
         <div class="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden">
 
-            <header class="h-20 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 flex items-center justify-between px-margin-mobile md:px-margin-desktop sticky top-0 z-30">
-                <div class="md:hidden">
-                    <button @click="toggleMobileMenu" class="p-2 text-primary hover:bg-primary-container/20 rounded-full transition-colors">
-                        <span class="material-symbols-outlined">{{ isMobileMenuOpen ? 'close' : 'menu' }}</span>
-                    </button>
-                </div>
+            <!-- ===== TOPBAR ===== -->
+            <header class="h-16 bg-surface/90 backdrop-blur-md border-b border-outline-variant/20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
 
-                <div class="hidden md:block">
-                    <p class="text-body-md text-on-surface-variant font-medium">{{ currentTime }}</p>
-                </div>
-
+                <!-- Left: Mobile menu + Datetime -->
                 <div class="flex items-center gap-4">
-                    <button class="w-10 h-10 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary-container/20 flex items-center justify-center transition-all relative">
-                        <span class="material-symbols-outlined">notifications</span>
-                        <span class="absolute top-2 right-2.5 w-2 h-2 bg-error rounded-full"></span>
+                    <button class="md:hidden p-2 text-primary hover:bg-primary-container/20 rounded-xl transition-colors" @click="toggleMobileMenu">
+                        <span class="material-symbols-outlined text-[22px]">{{ isMobileMenuOpen ? 'close' : 'menu' }}</span>
                     </button>
-                    <div class="flex items-center gap-3 pl-4 border-l border-outline-variant/30">
-                        <div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold font-serif overflow-hidden">
+                    <div class="hidden md:flex items-center gap-3">
+                        <!-- Live clock -->
+                        <div class="flex items-baseline gap-1.5">
+                            <span class="text-[22px] font-bold text-on-surface tabular-nums tracking-tight leading-none">{{ currentHour }}</span>
+                        </div>
+                        <div class="w-px h-6 bg-outline-variant/40"></div>
+                        <div>
+                            <p class="text-[13px] text-on-surface-variant capitalize">{{ currentTime }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Actions + Avatar -->
+                <div class="flex items-center gap-3">
+                    <!-- Notification bell -->
+                    <button class="relative w-9 h-9 rounded-xl text-on-surface-variant hover:text-primary hover:bg-primary-container/20 flex items-center justify-center transition-all">
+                        <span class="material-symbols-outlined text-[20px]">notifications</span>
+                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-surface"></span>
+                    </button>
+
+                    <!-- Divider -->
+                    <div class="w-px h-6 bg-outline-variant/30"></div>
+
+                    <!-- User -->
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl overflow-hidden ring-2 ring-primary/20">
                             <img src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1780751292/N%E1%BA%AFng_coffee_tbphoj.jpg" alt="Avatar" class="w-full h-full object-cover">
                         </div>
-                        <span class="text-label-md text-on-surface hidden sm:block font-bold">Staff</span>
+                        <div class="hidden sm:block">
+                            <p class="text-[13px] font-bold text-on-surface leading-none">Staff</p>
+                            <p class="text-[11px] text-on-surface-variant mt-0.5">Nhân viên</p>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -239,8 +266,10 @@ const submitNewOrder = () => {
                 </div>
             </Transition>
 
-            <main class="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop hide-scrollbar">
-                <slot />
+            <main class="flex-1 overflow-y-auto hide-scrollbar" style="background: var(--md-sys-color-background);">
+                <div class="p-5 md:p-8 max-w-[1600px] mx-auto">
+                    <slot />
+                </div>
             </main>
 
         </div>
