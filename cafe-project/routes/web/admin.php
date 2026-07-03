@@ -49,6 +49,8 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::post('/ban', [TableController::class, 'store'])->name('tables.store');
     Route::put('/ban/{table}', [TableController::class, 'update'])->name('tables.update');
     Route::delete('/ban/{table}', [TableController::class, 'destroy'])->name('tables.destroy');
+    Route::get('/quan-tri/ban/print', [TableController::class, 'print'])
+    ->name('tables.print');
 
     // Quản lý thương hiệu
     Route::get('/thuong-hieu', [BrandController::class, 'index'])->name('brands.index');

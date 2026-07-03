@@ -20,15 +20,10 @@ class Order extends Model
      * Các thuộc tính có thể fill dữ liệu hàng loạt (Mass Assignable).
      */
     protected $fillable = [
-        'user_id',
-        'table_id',
-        'cart_token',
-        'coupon_id',
-        'total_amount',
-        'discount_amount',
-        'final_amount',
-        'order_type',
-        'status',
+        'user_id', 'cart_token', 'table_id', 'coupon_id',
+        'total_amount', 'discount_amount', 'final_amount',
+        'order_type', 'status', 'cancel_reason', 'note',
+        'receiver_name', 'receiver_phone', 'address_detail', 'ward', 'city',
     ];
 
     /**

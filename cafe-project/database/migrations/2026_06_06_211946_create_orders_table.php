@@ -21,17 +21,24 @@ return new class extends Migration
                 ->onDelete('restrict')
                 ->comment('Mã khách hàng (Khóa ngoại, NULL nếu là khách vãng lai)');
             
+            // Token giúp kiểm tra có đúng là của khách vãng lai đấy đặt hay không
             $table->string('cart_token', 64)
                 ->nullable()
                 ->comment('Token định danh khách vãng lai (NULL nếu khách đã đăng nhập)');
                 
-            // Khóa ngoại liên kết tới bàn ăn (Để NULL nếu khách mua mang về)
+            // Khóa ngoại liên kết tới bàn ăn
             $table->foreignId('table_id')
                 ->nullable()
                 ->constrained('tables')
                 ->onDelete('restrict')
                 ->comment('Mã bàn ăn (Khóa ngoại, NULL nếu mang đi hoặc giao hàng)');
-                
+
+            $table->string('receiver_name', 100)->comment('Tên người nhận hàng')->nullable();
+            $table->string('receiver_phone', 15)->comment('Số điện thoại người nhận')->nullable();
+            $table->string('address_detail', 255)->comment('Chi tiết địa chỉ (Số nhà, tên đường,...)')->nullable();
+            $table->string('ward', 100)->nullable()->comment('Phường / Xã')->nullable();
+            $table->string('city', 100)->nullable()->comment('Tỉnh / Thành phố')->nullable();
+            
             // Khóa ngoại liên kết tới mã giảm giá (Nếu có áp dụng)
             $table->foreignId('coupon_id')
                 ->nullable()
@@ -47,12 +54,13 @@ return new class extends Migration
 
             $table->string('note', 255)->nullable()->comment('Ghi chú của khách hàng');
                 
-            $table->enum('order_type', ['DINE_IN', 'TAKE_AWAY'])
+            $table->enum('order_type', ['DINE_IN', 'TAKE_AWAY', 'DELIVERY'])
                 ->comment('Hình thức mua hàng (DINE_IN: Tại chỗ, TAKE_AWAY: Mang đi, DELIVERY: Giao hàng)');
                 
-            $table->enum('status', ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'])
+            $table->enum('status', ['PENDING', 'PROCESSING','READY','DELIVERING' , 'COMPLETED', 'CANCELLED'])
                 ->default('PENDING')
                 ->comment('Trạng thái đơn hàng (PENDING: Chờ duyệt, PROCESSING: Đang pha chế, COMPLETED: Hoàn thành, CANCELLED: Đã hủy)');
+                
             $table->string('cancel_reason', 255)->nullable()->comment('Lý do hủy');
                 
             // $table->text('delivery_address')->nullable()->comment('Địa chỉ nhận hàng (Chỉ bắt buộc nếu order_type là DELIVERY)');

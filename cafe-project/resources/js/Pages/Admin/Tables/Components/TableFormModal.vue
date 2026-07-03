@@ -27,7 +27,6 @@ watch(() => props.isOpen, (newVal) => {
             form.area = props.tableData.area || "Tầng trệt";
             form.capacity = props.tableData.capacity;
             form.qr_code = props.tableData.qr_code || "";
-            form.qr_image = props.tableData.qr_image || "";
             form.status = props.tableData.status;
         } else {
             form.reset();
@@ -103,12 +102,6 @@ const submitForm = () => {
                     <label class="text-label-large text-on-surface-variant font-bold">Định danh QR Code</label>
                     <input v-model="form.qr_code" type="text" placeholder="qr_code" class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface text-on-surface font-mono text-body-small focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
                     <span v-if="form.errors.qr_code" class="text-body-small text-error flex items-center gap-1 mt-0.5"><span class="material-symbols-outlined text-sm">error</span> {{ form.errors.qr_code }}</span>
-                </div>
-
-                <div class="flex flex-col gap-1">
-                    <label class="text-label-large text-on-surface-variant font-bold">Đường dẫn hình ảnh QR</label>
-                    <input v-model="form.qr_image" type="text" placeholder="https://nangcoffee.vn/order/table-01" class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface text-on-surface font-mono text-body-small focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
-                    <span v-if="form.errors.qr_image" class="text-body-small text-error flex items-center gap-1 mt-0.5"><span class="material-symbols-outlined text-sm">error</span> {{ form.errors.qr_image }}</span>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-outline-variant/20">

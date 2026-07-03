@@ -11,6 +11,7 @@ use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Table;
+use App\Models\UserAddress;
 use App\Events\OrderCreated;
 use App\Events\TableStatusUpdated;
 use Illuminate\Http\Request;
@@ -19,7 +20,6 @@ use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-
 class OrderController extends Controller
 {
     private const COOKIE_NAME = 'cart_token';
@@ -75,14 +75,14 @@ class OrderController extends Controller
             $this->syncPayment($order, $data['payment_method']);
             
             // THÊM: Cập nhật trạng thái bàn thành OCCUPIED nếu có chọn bàn
-            if ($data['table_id']) {
-                $table = Table::where('id', $data['table_id'])->first();
-                if ($table) {
-                    $table->update(['status' => 'OCCUPIED']);
-                    // Bắn event real-time cho staff khi cập nhật bàn
-                    broadcast(new TableStatusUpdated($table));
-                }
-            }
+            // if ($data['table_id']) {
+            //     $table = Table::where('id', $data['table_id'])->first();
+            //     if ($table) {
+            //         $table->update(['status' => 'OCCUPIED']);
+            //         // Bắn event real-time cho staff khi cập nhật bàn
+            //         broadcast(new TableStatusUpdated($table));
+            //     }
+            // }
 
             // Luôn xóa giỏ hàng sau khi tạo đơn thành công
             $cart->items()->delete();
@@ -118,9 +118,9 @@ class OrderController extends Controller
 
     private function createOrder(Cart $cart, array $data, float $subtotal, float $discountAmount, ?int $couponId, Request $request): Order
     {
-        return Order::create([
+        $orderData = [
             'user_id' => Auth::id(),
-            'cart_token' => Auth::check() ? null : $cart->token, // SỬA: Lấy token từ giỏ hàng
+            'cart_token' => Auth::check() ? null : $cart->token,
             'table_id' => $data['table_id'] ?? session('table_id'),
             'coupon_id' => $couponId,
             'total_amount' => $subtotal,
@@ -128,8 +128,22 @@ class OrderController extends Controller
             'final_amount' => $subtotal - $discountAmount,
             'order_type' => $data['order_type'],
             'status' => 'PENDING',
-            'note' => $data['note'] ?? null, // THÊM: Lưu ghi chú
-        ]);
+            'note' => $data['note'] ?? null,
+        ];
+
+        // Nếu là DELIVERY, copy thông tin từ user_addresses sang order
+        if ($data['order_type'] === 'DELIVERY' && !empty($data['address_id'])) {
+            $address = UserAddress::find($data['address_id']);
+            if ($address) {
+                $orderData['receiver_name'] = $address->receiver_name;
+                $orderData['receiver_phone'] = $address->receiver_phone;
+                $orderData['address_detail'] = $address->address_detail;
+                $orderData['ward'] = $address->ward;
+                $orderData['city'] = $address->city;
+            }
+        }
+
+        return Order::create($orderData);
     }
 
     private function syncOrderDetails(Order $order, Cart $cart): void

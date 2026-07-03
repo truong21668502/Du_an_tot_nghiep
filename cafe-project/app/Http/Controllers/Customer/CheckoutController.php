@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\Table;
+use App\Models\UserAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
@@ -20,21 +21,20 @@ class CheckoutController extends Controller
         $cart = $this->getOrCreateCart($request);
         $cart->load('items.product.variants', 'items.variant');
 
-        // Lấy table từ session (nếu có - tức khách vào từ QR)
-        $tableId = session('table_id');
-        $tableName = session('table_name');
-        $orderType = $tableId ? 'DINE_IN' : null; // Mặc định DINE_IN nếu có bàn
+        // Lấy địa chỉ giao hàng của user (nếu đã đăng nhập)
+        $addresses = [];
+        if (Auth::check()) {
+            $addresses = UserAddress::where('user_id', Auth::id())
+                ->orderBy('is_default', 'desc')
+                ->get(['id', 'receiver_name', 'receiver_phone', 'address_detail', 'ward', 'city', 'is_default']);
+        }
 
         return inertia('Checkout/Index', [
             'cart' => ['id' => $cart->id],
             'subtotal' => $this->calculateSubtotal($cart),
             'voucher' => session('cart_voucher'),
-            'tables' => $tableId ? [] : Table::where('status', 'EMPTY')->get(['id', 'table_name', 'area', 'capacity']),
-            'sessionTable' => $tableId ? [
-                'id' => $tableId,
-                'table_name' => $tableName,
-            ] : null,
-            'sessionOrderType' => $orderType,
+            'tables' => Table::where('status', 'EMPTY')->get(['id', 'table_name', 'area', 'capacity']),
+            'addresses' => $addresses,
         ]);
     }
 

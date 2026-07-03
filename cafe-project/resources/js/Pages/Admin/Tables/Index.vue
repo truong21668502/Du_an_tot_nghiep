@@ -94,6 +94,70 @@ const formatDateTime = (dateStr) => {
     
     return `${hours}:${minutes} — ${day}/${month}/${year}`;
 };
+
+// Hàm sinh URL ảnh QR từ API dựa trên domain hiện tại và mã QR của bàn
+const getQrImageUrl = (qrCode) => {
+    if (!qrCode) return '';
+    const targetUrl = route('table.order', { qr_code: qrCode });
+    return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(targetUrl)}`;
+};
+
+// Hàm tự động đổi sang QuickChart khi API chính bị lỗi tải ảnh
+const handleQrError = (event, qrCode) => {
+    const targetUrl = route('table.order', { qr_code: qrCode });
+    const fallbackUrl = `https://quickchart.io/qr?size=300&text=${encodeURIComponent(targetUrl)}`;
+    
+    // Kiểm tra để tránh vòng lặp vô hạn nếu cả 2 API cùng sập
+    if (event.target.src !== fallbackUrl) {
+        event.target.src = fallbackUrl;
+    }
+};
+
+// Hàm xử lý tải ảnh QR về máy
+const downloadQrCode = async (qrCode, tableName) => {
+    const url = getQrImageUrl(qrCode);
+    if (!url) return;
+    
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `QR_${tableName.replace(/\s+/g, '_')}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+        console.error("Không thể tải ảnh QR:", error);
+        alert("Có lỗi xảy ra khi tải ảnh QR. Vui lòng thử lại sau!");
+    }
+};
+
+const printQr = () => {
+    window.open(route('admin.tables.print'), '_blank');
+};
+
+// Trạng thái modal phóng to ảnh QR
+const previewQr = ref({
+    isOpen: false,
+    url: '',
+    title: ''
+});
+
+const openQrPreview = (qrCode, tableName) => {
+    previewQr.value = {
+        isOpen: true,
+        url: getQrImageUrl(qrCode),
+        title: tableName
+    };
+};
+
+const closeQrPreview = () => {
+    previewQr.value.isOpen = false;
+};
 </script>
 
 <template>
@@ -121,7 +185,7 @@ const formatDateTime = (dateStr) => {
                         <input v-model="searchFilters.search" type="text" placeholder="Tìm tên bàn hoặc URL QR Code..." class="w-full bg-transparent focus:outline-none text-on-surface" />
                     </div>
 
-                    <div class="sm:col-span-3">
+                    <div class="sm:col-span-2">
                         <select v-model="searchFilters.area" class="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-on-surface focus:outline-none focus:border-primary cursor-pointer">
                             <option value="">-- Tất cả khu vực --</option>
                             <option v-for="area in distinctAreas" :key="area" :value="area">{{ area }}</option>
@@ -145,6 +209,18 @@ const formatDateTime = (dateStr) => {
                             <option value="OCCUPIED">Đang có khách</option>
                         </select>
                     </div>
+
+<div class="sm:col-span-2">
+    <button 
+        @click="printQr" 
+        type="button"
+        class="w-full h-[38px] sm:h-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-secondary text-on-secondary hover:bg-secondary/90 font-sans text-label-large rounded-xl shadow-sm hover:shadow transition-all cursor-pointer border border-transparent"
+        title="Mở trang cấu hình in mã QR cho toàn bộ bàn"
+    >
+        <span class="material-symbols-outlined text-lg">print</span>
+        <span>In toàn bộ QR</span>
+    </button>
+</div>
 
                     <div class="sm:col-span-1 text-right flex justify-end">
                         <button @click="clearFilters" v-if="searchFilters.search || searchFilters.area || searchFilters.capacity || searchFilters.status" class="w-full h-full p-2 hover:bg-error-container/20 text-outline hover:text-error rounded-xl transition-colors flex items-center justify-center cursor-pointer" title="Xóa toàn bộ bộ lọc">
@@ -204,8 +280,35 @@ const formatDateTime = (dateStr) => {
                                 <td class="p-4 hidden md:table-cell text-left font-mono text-body-small text-on-surface-variant truncate max-w-xs">
                                     {{ table.qr_code || 'Chưa gắn định danh mã QR' }}
                                 </td>
-                                <td class="p-4 hidden md:table-cell text-left font-mono text-body-small text-on-surface-variant truncate max-w-xs">
-                                    {{ table.qr_image || 'Chưa có mã ảnh QR' }}
+                                <td class="p-4">
+                                    <div v-if="table.qr_code" class="flex items-center justify-center gap-3">
+                                        <div 
+                                            @click="openQrPreview(table.qr_code, table.table_name)"
+                                            class="p-1.5 bg-white border border-outline-variant/30 rounded-xl shadow-sm hover:scale-110 active:scale-95 transition-all duration-200 cursor-zoom-in"
+                                            title="Click để phóng to ảnh QR"
+                                        >
+                                        <img 
+                                            :src="getQrImageUrl(table.qr_code)" 
+                                            :alt="'QR ' + table.table_name"
+                                            class="w-12 h-12 object-contain select-none"
+                                            loading="lazy"
+                                            @error="(e) => handleQrError(e, table.qr_code)"
+                                        />
+                                        </div>
+                                        
+                                        <button 
+                                            @click="downloadQrCode(table.qr_code, table.table_name)"
+                                            type="button"
+                                            class="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:bg-primary/10 active:bg-primary/20 px-2.5 py-1.5 rounded-xl transition-colors cursor-pointer border border-primary/20"
+                                            title="Tải ảnh QR phiên bản gốc"
+                                        >
+                                            <span class="material-symbols-outlined text-sm">download</span>
+                                            <span>Tải về</span>
+                                        </button>
+                                    </div>
+                                    <span v-else class="text-body-small text-outline font-mono italic">
+                                        Chưa có mã
+                                    </span>
                                 </td>
                                 <td class="p-4 text-center">
                                     <span :class="['px-3 py-1 rounded-full text-label-medium font-bold', getStatusBadgeClass(table.status)]">
@@ -251,6 +354,47 @@ const formatDateTime = (dateStr) => {
             </div>
 
             <TableFormModal :isOpen="isModalOpen" :editMode="isEditMode" :tableData="selectedTable" @close="isModalOpen = false" />
+
+            <TableFormModal :isOpen="isModalOpen" :editMode="isEditMode" :tableData="selectedTable" @close="isModalOpen = false" />
+
+            <Teleport to="body">
+                <div 
+                    v-if="previewQr.isOpen" 
+                    @click.self="closeQrPreview"
+                    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in"
+                >
+                    <div class="bg-surface max-w-sm w-full rounded-2xl p-5 shadow-2xl border border-outline-variant/30 font-sans relative flex flex-col items-center">
+                        <button 
+                            @click="closeQrPreview" 
+                            class="absolute top-3 right-3 p-1 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors cursor-pointer"
+                        >
+                            <span class="material-symbols-outlined text-xl">close</span>
+                        </button>
+
+                        <h3 class="text-title-medium font-bold text-on-surface mb-1 text-center w-full truncate px-6">
+                            Mã QR: {{ previewQr.title }}
+                        </h3>
+                        <p class="text-body-small text-outline mb-4">Quét mã để điều hướng đến trang đặt món</p>
+
+                        <div class="p-3 bg-white border border-outline-variant/30 rounded-2xl shadow-inner mb-4">
+                            <img 
+                                :src="previewQr.url" 
+                                alt="QR Code Preview" 
+                                class="w-64 h-64 object-contain select-none"
+                                @error="(e) => handleQrError(e, previewQr.title)" 
+                            />
+                        </div>
+
+                        <button 
+                            @click="downloadQrCode(previewQr.url, previewQr.title)"
+                            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary text-on-primary hover:bg-primary/95 font-bold rounded-xl shadow-sm transition-all cursor-pointer"
+                        >
+                            <span class="material-symbols-outlined text-sm">download</span>
+                            Tải ảnh QR gốc xuống
+                        </button>
+                    </div>
+                </div>
+            </Teleport>
         </div>
     </AdminLayout>
 </template>

@@ -8,6 +8,8 @@ use App\Http\Requests\Admin\TableStoreRequest;
 use App\Http\Requests\Admin\TableUpdateRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf; // Sử dụng DomPDF để xuất PDF
+use Illuminate\Support\Facades\Http; // Sử dụng Http để lấy ảnh QR từ API
 
 class TableController extends Controller
 {
@@ -74,5 +76,11 @@ class TableController extends Controller
         $table = Table::findOrFail($id);
         $table->delete();
         return redirect()->back()->with('toast-success', 'Xóa bàn phục vụ thành công!');
+    }
+    public function print()
+    {
+        $tables = Table::orderBy('id')->get();
+
+        return view('admin.tables.print', compact('tables'));
     }
 }

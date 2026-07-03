@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('qr_code', 255)->unique()->nullable()->comment('Link hoặc mã QR định danh phục vụ gọi món tại bàn (Duy nhất)');
 
             //Đường dẫn Ảnh URL để hiển thị ảnh qr
-            $table->string('qr_image', 255)->nullable()->comment('Link ảnh qr bàn');
+            // $table->string('qr_image', 255)->nullable()->comment('Link ảnh qr bàn');
             
             $table->enum('status', ['EMPTY', 'OCCUPIED'])
                 ->default('EMPTY')
