@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\UserVoucherController;
 use App\Http\Controllers\Admin\ImportReceiptController;
 use App\Http\Controllers\Admin\MaterialController;
 use App\Http\Controllers\Admin\StockAdjustmentController;
+use App\Http\Controllers\Admin\OrderController;
 
 
 /*
@@ -50,7 +51,7 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::put('/ban/{table}', [TableController::class, 'update'])->name('tables.update');
     Route::delete('/ban/{table}', [TableController::class, 'destroy'])->name('tables.destroy');
     Route::get('/quan-tri/ban/print', [TableController::class, 'print'])
-    ->name('tables.print');
+        ->name('tables.print');
 
     // Quản lý thương hiệu
     Route::get('/thuong-hieu', [BrandController::class, 'index'])->name('brands.index');
@@ -82,9 +83,12 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
 
 
     // Quản lý đơn hàng
-    Route::get('/orders', function () {
-        return Inertia::render('Admin/Orders/Index');
-    })->name('orders.index');
+    // Quản lý đơn hàng
+    Route::prefix('don-hang')->name('orders.')->group(function () {
+        Route::get('/', [OrderController::class, 'index'])->name('index');
+        Route::get('/{order}', [OrderController::class, 'show'])->name('show');
+        Route::patch('/{order}/status', [OrderController::class, 'updateStatus'])->name('updateStatus');
+    });
 
     // Báo cáo
     Route::get('/reports', function () {
