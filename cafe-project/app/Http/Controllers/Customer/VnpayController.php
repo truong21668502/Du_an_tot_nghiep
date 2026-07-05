@@ -76,7 +76,7 @@ class VnpayController extends Controller
                     'payment_time' => now(),
                 ]);
 
-                $order->update(['status' => 'PROCESSING']);
+                // $order->update(['status' => 'PROCESSING']);
             });
         }
 

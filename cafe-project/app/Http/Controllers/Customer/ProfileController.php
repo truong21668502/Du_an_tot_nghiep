@@ -32,7 +32,7 @@ class ProfileController extends Controller
 
     public function orders()
     {
-        $orders = Order::with(['orderDetails.product', 'orderDetails.variant', 'payment'])
+        $orders = Order::with(['details.product', 'details.variant', 'payment', 'coupon'])
             ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->paginate(10)
@@ -48,10 +48,10 @@ class ProfileController extends Controller
     {
         if ($order->user_id !== Auth::id()) abort(403);
 
-        $order->load(['orderDetails.product', 'orderDetails.variant', 'payment', 'coupon']);
+        $order->load(['details.product', 'details.variant', 'payment', 'coupon', 'table']);
 
-        return inertia('Profile/Partials/OrderDetail', [
-            'user' => $this->getUserData(),
+        // Trả về JSON cho API call
+        return response()->json([
             'order' => $this->formatOrderDetail($order),
         ]);
     }
@@ -101,11 +101,11 @@ class ProfileController extends Controller
     {
         if ($order->user_id !== Auth::id()) abort(403);
 
-        if (in_array($order->status, ['PROCESSING', 'COMPLETED', 'CANCELLED'])) {
+        if (in_array($order->status, ['PROCESSING', 'READY', 'DELIVERING', 'COMPLETED', 'CANCELLED'])) {
             return back()->with('toast-error', 'Không thể hủy đơn hàng ở trạng thái này');
         }
 
-        $order->update(['status' => 'CANCELLED']);
+        $order->update(['status' => 'CANCELLED', 'cancel_reason' => 'Khách hàng hủy đơn']);
         return redirect()->route('profile.orders')->with('toast-success', 'Hủy đơn hàng thành công');
     }
 
@@ -184,22 +184,32 @@ class ProfileController extends Controller
     {
         return [
             'id' => $order->id,
-            'total_amount' => $order->total_amount,
-            'discount_amount' => $order->discount_amount,
-            'final_amount' => $order->final_amount,
-            'status' => $order->status,
-            'payment_status' => $order->payment_status,
-            'payment_method' => $order->payment_method,
             'order_type' => $order->order_type,
+            'status' => $order->status,
+            'total_amount' => (float) $order->total_amount,
+            'discount_amount' => (float) $order->discount_amount,
+            'final_amount' => (float) $order->final_amount,
+            'note' => $order->note,
+            'cancel_reason' => $order->cancel_reason,
+            'table' => $order->table ? [
+                'id' => $order->table->id,
+                'table_name' => $order->table->table_name,
+                'area' => $order->table->area,
+            ] : null,
+            'receiver_name' => $order->receiver_name,
+            'receiver_phone' => $order->receiver_phone,
+            'address_detail' => $order->address_detail,
+            'ward' => $order->ward,
+            'city' => $order->city,
             'created_at' => $order->created_at,
-            'items' => $order->orderDetails->map(fn($d) => [
+            'items' => $order->details->map(fn($d) => [
                 'id' => $d->id,
                 'product_name' => $d->product->product_name ?? 'Sản phẩm',
                 'product_image' => $d->product->image_url ?? null,
                 'size' => $d->variant->size ?? null,
                 'quantity' => $d->quantity,
-                'unit_price' => $d->unit_price,
-                'subtotal' => $d->unit_price * $d->quantity,
+                'unit_price' => (float) $d->unit_price,
+                'subtotal' => (float) ($d->unit_price * $d->quantity),
                 'note' => $d->note,
             ])->toArray(),
             'payment' => $order->payment ? [
@@ -207,18 +217,16 @@ class ProfileController extends Controller
                 'status' => $order->payment->payment_status,
                 'transaction_id' => $order->payment->transaction_id,
             ] : null,
+            'coupon' => $order->coupon ? [
+                'code' => $order->coupon->code,
+                'discount_type' => $order->coupon->discount_type,
+                'discount_value' => (float) $order->coupon->discount_value,
+            ] : null,
         ];
     }
 
     private function formatOrderDetail($order): array
     {
-        return $this->formatOrder($order) + [
-            'delivery_address' => $order->delivery_address,
-            'coupon' => $order->coupon ? [
-                'code' => $order->coupon->code,
-                'discount_type' => $order->coupon->discount_type,
-                'discount_value' => $order->coupon->discount_value,
-            ] : null,
-        ];
+        return $this->formatOrder($order);
     }
 }

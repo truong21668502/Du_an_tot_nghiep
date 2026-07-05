@@ -59,6 +59,8 @@ return new class extends Migration
                 
             $table->enum('status', ['PENDING', 'PROCESSING','READY','DELIVERING' , 'COMPLETED', 'CANCELLED'])
                 ->default('PENDING')
+                // PENDING: Chờ duyệt, PROCESSING: Đang pha chế, READY: Sẵn sàng, DELIVERING: Đang giao hàng, COMPLETED: Hoàn thành, CANCELLED: Đã hủy
+
                 ->comment('Trạng thái đơn hàng (PENDING: Chờ duyệt, PROCESSING: Đang pha chế, COMPLETED: Hoàn thành, CANCELLED: Đã hủy)');
                 
             $table->string('cancel_reason', 255)->nullable()->comment('Lý do hủy');

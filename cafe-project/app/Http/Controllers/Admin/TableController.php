@@ -8,8 +8,6 @@ use App\Http\Requests\Admin\TableStoreRequest;
 use App\Http\Requests\Admin\TableUpdateRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Barryvdh\DomPDF\Facade\Pdf; // Sử dụng DomPDF để xuất PDF
-use Illuminate\Support\Facades\Http; // Sử dụng Http để lấy ảnh QR từ API
 
 class TableController extends Controller
 {

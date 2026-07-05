@@ -68,33 +68,49 @@ class ProductController extends Controller
         }
 
         $products = $productsQuery->paginate(12)->withQueryString();
+$products->getCollection()->transform(function ($product) {
+    $variants = $product->variants->map(function($v) {
+        // Kiểm tra discount hợp lệ
+        $isDiscountValid = $v->discount_price && 
+                          (!$v->sale_date_start || $v->sale_date_start <= now()) && 
+                          (!$v->sale_date_end || $v->sale_date_end >= now());
+        
+        return [
+            'id'             => $v->id,
+            'size'           => $v->size ?? null,
+            'price'          => (float) $v->price,
+            'discount_price' => $isDiscountValid ? (float) $v->discount_price : null,
+            'current_price'  => $isDiscountValid ? (float) $v->discount_price : (float) $v->price,
+            'status'         => $v->status,
+        ];
+    });
 
-        $products->getCollection()->transform(function ($product) {
-            return [
-                'id'               => $product->id,
-                'product_name'     => $product->product_name,
-                'slug'             => $product->slug,
-                'short_description'=> $product->short_description,
-                'image_url'        => $product->image_url ?? ($product->images->first()->image_url ?? null),
-                'category'         => [
-                    'id'   => $product->category->id ?? null,
-                    'name' => $product->category->category_name ?? null,
-                    'slug' => $product->category->slug ?? null,
-                ],
-                'brand' => [
-                    'id'   => $product->brand->id ?? null,
-                    'name' => $product->brand->brand_name ?? null,
-                ],
-                'variants' => $product->variants->map(fn($v) => [
-                    'id'    => $v->id,
-                    'size'  => $v->size ?? null,
-                    'price' => $v->price ?? 0,
-                ]),
-                'min_price' => $product->variants->min('price') ?? 0,
-                'max_price' => $product->variants->max('price') ?? 0,
-                'created_at' => $product->created_at,
-            ];
-        });
+    $hasDiscount = $variants->contains(fn($v) => $v['discount_price'] !== null);
+    $cheapestVariant = $variants->sortBy('current_price')->first();
+    
+    return [
+        'id'               => $product->id,
+        'product_name'     => $product->product_name,
+        'slug'             => $product->slug,
+        'short_description'=> $product->short_description,
+        'image_url'        => $product->image_url ?? ($product->images->first()->image_url ?? null),
+        'category'         => [
+            'id'   => $product->category->id ?? null,
+            'name' => $product->category->category_name ?? null,
+            'slug' => $product->category->slug ?? null,
+        ],
+        'brand' => [
+            'id'   => $product->brand->id ?? null,
+            'name' => $product->brand->brand_name ?? null,
+        ],
+        'variants'      => $variants->values(),
+        'min_price'     => $cheapestVariant['current_price'] ?? 0,
+        'max_price'     => $variants->max('current_price') ?? 0,
+        'has_discount'  => $hasDiscount,
+        'created_at'    => $product->created_at,
+    ];
+});
+
 
         return inertia('Menu', [
             'categories' => collect([['id' => 'all', 'label' => 'Tất cả']])

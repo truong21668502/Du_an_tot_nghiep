@@ -124,6 +124,8 @@ const handleSubmitOrder = () => {
 const cartPage = () => {
   return router.get(route('customer.cart.index'));
 }
+
+
 </script>
 
 <template>

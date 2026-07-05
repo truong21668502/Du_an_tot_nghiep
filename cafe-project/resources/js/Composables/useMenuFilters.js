@@ -89,7 +89,7 @@ export function useMenuFilters(props) {
         showFilterSidebar.value = !showFilterSidebar.value;
     };
 
-        const paginatedItems = computed(() => {
+    const paginatedItems = computed(() => {
         if (!props.products?.data) return []
         return props.products.data.map((p) => ({
             id: p.id,
@@ -103,13 +103,18 @@ export function useMenuFilters(props) {
             image: p.image_url || 'https://placehold.co/400x400',
             createdAt: p.created_at,
             slug: p.slug,
+            // THÊM 2 DÒNG NÀY
+            has_discount: p.has_discount || false,
+            min_price: p.min_price ?? 0,
             variants: p.variants?.map(v => ({
-            id: v.id,
-            size: v.size || 'Mặc định',
-            price: v.price,
+                id: v.id,
+                size: v.size || 'Mặc định',
+                price: v.price,
+                discount_price: v.discount_price || null,      // THÊM
+                current_price: v.current_price || v.price,      // THÊM
             })) || [],
         }))
-        })
+    })
 
     const loading = computed(() => false);
     const totalPages = computed(() => props.products?.last_page || 1);

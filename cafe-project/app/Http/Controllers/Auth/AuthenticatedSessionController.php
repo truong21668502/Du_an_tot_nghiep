@@ -59,7 +59,7 @@ class AuthenticatedSessionController extends Controller
             'ADMIN'   => redirect()->route('admin.dashboard'),
             'STAFF'   => redirect()->route('staff.dashboard'),
             'BARISTA' => redirect()->route('barista.queue'),
-            default   => redirect()->route('home'),
+            default   => redirect()->intended(route('home')),
         };
     }
 

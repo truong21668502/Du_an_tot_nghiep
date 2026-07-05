@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
             // ==================== ADMIN ====================
             [
                 'full_name'        => 'Nguyễn Đình Tú',
-                'phone_number'     => '0336620188',
+                'phone_number'     => '0336620188', 
                 'email'            => 'admin@cafeshop.vn',
                 'password'         => Hash::make('Admin@123'),
                 'role'             => 'ADMIN',

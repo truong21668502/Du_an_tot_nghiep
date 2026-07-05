@@ -1,5 +1,7 @@
 ﻿import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
+import axios from 'axios';
+import { toast } from "vue3-toastify";
 export function useProduct(initialProduct = null) {
   const product = ref(initialProduct)
   const selectedVariant = ref(null)
@@ -30,19 +32,25 @@ export function useProduct(initialProduct = null) {
     return selectedVariant.value.quantity > 0
   })
   const addToCart = (note = '') => {
-    if (!canAddToCart.value) return
-    loading.value = true
-    router.post(route('customer.cart.add'), {
-      product_id: product.value.id,
-      variant_id: selectedVariant.value.id,
-      quantity: selectedQuantity.value,
-      note: note
-    }, {
-      preserveScroll: true,
-      onError: (err) => { errors.value = err },
-      onFinish: () => { loading.value = false }
-    })
-  }
+      if (!canAddToCart.value) return
+      loading.value = true
+      
+      axios.post(route('customer.cart.add'), {
+        product_id: product.value.id,
+        variant_id: selectedVariant.value.id,
+        quantity: selectedQuantity.value,
+        note: note
+      })
+      .then(response => {
+        loading.value = false
+        toast.success('Đã thêm sản phẩm vào giỏ hàng')
+      })
+      .catch(error => {
+        loading.value = false
+        errors.value = error.response?.data?.errors || {}
+        toast.error('Có lỗi xảy ra khi thêm vào giỏ hàng')
+      })
+    }
   const submitReview = (productId, data) => {
     loading.value = true
     router.post(`/menu/${productId}/review`, data, {

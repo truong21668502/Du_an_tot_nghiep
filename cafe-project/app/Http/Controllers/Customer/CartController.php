@@ -51,14 +51,18 @@ class CartController extends Controller
             'quantity' => 'integer|min:1',
             'note' => 'nullable|string',
         ]));
-    $cart->load([
-        'items.product.category',
-        'items.product.images',
-        'items.product.variants',
-        'items.variant',
-    ]);
+        $cart->load([
+            'items.product.category',
+            'items.product.images',
+            'items.product.variants',
+            'items.variant',
+        ]);
 
-        return back()->with('toast-success', 'Đã thêm sản phẩm vào giỏ hàng');
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã thêm sản phẩm vào giỏ hàng',
+            'cartItems' => $this->transformCartItems($cart)
+        ]);
     }
 
     public function update(Request $request, CartItem $cartItem)
@@ -71,7 +75,18 @@ class CartController extends Controller
             'note' => 'nullable|string',
         ]));
 
-        return back()->with('success', 'Đã cập nhật giỏ hàng');
+        $cart->load([
+            'items.product.category',
+            'items.product.images',
+            'items.product.variants',
+            'items.variant',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã cập nhật giỏ hàng',
+            'cartItems' => $this->transformCartItems($cart)
+        ]);
     }
 
     public function remove(Request $request, CartItem $cartItem)
@@ -80,7 +95,18 @@ class CartController extends Controller
         abort_if($cartItem->cart_id !== $cart->id, 403);
         $cartItem->delete();
 
-        return back()->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng');
+        $cart->load([
+            'items.product.category',
+            'items.product.images',
+            'items.product.variants',
+            'items.variant',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã xóa sản phẩm khỏi giỏ hàng',
+            'cartItems' => $this->transformCartItems($cart)
+        ]);
     }
 
     public function clear(Request $request)
@@ -97,34 +123,53 @@ class CartController extends Controller
         $cart = $this->getOrCreateCart($request);
         $subtotal = $this->calculateSubtotal($cart);
         if (!Auth::check()) {
-            return back()->withErrors(['voucher' => 'Vui lòng đăng nhập để sử dụng mã giảm giá']);
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập để sử dụng mã giảm giá'
+            ], 401);
         }   
 
         try {
             $coupon = $this->validateCoupon($request->validate(['code' => 'required|string'])['code'], $subtotal);
         } catch (VoucherException $e) {
-            return back()->withErrors(['voucher' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
         }
+
+        $discount = $this->calculateDiscount($coupon, $subtotal);
 
         session()->put('cart_voucher', [
             'coupon_id' => $coupon->id,
             'code' => $coupon->code,
-            'discount' => $this->calculateDiscount($coupon, $subtotal),
+            'discount' => $discount,
             'discount_type' => $coupon->discount_type,
             'discount_value' => (float) $coupon->discount_value,
         ]);
 
-        return redirect()->route('customer.cart.index')->with('success', 'Đã áp dụng mã giảm giá');
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã áp dụng mã giảm giá',
+            'appliedVoucher' => [
+                'code' => $coupon->code,
+                'discount' => $discount,
+            ],
+            'voucherDiscount' => $discount
+        ]);
     }
 
     public function removeVoucher()
     {
         session()->forget('cart_voucher');
 
-        return redirect()->route('customer.cart.index')->with('success', 'Đã xóa mã giảm giá');
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã xóa mã giảm giá',
+            'appliedVoucher' => null,
+            'voucherDiscount' => 0
+        ]);
     }
-
-    // ─── Cart Logic ────────────────────────────────────────────
 
     private function getOrCreateCart(Request $request): Cart
     {
@@ -214,8 +259,6 @@ class CartController extends Controller
             : (float) ($item->product->variants->min('price') ?? 0);
     }
 
-    // ─── Coupon Logic ──────────────────────────────────────────
-
     private function validateCoupon(string $code, float $subtotal): Coupon
     {
         $coupon = Coupon::where('code', strtoupper(trim($code)))
@@ -237,7 +280,6 @@ class CartController extends Controller
             );
         }
 
-        // THÊM: Kiểm tra user đã dùng coupon này chưa
         if (Auth::check()) {
             $alreadyUsed = \App\Models\CouponUser::where('user_id', Auth::id())
                 ->where('coupon_id', $coupon->id)
@@ -266,8 +308,6 @@ class CartController extends Controller
 
         return round(min($discount, $subtotal), 2);
     }
-
-    // ─── Helpers ───────────────────────────────────────────────
 
     private function transformCartItems(Cart $cart)
     {

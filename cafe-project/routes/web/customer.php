@@ -24,8 +24,6 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER,ADMIN'])->group(function (
         Route::get('/dia-chi', [ProfileController::class, 'addresses'])->name('addresses');
     });
 
-    
-
     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
     Route::post('/profile/update-avatar', [ProfileController::class, 'updateAvatar'])->name('profile.update-avatar');
