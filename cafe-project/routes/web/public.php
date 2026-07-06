@@ -34,20 +34,6 @@ Route::get('/thuc-don/{slug}', [ProductController::class, 'show'])->name('produc
 Route::get('/ban/{qr_code}', [TableOrderController::class, 'index'])->name('table.order');
 
 
-Route::prefix('gio-hang')->name('customer.cart.')->group(function () {
-    Route::get('/', [CartController::class, 'index'])->name('index');
-    Route::post('/', [CartController::class, 'add'])->name('add');
-
-    Route::delete('/', [CartController::class, 'clear'])->name('clear');
-    Route::post('/voucher', [CartController::class, 'applyVoucher'])->name('voucher.apply');
-    Route::delete('/voucher', [CartController::class, 'removeVoucher'])->name('voucher.remove');
-
-        Route::patch('/{cartItem}', [CartController::class, 'update'])->name('update');
-    Route::delete('/{cartItem}', [CartController::class, 'remove'])->name('remove');
-});
-
-Route::get('/thanh-toan', [CheckoutController::class, 'index'])->name('customer.checkout.index');
-
 Route::post('/orders', [OrderController::class, 'store'])->name('customer.orders.store');
 Route::get('/don-hang/{order}/pending', [OrderController::class, 'pending'])->name('customer.orders.pending');
 

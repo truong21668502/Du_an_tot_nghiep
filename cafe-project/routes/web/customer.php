@@ -6,7 +6,7 @@ use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\Customer\FavoriteProductController;
-//use App\Http\Controllers\Customer\CheckoutController;
+use App\Http\Controllers\Customer\CheckoutController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,25 +38,19 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER,ADMIN'])->group(function (
     Route::delete('/favorites/{product}', [FavoriteProductController::class, 'remove'])->name('favorites.remove');
     Route::get('/favorites', [FavoriteProductController::class, 'index'])->name('favorites.index');
 
-    // Giỏ hàng
-    // Route::get('/gio-hang', [CartController::class, 'index'])->name('customer.cart.index');
+    Route::prefix('gio-hang')->name('customer.cart.')->group(function () {
+        Route::get('/', [CartController::class, 'index'])->name('index');
+        Route::post('/', [CartController::class, 'add'])->name('add');
 
-    // Route::post('/cart/add', [CartController::class, 'add'])->name('customer.cart.add');
+        Route::delete('/', [CartController::class, 'clear'])->name('clear');
+        Route::post('/voucher', [CartController::class, 'applyVoucher'])->name('voucher.apply');
+        Route::delete('/voucher', [CartController::class, 'removeVoucher'])->name('voucher.remove');
 
-    // Route::delete('/cart', [CartController::class, 'clear'])->name('customer.cart.clear');
+            Route::patch('/{cartItem}', [CartController::class, 'update'])->name('update');
+        Route::delete('/{cartItem}', [CartController::class, 'remove'])->name('remove');
+    });
 
-    // Route::get('/thanh-toan', [CheckoutController::class, 'index'])->name('checkout.index');
-    // Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-    // Route::get('/thanh-toan/thanh-cong/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
-    // Route::get('/thanh-toan/payment/{order}', [CheckoutController::class, 'payment'])->name('checkout.payment');
-    // Route::post('/checkout/confirm-payment/{order}', [CheckoutController::class, 'confirmPayment'])->name('checkout.confirm-payment');
-    // Route::get('/checkout/confirming/{order}', [CheckoutController::class, 'confirming'])->name('checkout.confirming');
-
-    // Route::post('/cart/voucher', [CartController::class, 'applyVoucher'])->name('customer.cart.voucher.apply');
-    // Route::delete('/cart/voucher', [CartController::class, 'removeVoucher'])->name('customer.cart.voucher.remove');
-
-    // Route::put('/cart/{cartItem}', [CartController::class, 'update'])->name('customer.cart.update');
-    // Route::delete('/cart/{cartItem}', [CartController::class, 'remove'])->name('customer.cart.remove');
+    Route::get('/thanh-toan', [CheckoutController::class, 'index'])->name('customer.checkout.index');
 
     // Đơn hàng
     Route::get('/don-hang', function () {
