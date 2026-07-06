@@ -62,7 +62,7 @@ class OrderController extends Controller
     private function placeOrder(Cart $cart, array $data, Request $request): Order
     {
         $cart->loadMissing('items.product.variants', 'items.variant');
-
+        
         if ($cart->items->isEmpty()) {
             throw new CartException('Giỏ hàng đang trống, không thể đặt hàng');
         }
@@ -71,6 +71,7 @@ class OrderController extends Controller
             [$subtotal, $discountAmount, $couponId] = $this->calculateAmounts($cart);
 
             $order = $this->createOrder($cart, $data, $subtotal, $discountAmount, $couponId, $request);
+
             $this->syncOrderDetails($order, $cart);
             $this->syncPayment($order, $data['payment_method']);
             
@@ -87,6 +88,7 @@ class OrderController extends Controller
             // Luôn xóa giỏ hàng sau khi tạo đơn thành công
             $cart->items()->delete();
             session()->forget('cart_voucher');
+            session()->forget('table_id');
 
             // Bắn event real-time cho staff khi tạo đơn hàng mới
             $order->load('table', 'details.product', 'details.variant', 'payment');
@@ -118,10 +120,16 @@ class OrderController extends Controller
 
     private function createOrder(Cart $cart, array $data, float $subtotal, float $discountAmount, ?int $couponId, Request $request): Order
     {
+        $tableId = null;
+
+        if ($data['order_type'] === 'DINE_IN') {
+            $tableId = $data['table_id'] ?? session('table_id');
+        }
+
         $orderData = [
             'user_id' => Auth::id(),
             'cart_token' => Auth::check() ? null : $cart->token,
-            'table_id' => $data['table_id'] ?? session('table_id'),
+            'table_id' => $tableId,
             'coupon_id' => $couponId,
             'total_amount' => $subtotal,
             'discount_amount' => $discountAmount,

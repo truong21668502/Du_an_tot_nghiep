@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Table;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TableOrderController extends Controller
 {
@@ -81,39 +83,32 @@ class TableOrderController extends Controller
         $products = $productsQuery->paginate(12)->withQueryString();
 
         // Transform products
-        // Transform products - Format cho MenuItemCard
         $products->getCollection()->transform(function ($product) {
             $minPrice = $product->variants->min('price') ?? 0;
             $hasDiscount = $product->variants->contains(fn($v) => $v->discount_price);
             
             return [
                 'id'                => $product->id,
-                'name'              => $product->product_name,        // MenuItemCard dùng 'name'
+                'name'              => $product->product_name,
                 'product_name'      => $product->product_name,
                 'slug'              => $product->slug,
-                'description'       => $product->short_description,   // MenuItemCard dùng 'description'
+                'description'       => $product->short_description,
                 'short_description' => $product->short_description,
-                'image'             => $product->image_url ?? ($product->images->first()->image_url ?? null), // MenuItemCard dùng 'image'
+                'image'             => $product->image_url ?? ($product->images->first()->image_url ?? null),
                 'image_url'         => $product->image_url ?? ($product->images->first()->image_url ?? null),
-                'price'             => (float) $minPrice,             // MenuItemCard dùng 'price'
-                'category'          => $product->category->category_name ?? null, // MenuItemCard dùng 'category' string
+                'price'             => (float) $minPrice,
+                'min_price'         => (float) $minPrice,
+                'category'          => $product->category->category_name ?? null,
                 'badge'             => $hasDiscount ? 'Giảm giá' : ($product->category->category_name ?? null),
                 'badgeVariant'      => $hasDiscount ? 'error' : 'tertiary',
-                'rating'            => 4.5,
-                'createdAt'         => $product->created_at,
-                'category_obj'      => [                               // Giữ lại object nếu cần
-                    'id'   => $product->category->id ?? null,
-                    'name' => $product->category->category_name ?? null,
-                    'slug' => $product->category->slug ?? null,
-                ],
+                'has_discount'      => $hasDiscount,
                 'variants' => $product->variants->map(fn($v) => [
                     'id'             => $v->id,
-                    'size'           => $v->size ?? null,
+                    'size'           => $v->size ?? 'Mặc định',
                     'price'          => (float) $v->price,
                     'discount_price' => $v->discount_price ? (float) $v->discount_price : null,
+                    'current_price'  => $v->discount_price ? (float) $v->discount_price : (float) $v->price,
                 ]),
-                'min_price'  => (float) $minPrice,
-                'max_price'  => (float) ($product->variants->max('price') ?? 0),
                 'created_at' => $product->created_at,
             ];
         });
@@ -125,6 +120,10 @@ class TableOrderController extends Controller
                 'label' => $c->category_name,
             ]))
             ->values();
+
+        // LẤY GIỎ HÀNG
+        $cartItems = $this->getCartItems($request);
+        $voucherSession = session('cart_voucher');
 
         return inertia('TableOrder/Index', [
             'table'      => [
@@ -144,9 +143,55 @@ class TableOrderController extends Controller
                 'rating'    => $request->rating ?? null,
                 'sort_by'   => $request->sort_by ?? 'newest',
             ],
-            'cartItems'        => [],
-            'voucherDiscount'  => 0,
-            'appliedVoucher'   => null,
+            'cartItems'        => $cartItems,
+            'voucherDiscount'  => $voucherSession['discount'] ?? 0,
+            'appliedVoucher'   => $voucherSession ? [
+                'code'     => $voucherSession['code'],
+                'discount' => $voucherSession['discount'],
+            ] : null,
         ]);
+    }
+
+    private function getCartItems(Request $request): array
+    {
+        $cart = null;
+
+        if (Auth::check()) {
+            $cart = Cart::where('user_id', Auth::id())->first();
+        } else {
+            $token = $request->cookie('cart_token');
+            if ($token) {
+                $cart = Cart::whereNull('user_id')->where('token', $token)->first();
+            }
+        }
+
+        if (!$cart) return [];
+
+        $cart->load(['items.product', 'items.variant']);
+
+        return $cart->items->map(function ($item) {
+            $price = $item->variant
+                ? (float) $item->variant->price
+                : (float) ($item->product->variants->min('price') ?? 0);
+
+            return [
+                'id'         => $item->id,
+                'product_id' => $item->product_id,
+                'variant_id' => $item->variant_id,
+                'product'    => [
+                    'id'    => $item->product->id ?? null,
+                    'name'  => $item->product->product_name ?? 'Sản phẩm',
+                    'price' => $price,
+                ],
+                'variant' => $item->variant ? [
+                    'id'    => $item->variant->id,
+                    'size'  => $item->variant->size ?? null,
+                    'price' => (float) $item->variant->price,
+                ] : null,
+                'quantity'  => $item->quantity,
+                'note'      => $item->note,
+                'subtotal'  => $price * $item->quantity,
+            ];
+        })->values()->toArray();
     }
 }

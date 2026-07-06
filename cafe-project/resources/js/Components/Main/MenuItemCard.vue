@@ -101,6 +101,11 @@ const addToCart = () => {
     .then(response => {
       addingToCart.value = false
       toast.success('Đã thêm sản phẩm vào giỏ hàng')
+            router.reload({ 
+        preserveScroll: true, 
+        preserveState: true,
+        only: ['cartItems'] 
+      })
     })
     .catch(error => {
       addingToCart.value = false
