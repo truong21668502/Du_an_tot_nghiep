@@ -42,3 +42,5 @@ class ProductFavoriteController extends Controller
             'data' => $favoriteProducts,
             'message' => 'Danh sách sản phẩm yêu thích đã được tải thành công.',
         ]);
+    }
+}
