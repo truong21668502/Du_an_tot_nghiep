@@ -38,4 +38,7 @@ class ProductFavoriteController extends Controller
         // ]);
 
         return response()->json([
-            'success' =>
+            'success' => true,
+            'data' => $favoriteProducts,
+            'message' => 'Danh sách sản phẩm yêu thích đã được tải thành công.',
+        ]);
