@@ -36,7 +36,7 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER,ADMIN'])->group(function (
     Route::post('/menu/{product}/review', [ReviewController::class, 'store'])->name('product.review.store');
     Route::post('/favorites/toggle/{product}', [FavoriteProductController::class, 'toggle'])->name('favorites.toggle');
     Route::delete('/favorites/{product}', [FavoriteProductController::class, 'remove'])->name('favorites.remove');
-    Route::get('/favorites', [FavoriteProductController::class, 'index'])->name('favorites.index');
+    Route::get('/san-pham-yeu-thich', [FavoriteProductController::class, 'index'])->name('favorites.index');
 
     Route::prefix('gio-hang')->name('customer.cart.')->group(function () {
         Route::get('/', [CartController::class, 'index'])->name('index');

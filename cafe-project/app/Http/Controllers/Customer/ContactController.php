@@ -18,6 +18,9 @@ class ContactController extends Controller
 
         Mail::to(config('mail.admin_email', config('mail.from.address')))->send(new AdminContactMail($data));
 
-        return back()->with('toast-success', 'Tin nhắn của bạn đã được gửi thành công!');
+        return response()->json([
+            'success' => true,
+            'message' => 'Tin nhắn của bạn đã được gửi thành công!',
+        ]);
     }
 }

@@ -21,6 +21,8 @@ class ProductController extends Controller
         })->get(['id', 'category_name', 'slug']);
 
         $productsQuery = Product::with(['category', 'brand', 'images', 'variants'])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->where('is_active', 'Đang bán');
 
         if (!empty($filters['category'])) {
@@ -33,7 +35,7 @@ class ProductController extends Controller
             $s = $filters['search'];
             $productsQuery->where(function ($q) use ($s) {
                 $q->where('product_name', 'like', "%{$s}%")
-                ->orWhere('short_description', 'like', "%{$s}%");
+                    ->orWhere('short_description', 'like', "%{$s}%");
             });
         }
 
@@ -43,7 +45,7 @@ class ProductController extends Controller
 
             $productsQuery->whereHas('variants', function ($q) use ($min, $max) {
                 $q->where('price', '>=', $min)
-                ->where('price', '<=', $max);
+                    ->where('price', '<=', $max);
             });
         }
 
@@ -68,49 +70,59 @@ class ProductController extends Controller
         }
 
         $products = $productsQuery->paginate(12)->withQueryString();
-$products->getCollection()->transform(function ($product) {
-    $variants = $product->variants->map(function($v) {
-        // Kiểm tra discount hợp lệ
-        $isDiscountValid = $v->discount_price && 
-                          (!$v->sale_date_start || $v->sale_date_start <= now()) && 
-                          (!$v->sale_date_end || $v->sale_date_end >= now());
-        
-        return [
-            'id'             => $v->id,
-            'size'           => $v->size ?? null,
-            'price'          => (float) $v->price,
-            'discount_price' => $isDiscountValid ? (float) $v->discount_price : null,
-            'current_price'  => $isDiscountValid ? (float) $v->discount_price : (float) $v->price,
-            'status'         => $v->status,
-        ];
-    });
 
-    $hasDiscount = $variants->contains(fn($v) => $v['discount_price'] !== null);
-    $cheapestVariant = $variants->sortBy('current_price')->first();
-    
-    return [
-        'id'               => $product->id,
-        'product_name'     => $product->product_name,
-        'slug'             => $product->slug,
-        'short_description'=> $product->short_description,
-        'image_url'        => $product->image_url ?? ($product->images->first()->image_url ?? null),
-        'category'         => [
-            'id'   => $product->category->id ?? null,
-            'name' => $product->category->category_name ?? null,
-            'slug' => $product->category->slug ?? null,
-        ],
-        'brand' => [
-            'id'   => $product->brand->id ?? null,
-            'name' => $product->brand->brand_name ?? null,
-        ],
-        'variants'      => $variants->values(),
-        'min_price'     => $cheapestVariant['current_price'] ?? 0,
-        'max_price'     => $variants->max('current_price') ?? 0,
-        'has_discount'  => $hasDiscount,
-        'created_at'    => $product->created_at,
-    ];
-});
+        $favoritedProductIds = [];
+        if (Auth::check()) {
+            $favoritedProductIds = FavoriteProduct::where('user_id', Auth::id())
+                ->whereIn('product_id', $products->pluck('id'))
+                ->pluck('product_id')
+                ->toArray();
+        }
 
+        $products->getCollection()->transform(function ($product) use ($favoritedProductIds) {
+            $variants = $product->variants->map(function ($v) {
+                $isDiscountValid = $v->discount_price &&
+                    (!$v->sale_date_start || $v->sale_date_start <= now()) &&
+                    (!$v->sale_date_end || $v->sale_date_end >= now());
+
+                return [
+                    'id'             => $v->id,
+                    'size'           => $v->size ?? null,
+                    'price'          => (float) $v->price,
+                    'discount_price' => $isDiscountValid ? (float) $v->discount_price : null,
+                    'current_price'  => $isDiscountValid ? (float) $v->discount_price : (float) $v->price,
+                    'status'         => $v->status,
+                ];
+            });
+
+            $hasDiscount = $variants->contains(fn($v) => $v['discount_price'] !== null);
+            $cheapestVariant = $variants->sortBy('current_price')->first();
+
+            return [
+                'id'               => $product->id,
+                'product_name'     => $product->product_name,
+                'slug'             => $product->slug,
+                'short_description' => $product->short_description,
+                'image_url'        => $product->image_url ?? ($product->images->first()->image_url ?? null),
+                'category'         => [
+                    'id'   => $product->category->id ?? null,
+                    'name' => $product->category->category_name ?? null,
+                    'slug' => $product->category->slug ?? null,
+                ],
+                'brand' => [
+                    'id'   => $product->brand->id ?? null,
+                    'name' => $product->brand->brand_name ?? null,
+                ],
+                'variants'      => $variants->values(),
+                'min_price'     => $cheapestVariant['current_price'] ?? 0,
+                'max_price'     => $variants->max('current_price') ?? 0,
+                'has_discount'  => $hasDiscount,
+                'is_favorited'  => in_array($product->id, $favoritedProductIds),
+                'avg_rating'    => round($product->reviews_avg_rating ?? 0, 1),
+                'total_reviews' => $product->reviews_count ?? 0,
+                'created_at'    => $product->created_at,
+            ];
+        });
 
         return inertia('Menu', [
             'categories' => collect([['id' => 'all', 'label' => 'Tất cả']])
@@ -139,9 +151,11 @@ $products->getCollection()->transform(function ($product) {
             },
             'variants.recipes.material',
         ])
-        ->where('slug', $slug)
-        ->where('is_active', 'Đang bán')
-        ->firstOrFail();
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->where('slug', $slug)
+            ->where('is_active', 'Đang bán')
+            ->firstOrFail();
 
         $reviews = Review::with('user')
             ->where('product_id', $product->id)
@@ -203,11 +217,13 @@ $products->getCollection()->transform(function ($product) {
                     'status' => $variant->status,
                 ];
             }),
-            'avg_rating' => (float) $reviews->avg('rating') ?? 0,
-            'total_reviews' => $reviews->total(),
+            'avg_rating' => round($product->reviews_avg_rating ?? 0, 1),
+            'total_reviews' => $product->reviews_count ?? 0,
+            'is_favorited' => $isFavorited,
         ];
 
         $relatedProducts = Product::with(['category', 'images', 'variants'])
+            ->withAvg('reviews', 'rating')
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('is_active', 'Đang bán')
@@ -222,7 +238,7 @@ $products->getCollection()->transform(function ($product) {
                     'category' => $p->category->slug ?? 'all',
                     'badge' => $p->category->category_name ?? null,
                     'badgeVariant' => 'tertiary',
-                    'rating' => 4.5,
+                    'rating' => round($p->reviews_avg_rating ?? 0, 1),
                     'description' => $p->short_description ?? '',
                     'image' => $p->image_url ?? ($p->images->first()->image_url ?? null),
                     'createdAt' => $p->created_at,

@@ -49,7 +49,7 @@ const testimonials = [
           <div>
             <!-- Stars -->
             <div class="flex gap-1 mb-6 text-secondary">
-              <span v-for="star in item.rating" :key="star" class="material-symbols-outlined text-sm font-fill">star</span>
+              <span v-for="star in item.rating" :key="star"  class="material-symbols-outlined text-sm font-fill">star</span>
             </div>
             <!-- Feedback -->
             <p class="text-body-md text-on-surface/90 italic leading-relaxed mb-6">

@@ -1,6 +1,6 @@
 ﻿<script setup>
 import { ref, computed, watch } from 'vue'
-import { usePage, router } from '@inertiajs/vue3'
+import { usePage, router, Link } from '@inertiajs/vue3'
 import { toast } from "vue3-toastify";
 const isMobileMenuOpen = ref(false)
 const page = usePage()
@@ -65,12 +65,16 @@ router.on('navigate', () => {
           </a>
         </div>
         <div class="flex items-center gap-4">
-          <button 
-            @click="navigateTo('/gio-hang')"
+          <Link :href="route('customer.cart.index')"
             class="hidden md:flex items-center justify-center w-10 h-10 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary-container/20 transition-all duration-200"
           >
             <span class="material-symbols-outlined">shopping_cart</span>
-          </button>
+          </Link>
+          <Link :href="route('favorites.index')"
+            class="hidden md:flex items-center justify-center w-10 h-10 rounded-full text-on-surface-variant hover:text-primary hover:bg-primary-container/20 transition-all duration-200"
+          >
+            <span class="material-symbols-outlined">favorite</span>
+          </Link>
           <template v-if="user">
             <button 
               @click="navigateTo('/ho-so')"

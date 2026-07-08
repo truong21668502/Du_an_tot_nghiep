@@ -103,7 +103,7 @@ export function useMenuFilters(props) {
             image: p.image_url || 'https://placehold.co/400x400',
             createdAt: p.created_at,
             slug: p.slug,
-            // THÊM 2 DÒNG NÀY
+            isFavorited: p.is_favorited || false,
             has_discount: p.has_discount || false,
             min_price: p.min_price ?? 0,
             variants: p.variants?.map(v => ({

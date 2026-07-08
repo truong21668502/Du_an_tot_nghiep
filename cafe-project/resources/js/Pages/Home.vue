@@ -12,7 +12,7 @@ import { usePage } from '@inertiajs/vue3'
 const { initialize } = useGoogleOneTap()
 const page = usePage()
 const props = page.props
-console.log(props)
+// console.log(props)
 defineOptions({ layout: MainLayout })
 initialize()
 </script>

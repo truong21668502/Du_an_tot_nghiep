@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\FavoriteProduct;
 use App\Models\Post;
 use App\Models\Product;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
@@ -25,31 +27,44 @@ class HomeController extends Controller
         }
 
         $products = Product::with(['category', 'variants', 'images'])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->whereIn('id', $bestSellerIds)
             ->where('is_active', 'Đang bán')
             ->limit(6)
-            ->get()
-            ->map(function ($product) {
-                $minPrice = (float) ($product->variants->min('price') ?? 0);
-                return [
-                    'id' => $product->id,
-                    'name' => $product->product_name,
-                    'slug' => $product->slug,
-                    'description' => $product->short_description ?? '',
-                    'image' => $product->image_url ?? ($product->images->first()->image_url ?? 'https://placehold.co/400x400'),
-                    'price' => $minPrice,
-                    'category' => $product->category->slug ?? 'all',
-                    'badge' => $product->category->category_name ?? null,
-                    'badgeVariant' => 'tertiary',
-                    'rating' => 4.5,
-                    'createdAt' => $product->created_at,
-                    'variants' => $product->variants->map(fn($v) => [
-                        'id' => $v->id,
-                        'size' => $v->size,
-                        'price' => (float) $v->price,
-                    ]),
-                ];
-            });
+            ->get();
+
+        $favoritedProductIds = [];
+        if (Auth::check()) {
+            $favoritedProductIds = FavoriteProduct::where('user_id', Auth::id())
+                ->whereIn('product_id', $products->pluck('id'))
+                ->pluck('product_id')
+                ->toArray();
+        }
+
+        $drinks = $products->map(function ($product) use ($favoritedProductIds) {
+            $minPrice = (float) ($product->variants->min('price') ?? 0);
+            return [
+                'id' => $product->id,
+                'name' => $product->product_name,
+                'slug' => $product->slug,
+                'description' => $product->short_description ?? '',
+                'image' => $product->image_url ?? ($product->images->first()->image_url ?? 'https://placehold.co/400x400'),
+                'price' => $minPrice,
+                'category' => $product->category->slug ?? 'all',
+                'badge' => $product->category->category_name ?? null,
+                'badgeVariant' => 'tertiary',
+                'rating' => round($product->reviews_avg_rating ?? 0, 1),
+                'total_reviews' => $product->reviews_count ?? 0,
+                'isFavorited' => in_array($product->id, $favoritedProductIds),
+                'createdAt' => $product->created_at,
+                'variants' => $product->variants->map(fn($v) => [
+                    'id' => $v->id,
+                    'size' => $v->size,
+                    'price' => (float) $v->price,
+                ]),
+            ];
+        });
 
         $articles = Post::with('user')
             ->where('status', 'PUBLISHED')
@@ -69,7 +84,7 @@ class HomeController extends Controller
             });
 
         return inertia('Home', [
-            'drinks' => $products->values(),
+            'drinks' => $drinks->values(),
             'articles' => $articles,
         ]);
     }
