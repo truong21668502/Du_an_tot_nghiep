@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
+import axios from 'axios';
 import StaffLayout from '../../Layouts/StaffLayout.vue';
 import StatCards from './Partials/StatCards.vue';
 import { toast } from "vue3-toastify";
@@ -11,18 +12,37 @@ const props = defineProps({
     initialTables: Array,
 });
 
-// logic đơn hàng
+// Quản lý trạng thái đơn hàng
 const orders = ref(props.initialOrders || []);
 const selectedOrder = ref(null);
 const isOrderModalOpen = ref(false);
+const showCancelConfirm = ref(false);
+const showPaymentConfirm = ref(false);
+const vnpayQrUrl = ref(null);
 
-const openOrderDetails = (order) => {
+const openOrderDetails = async (order) => {
     selectedOrder.value = order;
     isOrderModalOpen.value = true;
+    
+    // Nếu thanh toán chuyển khoản và đang chờ thanh toán
+    if (order?.payment?.payment_method !== 'CASH' && order?.payment?.payment_status === 'PENDING') {
+        try {
+            vnpayQrUrl.value = null;
+            const res = await axios.get(route('staff.orders.vnpay-url', order.id));
+            vnpayQrUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(res.data.url)}`;
+        } catch (error) {
+            console.error("Lỗi lấy mã QR VNPay:", error);
+        }
+    } else {
+        vnpayQrUrl.value = null;
+    }
 };
 
 const closeOrderModal = () => {
     isOrderModalOpen.value = false;
+    showCancelConfirm.value = false;
+    showPaymentConfirm.value = false;
+    vnpayQrUrl.value = null;
     setTimeout(() => selectedOrder.value = null, 300);
 };
 
@@ -52,30 +72,57 @@ const completeOrder = (orderId) => {
 };
 
 const cancelOrder = (orderId) => {
-    if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) {
-        router.patch(route('staff.orders.cancel', orderId), {}, {
-            preserveScroll: true,
-            onSuccess: () => {
-                orders.value = orders.value.filter(o => o.id !== orderId);
-                closeOrderModal();
-                toast.success(`Đã hủy đơn hàng #${orderId} thành công!`);
-            }
-        });
-    }
+    router.patch(route('staff.orders.cancel', orderId), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            orders.value = orders.value.filter(o => o.id !== orderId);
+            
+            // Cập nhật lại tables state
+            tables.value.forEach(t => {
+                if (t.orders) {
+                    t.orders = t.orders.filter(o => o.id !== orderId);
+                }
+            });
+
+            closeOrderModal();
+            toast.success(`Đã hủy đơn hàng #${orderId} thành công!`);
+        }
+    });
 };
 
 const confirmPayment = (orderId) => {
-    if (confirm('Khách đã thanh toán tiền mặt xong?')) {
-        router.patch(route('staff.orders.confirm-payment', orderId), {}, {
-            preserveScroll: true
-        });
-    }
+    router.patch(route('staff.orders.confirm-payment', orderId), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            // Cập nhật local state ngay lập tức cho orders
+            const orderIndex = orders.value.findIndex(o => o.id === orderId);
+            if (orderIndex !== -1 && orders.value[orderIndex].payment) {
+                orders.value[orderIndex].payment.payment_status = 'PAID';
+            }
+            if (selectedOrder.value?.id === orderId && selectedOrder.value.payment) {
+                selectedOrder.value.payment.payment_status = 'PAID';
+            }
+            
+            // Cập nhật local state cho tables
+            tables.value.forEach(t => {
+                if (t.orders) {
+                    const tOrder = t.orders.find(o => o.id === orderId);
+                    if (tOrder && tOrder.payment) {
+                        tOrder.payment.payment_status = 'PAID';
+                    }
+                }
+            });
+
+            closeOrderModal();
+            toast.success('Đã xác nhận thanh toán!');
+        }
+    });
 }
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 };
-// hàm in hóa đơn
+// Hàm in hóa đơn
 const printBill = (table) => {
     if (!table || !table.orders || table.orders.length === 0) {
         toast.error('Không có đơn hàng nào để in!');
@@ -160,12 +207,13 @@ const calculateTotalAmount = (tableOrders) => {
     return tableOrders.reduce((sum, order) => sum + Number(order.final_amount || 0), 0);
 };
 
-// logic quản lý bàn
+// Quản lý trạng thái bàn
 const tables = ref(props.initialTables || []);
 const selectedTable = ref(null);
 const isTableModalOpen = ref(false);
+const showCleanConfirm = ref(false);
 
-// gom nhóm bàn theo khu vực
+// Gom nhóm bàn theo khu vực
 const groupedTables = computed(() => {
     return tables.value.reduce((acc, table) => {
         const area = table.area || 'Khu vực khác';
@@ -182,19 +230,17 @@ const openTableDetails = (table) => {
 
 const closeTableModal = () => {
     isTableModalOpen.value = false;
+    showCleanConfirm.value = false;
     setTimeout(() => selectedTable.value = null, 300);
 };
 
-// cập nhật trạng thái bàn
+// Cập nhật trạng thái bàn
 const updateTableStatus = (tableId, newStatus) => {
     if (newStatus === 'EMPTY') {
         const table = tables.value.find(t => t.id === tableId);
         const hasUnpaidOrders = table?.orders?.some(o => o.payment?.payment_status !== 'PAID');
         if (hasUnpaidOrders) {
             toast.error('❌ KHÔNG THỂ DỌN BÀN: Bàn này vẫn còn đơn hàng chưa thanh toán!');
-            return;
-        }
-        if (!confirm('Bạn có chắc chắn khách đã về và muốn dọn bàn này?')) {
             return;
         }
     }
@@ -217,7 +263,7 @@ const updateTableStatus = (tableId, newStatus) => {
     });
 };
 
-// hàm gộp các món ăn trùng tên và trùng size
+// Gộp các món ăn trùng tên và kích thước
 const getGroupedOrderDetails = (ordersList) => {
     if (!ordersList || ordersList.length === 0) return [];
     const grouped = {};
@@ -235,7 +281,7 @@ const getGroupedOrderDetails = (ordersList) => {
     return Object.values(grouped);
 };
 
-// Thống kê Barista Hub
+// Thống kê tổng quan
 const emptyTablesCount = computed(() => tables.value.filter(t => t.status === 'EMPTY').length);
 const occupiedTablesCount = computed(() => tables.value.filter(t => t.status === 'OCCUPIED').length);
 const pendingOrdersCount = computed(() => orders.value.filter(o => o.status === 'PENDING').length);
@@ -259,7 +305,7 @@ const tableHasPendingOrder = (table) => {
 };
 
 
-// lắng nghe sự kiện real-time
+// WebSockets lắng nghe thay đổi thời gian thực
 onMounted(() => {
     if (window.Echo) {
         window.Echo.channel('cafe-tables')
@@ -300,11 +346,32 @@ onMounted(() => {
         window.Echo.channel('staff-orders')
             .listen('.order.payment-confirmed', (e) => {
                 const index = orders.value.findIndex(o => o.id === e.id);
-                if (index !== -1) {
+                if (index !== -1 && orders.value[index].payment) {
                     orders.value[index].payment.payment_status = e.payment_status;
                     orders.value[index].status = e.status;
                     toast.success(`Đơn ${e.order_code} đã thanh toán xong!`);
                 }
+                
+                // Đồng thời cập nhật trạng thái đơn trong sơ đồ bàn
+                tables.value.forEach(t => {
+                    if (t.orders) {
+                        const tOrder = t.orders.find(o => o.id === e.id);
+                        if (tOrder && tOrder.payment) {
+                            tOrder.payment.payment_status = e.payment_status;
+                        }
+                    }
+                });
+            })
+            .listen('.order.cancelled', (e) => {
+                // Xoá khỏi danh sách orders
+                orders.value = orders.value.filter(o => o.id !== e.id);
+                // Xoá khỏi danh sách orders trong bàn
+                tables.value.forEach(t => {
+                    if (t.orders) {
+                        t.orders = t.orders.filter(o => o.id !== e.id);
+                    }
+                });
+                toast.info(`Đơn hàng #${e.id} đã bị hủy.`);
             });
     }
 });
@@ -321,7 +388,7 @@ onUnmounted(() => {
     <Head title="Bảng điều khiển - Nắng Coffee" />
 
     <StaffLayout>
-        <!-- ===== STAT CHIPS ROW ===== -->
+        <!-- ===== THỐNG KÊ TỔNG QUAN ===== -->
         <div class="flex items-center gap-3 mb-6 flex-wrap">
             <div class="stat-chip">
                 <div class="stat-chip-icon" style="background:#E8F5E9; color:#388E3C">
@@ -361,21 +428,21 @@ onUnmounted(() => {
             </div>
         </div>
 
-        <!-- ===== MAIN CONTENT: Floor Plan + Orders Panel ===== -->
+        <!-- ===== NỘI DUNG CHÍNH: Sơ đồ bàn + Đơn hàng ===== -->
         <div class="flex gap-5 h-[calc(100vh-240px)] min-h-[500px]">
 
-            <!-- ===== FLOOR PLAN ===== -->
+            <!-- ===== SƠ ĐỒ BÀN ===== -->
             <div class="flex-1 min-w-0 flex flex-col relative rounded-2xl border bg-surface-container-low border-outline-variant/30 overflow-hidden">
                 
-                <!-- Background Image Placeholder (Can be customized by user) -->
-                <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=2000" 
+                <!-- Ảnh nền quán Cafe -->
+                <img src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1783495774/background_nangcoffee_gdibni.png" 
                     alt="Cafe Background"
-                    class="absolute inset-0 w-full h-full object-cover opacity-[0.03] pointer-events-none mix-blend-multiply" />
+                    class="absolute inset-0 w-full h-full object-cover opacity-[0.15] pointer-events-none" />
 
-                <!-- Floor plan container -->
+                <!-- Khung chứa sơ đồ -->
                 <div class="floor-plan-wrap relative z-10 flex-1 overflow-y-auto hide-scrollbar">
 
-                    <!-- Table Status Legend -->
+                    <!-- Ghi chú trạng thái -->
                     <div class="flex items-center justify-between px-6 py-3 border-b bg-surface/80 backdrop-blur-md border-outline-variant/20 sticky top-0 z-20">
                         <div class="font-bold text-[13px] tracking-wider uppercase flex items-center gap-2 text-on-surface-variant">
                             <span class="material-symbols-outlined text-[18px]">info</span>
@@ -388,10 +455,10 @@ onUnmounted(() => {
                         </div>
                     </div>
 
-                    <!-- Table areas -->
+                    <!-- Các khu vực bàn -->
                     <div class="p-6 space-y-8">
                         <div v-for="(areaTables, areaName) in groupedTables" :key="areaName">
-                            <!-- Area label -->
+                            <!-- Tên khu vực -->
                             <div class="flex items-center gap-2 mb-5">
                                 <div class="area-pill text-on-surface-variant bg-surface-container-lowest/80 border border-outline-variant/20">
                                     <span class="material-symbols-outlined text-[13px]">location_on</span>
@@ -403,7 +470,7 @@ onUnmounted(() => {
                                 </span>
                             </div>
 
-                            <!-- Tables grid -->
+                            <!-- Lưới bàn -->
                             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                 <button v-for="table in areaTables" :key="table.id"
                                     @click="openTableDetails(table)"
@@ -416,25 +483,25 @@ onUnmounted(() => {
                                             : 'bg-surface-container-lowest border-outline-variant/30 hover:border-primary/40'
                                     ]">
                                     
-                                    <!-- Notification Bell -->
+                                    <!-- Chuông thông báo -->
                                     <div v-if="tableHasPendingOrder(table)"
                                         class="absolute -top-2 -right-2 w-7 h-7 rounded-full text-on-error bg-error flex items-center justify-center shadow-lg animate-bounce">
                                         <span class="material-symbols-outlined text-[16px]">notifications</span>
                                     </div>
 
-                                    <!-- Table Icon -->
+                                    <!-- Biểu tượng bàn -->
                                     <span class="material-symbols-outlined text-[36px] mb-2 transition-colors"
                                         :class="table.status === 'OCCUPIED' ? (tableHasPendingOrder(table) ? 'text-error' : 'text-primary') : 'text-on-surface-variant/30'">
                                         table_restaurant
                                     </span>
 
-                                    <!-- Table Name -->
+                                    <!-- Tên bàn -->
                                     <span class="font-bold text-[14px] mb-1.5 text-center leading-tight transition-colors"
                                         :class="table.status === 'OCCUPIED' ? (tableHasPendingOrder(table) ? 'text-error' : 'text-on-surface') : 'text-on-surface-variant'">
                                         {{ table.table_name }}
                                     </span>
 
-                                    <!-- Chairs -->
+                                    <!-- Ghế ngồi -->
                                     <div class="flex flex-wrap justify-center gap-0.5 mb-2 px-2">
                                         <span v-for="i in table.capacity" :key="i" 
                                             class="material-symbols-outlined text-[15px] transition-colors"
@@ -443,7 +510,7 @@ onUnmounted(() => {
                                         </span>
                                     </div>
 
-                                    <!-- Amount if occupied -->
+                                    <!-- Tổng tiền (nếu có khách) -->
                                     <div v-if="table.status === 'OCCUPIED' && table.orders?.length"
                                         class="mt-auto pt-2 border-t w-full text-center transition-colors"
                                         :class="tableHasPendingOrder(table) ? 'border-error/20' : 'border-primary/20'">
@@ -458,7 +525,7 @@ onUnmounted(() => {
                                         <span class="font-medium text-[11px] text-primary/60">Chưa gọi món</span>
                                     </div>
 
-                                    <!-- Empty state placeholder -->
+                                    <!-- Chữ trống (khi chưa gọi món/trống) -->
                                     <div v-else class="mt-auto pt-2 border-t w-full text-center transition-colors border-outline-variant/20">
                                         <span class="font-medium text-[11px] text-on-surface-variant/50">Trống</span>
                                     </div>
@@ -467,7 +534,7 @@ onUnmounted(() => {
                         </div>
                     </div>
 
-                    <!-- Plants / decorative corners -->
+                    <!-- Cây trang trí ở các góc -->
                     <div class="plant-tl">🌿</div>
                     <div class="plant-tr">🌿</div>
                     <div class="plant-bl">🌿</div>
@@ -475,7 +542,7 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <!-- ===== ACTIVE ORDERS PANEL ===== -->
+            <!-- ===== DANH SÁCH ĐƠN HÀNG HOẠT ĐỘNG ===== -->
             <div class="w-72 xl:w-80 flex-shrink-0 flex flex-col">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="text-[15px] font-bold text-on-surface">Đơn đang hoạt động</h3>
@@ -485,7 +552,7 @@ onUnmounted(() => {
                     </span>
                 </div>
 
-                <!-- Empty -->
+                <!-- Trạng thái trống -->
                 <div v-if="orders.length === 0"
                     class="flex-1 rounded-2xl border flex flex-col items-center justify-center p-8 text-center bg-surface-container-low border-outline-variant/30">
                     <span class="material-symbols-outlined text-[40px] mb-3" style="color:#C8A97E">coffee</span>
@@ -493,7 +560,7 @@ onUnmounted(() => {
                     <p class="text-[12px] mt-1" style="color:#BCAAA4">Các đơn mới sẽ hiện ở đây</p>
                 </div>
 
-                <!-- Orders list -->
+                <!-- Danh sách đơn hàng -->
                 <div v-else class="flex-1 overflow-y-auto hide-scrollbar space-y-3 pr-1">
                     <div v-for="order in orders" :key="order.id"
                         @click="openOrderDetails(order)"
@@ -558,7 +625,7 @@ onUnmounted(() => {
             </div>
         </div>
 
-        <!-- ===== ORDER DETAIL MODAL ===== -->
+        <!-- ===== MODAL CHI TIẾT ĐƠN HÀNG ===== -->
         <Transition name="fade">
             <div v-if="isOrderModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeOrderModal"></div>
@@ -641,6 +708,21 @@ onUnmounted(() => {
                                 </ul>
                             </div>
 
+                            <!-- Mã QR VNPay (chuyển khoản) -->
+                            <div v-if="selectedOrder?.payment?.payment_method !== 'CASH' && selectedOrder?.payment?.payment_status === 'PENDING'" 
+                                 class="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-outline-variant/30 shadow-sm">
+                                <p class="text-[13px] font-bold text-[#005BAA] mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[18px]">qr_code_scanner</span> Quét mã thanh toán VNPay
+                                </p>
+                                <div v-if="vnpayQrUrl" class="relative">
+                                    <img :src="vnpayQrUrl" alt="VNPay QR" class="w-full h-auto object-contain border p-1 shadow-sm" />
+                                </div>
+                                <div v-else class="w-40 h-40 flex items-center justify-center bg-gray-50 animate-pulse border border-outline-variant/30">
+                                    <span class="material-symbols-outlined text-gray-300 text-[32px]">qr_code</span>
+                                </div>
+                                <p class="text-[14px] text-error font-bold mt-3">Số tiền: {{ formatCurrency(selectedOrder?.final_amount) }}</p>
+                            </div>
+
                             <div class="flex justify-between items-center p-4 rounded-xl border bg-surface-container-low border-outline-variant/20">
                                 <span class="text-[14px] text-on-surface-variant font-medium">Tổng thanh toán:</span>
                                 <span class="text-[18px] font-bold text-primary">{{ formatCurrency(selectedOrder?.final_amount) }}</span>
@@ -648,36 +730,86 @@ onUnmounted(() => {
                         </div>
 
                         <!-- Footer -->
-                        <div class="px-5 py-4 border-t flex gap-3 justify-end flex-wrap bg-surface-container-low border-outline-variant/20">
-                            <button @click="closeOrderModal"
-                                class="px-5 py-2 rounded-xl text-[13px] font-bold hover:bg-surface-container text-on-surface-variant transition-colors">Đóng lại</button>
-                            <button v-if="selectedOrder?.payment?.payment_method === 'CASH' && selectedOrder?.payment?.payment_status === 'PENDING'"
-                                @click="confirmPayment(selectedOrder.id)"
-                                class="px-5 py-2 rounded-xl font-bold text-[13px] flex items-center gap-2 transition-all border bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20">
-                                <span class="material-symbols-outlined text-[18px]">payments</span> Thu tiền mặt
-                            </button>
-                            <button v-if="selectedOrder?.status === 'PENDING'"
-                                @click="cancelOrder(selectedOrder.id)"
-                                class="px-5 py-2 rounded-xl font-bold text-[13px] flex items-center gap-2 transition-all border bg-error/5 text-error border-error/20 hover:bg-error/10">
-                                <span class="material-symbols-outlined text-[18px]">cancel</span> Hủy đơn
-                            </button>
-                            <button v-if="selectedOrder?.status === 'PENDING'"
-                                @click="acceptOrder(selectedOrder.id)"
-                                class="px-6 py-2 rounded-xl font-bold text-[13px] text-on-primary flex items-center gap-2 transition-all shadow-sm hover:opacity-90 bg-primary">
-                                <span class="material-symbols-outlined text-[18px]">check_circle</span> Tiếp nhận đơn
-                            </button>
-                            <button v-else-if="selectedOrder?.status === 'PROCESSING'"
-                                @click="completeOrder(selectedOrder.id)"
-                                class="px-6 py-2 rounded-xl font-bold text-[13px] text-on-secondary flex items-center gap-2 transition-all shadow-sm hover:opacity-90 bg-secondary">
-                                <span class="material-symbols-outlined text-[18px]">task_alt</span> Hoàn thành
-                            </button>
+                        <div class="px-5 py-4 border-t space-y-3 bg-surface-container-low border-outline-variant/20">
+                            
+                            <!-- Xác nhận thanh toán -->
+                            <template v-if="selectedOrder?.payment?.payment_status === 'PENDING'">
+                                <button v-if="!showPaymentConfirm"
+                                    @click="showPaymentConfirm = true"
+                                    class="w-full px-5 py-2.5 rounded-xl font-bold text-[13px] flex items-center justify-center gap-2 transition-all border bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20">
+                                    <span class="material-symbols-outlined text-[18px]">payments</span> {{ selectedOrder?.payment?.payment_method === 'CASH' ? 'Thu tiền mặt' : 'Xác nhận đã thanh toán' }}
+                                </button>
+                                <div v-else class="rounded-xl border-2 border-secondary/30 bg-secondary/5 p-4 space-y-3">
+                                    <div class="flex items-center gap-2 text-secondary">
+                                        <span class="material-symbols-outlined text-[20px]">payments</span>
+                                        <p class="text-[13px] font-bold">{{ selectedOrder?.payment?.payment_method === 'CASH' ? 'Xác nhận thu tiền mặt?' : 'Xác nhận đã thanh toán?' }}</p>
+                                    </div>
+                                    <p class="text-[12px] text-on-surface-variant">{{ selectedOrder?.payment?.payment_method === 'CASH' ? 'Khách đã đưa' : 'Đã nhận đủ' }}: {{ formatCurrency(selectedOrder?.final_amount) }}</p>
+                                    <div class="flex gap-2">
+                                        <button @click="showPaymentConfirm = false"
+                                            class="flex-1 py-2.5 rounded-xl border border-outline-variant/40 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container transition-all">
+                                            Huỷ
+                                        </button>
+                                        <button @click="confirmPayment(selectedOrder.id)"
+                                            class="flex-1 py-2.5 rounded-xl bg-secondary text-on-secondary font-bold text-[13px] hover:bg-secondary/90 transition-all shadow-sm">
+                                            <span class="flex items-center justify-center gap-1.5">
+                                                <span class="material-symbols-outlined text-[16px]">check</span> Xác nhận
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Xác nhận huỷ đơn -->
+                            <template v-if="selectedOrder?.status === 'PENDING'">
+                                <div v-if="showCancelConfirm" class="rounded-xl border-2 border-error/30 bg-error/5 p-4 space-y-3">
+                                    <div class="flex items-center gap-2 text-error">
+                                        <span class="material-symbols-outlined text-[20px]">warning</span>
+                                        <p class="text-[13px] font-bold">Xác nhận huỷ đơn?</p>
+                                    </div>
+                                    <p class="text-[12px] text-on-surface-variant">Hành động này sẽ huỷ đơn hàng #{{ selectedOrder?.id }} và không thể hoàn tác.</p>
+                                    <div class="flex gap-2">
+                                        <button @click="showCancelConfirm = false"
+                                            class="flex-1 py-2.5 rounded-xl border border-outline-variant/40 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container transition-all">
+                                            Quay lại
+                                        </button>
+                                        <button @click="cancelOrder(selectedOrder.id)"
+                                            class="flex-1 py-2.5 rounded-xl bg-error text-on-error font-bold text-[13px] hover:bg-error/90 transition-all shadow-sm">
+                                            <span class="flex items-center justify-center gap-1.5">
+                                                <span class="material-symbols-outlined text-[16px]">check</span> Huỷ đơn
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Nút thao tác -->
+                            <div v-if="!showCancelConfirm && !showPaymentConfirm" class="flex gap-3 justify-end flex-wrap">
+                                <button @click="closeOrderModal"
+                                    class="px-5 py-2 rounded-xl text-[13px] font-bold hover:bg-surface-container text-on-surface-variant transition-colors">Đóng lại</button>
+                                <button v-if="selectedOrder?.status === 'PENDING'"
+                                    @click="showCancelConfirm = true"
+                                    class="px-5 py-2 rounded-xl font-bold text-[13px] flex items-center gap-2 transition-all border bg-error/5 text-error border-error/20 hover:bg-error/10">
+                                    <span class="material-symbols-outlined text-[18px]">cancel</span> Hủy đơn
+                                </button>
+                                <button v-if="selectedOrder?.status === 'PENDING'"
+                                    @click="acceptOrder(selectedOrder.id)"
+                                    class="px-6 py-2 rounded-xl font-bold text-[13px] text-on-primary flex items-center gap-2 transition-all shadow-sm hover:opacity-90 bg-primary">
+                                    <span class="material-symbols-outlined text-[18px]">check_circle</span> Tiếp nhận đơn
+                                </button>
+                                <button v-else-if="selectedOrder?.status === 'PROCESSING'"
+                                    @click="completeOrder(selectedOrder.id)"
+                                    class="px-6 py-2 rounded-xl font-bold text-[13px] text-on-secondary flex items-center gap-2 transition-all shadow-sm hover:opacity-90 bg-secondary">
+                                    <span class="material-symbols-outlined text-[18px]">task_alt</span> Hoàn thành
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </Transition>
             </div>
         </Transition>
 
-        <!-- ===== TABLE DETAIL MODAL ===== -->
+        <!-- ===== MODAL CHI TIẾT BÀN ===== -->
         <Transition name="fade">
             <div v-if="isTableModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeTableModal"></div>
@@ -775,14 +907,14 @@ onUnmounted(() => {
                                 </div>
                             </template>
 
-                            <!-- Empty table hint -->
+                            <!-- Trạng thái trống -->
                             <div v-if="selectedTable?.status === 'EMPTY'"
                                 class="flex items-center gap-3 p-4 rounded-xl bg-surface-container-low border border-outline-variant/20">
                                 <span class="material-symbols-outlined text-on-surface-variant/40 text-[24px]">chair</span>
                                 <p class="text-[13px] text-on-surface-variant">Bàn đang trống, chưa có khách.</p>
                             </div>
 
-                            <!-- Action buttons -->
+                            <!-- Các nút thao tác -->
                             <div class="space-y-2.5">
                                 <button v-if="selectedTable?.status === 'OCCUPIED' && selectedTable?.orders && selectedTable.orders.length > 0"
                                     @click="printBill(selectedTable)"
@@ -794,11 +926,33 @@ onUnmounted(() => {
                                     class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:bg-primary/90 transition-all shadow-sm">
                                     <span class="material-symbols-outlined text-[18px]">login</span> Khách vào bàn
                                 </button>
-                                <button v-if="selectedTable?.status === 'OCCUPIED'"
-                                    @click="updateTableStatus(selectedTable.id, 'EMPTY')"
-                                    class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-outline-variant/40 font-bold text-on-surface hover:bg-surface-container transition-all text-label-md">
-                                    <span class="material-symbols-outlined text-[18px]">cleaning_services</span> Khách về — Dọn bàn
-                                </button>
+                                <!-- Xác nhận dọn bàn: 2 bước -->
+                                <template v-if="selectedTable?.status === 'OCCUPIED'">
+                                    <button v-if="!showCleanConfirm"
+                                        @click="showCleanConfirm = true"
+                                        class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-outline-variant/40 font-bold text-on-surface hover:bg-surface-container transition-all text-label-md">
+                                        <span class="material-symbols-outlined text-[18px]">cleaning_services</span> Khách về — Dọn bàn
+                                    </button>
+                                    <div v-else class="rounded-xl border-2 border-error/30 bg-error/5 p-4 space-y-3">
+                                        <div class="flex items-center gap-2 text-error">
+                                            <span class="material-symbols-outlined text-[20px]">warning</span>
+                                            <p class="text-[13px] font-bold">Xác nhận dọn bàn?</p>
+                                        </div>
+                                        <p class="text-[12px] text-on-surface-variant">Hành động này sẽ chuyển bàn về trạng thái trống và xoá các đơn hàng liên kết.</p>
+                                        <div class="flex gap-2">
+                                            <button @click="showCleanConfirm = false"
+                                                class="flex-1 py-2.5 rounded-xl border border-outline-variant/40 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container transition-all">
+                                                Huỷ
+                                            </button>
+                                            <button @click="updateTableStatus(selectedTable.id, 'EMPTY')"
+                                                class="flex-1 py-2.5 rounded-xl bg-error text-on-error font-bold text-[13px] hover:bg-error/90 transition-all shadow-sm">
+                                                <span class="flex items-center justify-center gap-1.5">
+                                                    <span class="material-symbols-outlined text-[16px]">check</span> Xác nhận
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -810,29 +964,36 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* ===== STAT CHIPS ===== */
+/* ===== THỐNG KÊ TỔNG QUAN ===== */
 .stat-chip {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 18px;
-    border-radius: 14px;
-    background: #FAF6F0;
-    border: 1px solid #E0D0BE;
-    min-width: 140px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    gap: 16px;
+    padding: 14px 20px;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    min-width: 160px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-chip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
 }
 .stat-chip-icon {
-    width: 40px; height: 40px;
-    border-radius: 12px;
+    width: 44px; height: 44px;
+    border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
+    background-image: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
 }
 .stat-num {
-    font-size: 22px; font-weight: 800; line-height: 1;
+    font-size: 24px; font-weight: 800; line-height: 1.1;
+    color: #334155; /* Neutral dark color, can be overridden inline */
 }
 .stat-label {
-    font-size: 11px; color: #8D6E63; margin-top: 2px; white-space: nowrap;
+    font-size: 13px; color: #64748B; margin-top: 4px; font-weight: 500; white-space: nowrap;
 }
 
 /* ===== FLOOR PLAN ===== */

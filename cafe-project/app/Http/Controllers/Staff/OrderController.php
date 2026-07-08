@@ -8,6 +8,7 @@ use App\Models\Table;
 use App\Events\OrderCreated; 
 use App\Events\TableStatusUpdated;
 use App\Events\OrderPaymentConfirmed;
+use App\Events\OrderCancelled;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -116,12 +117,54 @@ class OrderController extends Controller
             // Bắn sự kiện để Frontend tự update icon thanh toán
             broadcast(new OrderPaymentConfirmed($order));
 
-            return back()->with('success', 'Đã xác nhận thu tiền mặt!');
+            return back()->with('success', 'Đã xác nhận thanh toán đơn hàng!');
 
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Lỗi thanh toán: ' . $e->getMessage());
         }
+    }
+
+    public function getVnpayUrl(Order $order, Request $request)
+    {
+        if ($order->payment && $order->payment->payment_method === 'CASH') {
+            return response()->json(['error' => 'Đơn hàng này thanh toán bằng tiền mặt'], 400);
+        }
+        $tmnCode = config('services.vnpay.tmn_code');
+        $hashSecret = config('services.vnpay.hash_secret');
+        $baseUrl = config('services.vnpay.url');
+        
+        $params = [
+            'vnp_Version' => '2.1.0',
+            'vnp_TmnCode' => $tmnCode,
+            'vnp_Amount' => (int) round($order->final_amount * 100),
+            'vnp_Command' => 'pay',
+            'vnp_CreateDate' => now()->format('YmdHis'),
+            'vnp_CurrCode' => 'VND',
+            'vnp_IpAddr' => $request->ip(),
+            'vnp_Locale' => 'vn',
+            'vnp_OrderInfo' => 'Thanh toan don hang #' . $order->id,
+            'vnp_OrderType' => 'billpayment',
+            'vnp_ReturnUrl' => route('vnpay.return'),
+            'vnp_TxnRef' => $order->id . '_' . now()->timestamp,
+        ];
+
+        ksort($params);
+
+        $hashData = "";
+        $i = 0;
+        foreach ($params as $key => $value) {
+            if ($i == 1) {
+                $hashData .= '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashData .= urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+        }
+        $vnpSecureHash = hash_hmac('sha512', $hashData, $hashSecret);
+        $vnpayUrl = $baseUrl . "?" . $hashData . '&vnp_SecureHash=' . $vnpSecureHash;
+
+        return response()->json(['url' => $vnpayUrl]);
     }
 
     public function cancel(Order $order)
@@ -144,6 +187,8 @@ class OrderController extends Controller
                 }
             }
         }
+        
+        broadcast(new OrderCancelled($order));
 
         return redirect()->back();
     }

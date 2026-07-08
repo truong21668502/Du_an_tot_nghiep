@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
+import axios from 'axios';
 import StaffLayout from '../../Layouts/StaffLayout.vue';
 
 const props = defineProps({
@@ -11,14 +12,29 @@ const orders = ref(props.initialOrders || []);
 const selectedOrder = ref(null);
 const isOrderModalOpen = ref(false);
 const filterStatus = ref('ALL');
+const vnpayQrUrl = ref(null);
 
-const openOrderDetails = (order) => {
+const openOrderDetails = async (order) => {
     selectedOrder.value = order;
     isOrderModalOpen.value = true;
+
+    // Fetch VNPAY URL if bank transfer and pending
+    if (order?.payment?.payment_method !== 'CASH' && order?.payment?.payment_status === 'PENDING') {
+        try {
+            vnpayQrUrl.value = null; // reset while loading
+            const res = await axios.get(route('staff.orders.vnpay-url', order.id));
+            vnpayQrUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(res.data.url)}`;
+        } catch (error) {
+            console.error("Lỗi lấy mã QR VNPay:", error);
+        }
+    } else {
+        vnpayQrUrl.value = null;
+    }
 };
 
 const closeOrderModal = () => {
     isOrderModalOpen.value = false;
+    vnpayQrUrl.value = null;
     setTimeout(() => selectedOrder.value = null, 300);
 };
 
@@ -58,9 +74,19 @@ const cancelOrder = (orderId) => {
 };
 
 const confirmPayment = (orderId) => {
-    if (confirm('Khách đã thanh toán tiền mặt xong?')) {
+    if (confirm(selectedOrder.value?.payment?.payment_method === 'CASH' ? 'Khách đã thanh toán tiền mặt xong?' : 'Đã nhận đủ tiền chuyển khoản?')) {
         router.patch(route('staff.orders.confirm-payment', orderId), {}, {
-            preserveScroll: true
+            preserveScroll: true,
+            onSuccess: () => {
+                const orderIndex = orders.value.findIndex(o => o.id === orderId);
+                if (orderIndex !== -1 && orders.value[orderIndex].payment) {
+                    orders.value[orderIndex].payment.payment_status = 'PAID';
+                }
+                if (selectedOrder.value?.id === orderId && selectedOrder.value.payment) {
+                    selectedOrder.value.payment.payment_status = 'PAID';
+                }
+                closeOrderModal();
+            }
         });
     }
 }
@@ -73,6 +99,16 @@ onMounted(() => {
                 if (!exists) {
                     orders.value.push(e.order);
                 }
+            })
+            .listen('.order.payment-confirmed', (e) => {
+                const index = orders.value.findIndex(o => o.id === e.id);
+                if (index !== -1 && orders.value[index].payment) {
+                    orders.value[index].payment.payment_status = e.payment_status;
+                    orders.value[index].status = e.status;
+                }
+            })
+            .listen('.order.cancelled', (e) => {
+                orders.value = orders.value.filter(o => o.id !== e.id);
             });
     }
 });
@@ -300,6 +336,21 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                 </ul>
                             </div>
 
+                            <!-- Mã QR VNPay -->
+                            <div v-if="selectedOrder?.payment?.payment_method !== 'CASH' && selectedOrder?.payment?.payment_status === 'PENDING'" 
+                                 class="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-outline-variant/30 mt-3 shadow-sm">
+                                <p class="text-[13px] font-bold text-[#005BAA] mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[18px]">qr_code_scanner</span> Quét mã thanh toán VNPay
+                                </p>
+                                <div v-if="vnpayQrUrl" class="relative">
+                                    <img :src="vnpayQrUrl" alt="VNPay QR" class="w-full h-auto object-contain border p-1 shadow-sm" />
+                                </div>
+                                <div v-else class="w-40 h-40 flex items-center justify-center bg-gray-50 animate-pulse border border-outline-variant/30">
+                                    <span class="material-symbols-outlined text-gray-300 text-[32px]">qr_code</span>
+                                </div>
+                                <p class="text-[14px] text-error font-bold mt-3">Số tiền: {{ formatCurrency(selectedOrder?.final_amount) }}</p>
+                            </div>
+
                             <!-- Total -->
                             <div class="flex justify-between items-center p-4 bg-primary/5 rounded-xl border border-primary/15">
                                 <span class="text-body-md text-on-surface-variant font-medium">Tổng thanh toán:</span>
@@ -313,10 +364,11 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                 class="px-5 py-2 rounded-xl text-label-md font-bold text-on-surface-variant hover:bg-surface-container transition-colors">
                                 Đóng lại
                             </button>
-                            <button v-if="selectedOrder?.payment?.payment_method === 'CASH' && selectedOrder?.payment?.payment_status === 'PENDING'"
+                            <button v-if="selectedOrder?.payment?.payment_status === 'PENDING'"
                                 @click="confirmPayment(selectedOrder.id)"
                                 class="px-5 py-2 rounded-xl bg-emerald-600/10 text-emerald-700 border border-emerald-600/30 font-bold text-label-md hover:bg-emerald-600/20 flex items-center gap-2 transition-all">
-                                <span class="material-symbols-outlined text-[18px]">payments</span> Thu tiền mặt
+                                <span class="material-symbols-outlined text-[18px]">payments</span> 
+                                {{ selectedOrder?.payment?.payment_method === 'CASH' ? 'Thu tiền mặt' : 'Xác nhận đã thanh toán' }}
                             </button>
                             <button v-if="selectedOrder?.status === 'PENDING'"
                                 @click="cancelOrder(selectedOrder.id)"
