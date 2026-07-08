@@ -38,6 +38,10 @@ return [
         'tmn_code' => env('VNP_TMN_CODE'),
         'hash_secret' => env('VNP_HASH_SECRET'),
         'url' => env('VNP_URL'),
+    ],
+    'bank' => [
+        'account_number' => env('BANK_ACCOUNT_NUMBER', '123456789'),
+        'short_name' => env('BANK_SHORT_NAME', 'VCB'),
+        'account_name' => env('BANK_ACCOUNT_NAME', 'NGUYEN VAN A'),
     ]
-
 ];

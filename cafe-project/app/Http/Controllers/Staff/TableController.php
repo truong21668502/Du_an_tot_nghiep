@@ -12,9 +12,10 @@ class TableController extends Controller
 {
     public function index()
     {
-        // Lấy tất cả bàn và nạp tất cả các đơn hàng liên quan
+        // Lấy tất cả bàn và chỉ nạp các đơn hàng đang hoạt động
         $tables = Table::with(['orders' => function($query) {
-            $query->with(['details.product', 'details.variant', 'payment'])
+            $query->whereIn('status', ['PENDING', 'PROCESSING'])
+                    ->with(['details.product', 'details.variant', 'payment'])
                     ->latest();
         }])->orderBy('id', 'asc')->get(); 
 
@@ -33,9 +34,10 @@ class TableController extends Controller
             'status' => $request->status
         ]);
 
-        // Nạp lại tất cả đơn hàng cho bàn này sau khi update status
+        // Chỉ nạp lại các đơn hàng đang hoạt động cho bàn này
         $table->load(['orders' => function($query) {
-            $query->with(['details.product', 'details.variant', 'payment'])
+            $query->whereIn('status', ['PENDING', 'PROCESSING'])
+                    ->with(['details.product', 'details.variant', 'payment'])
                     ->latest();
         }]);
 

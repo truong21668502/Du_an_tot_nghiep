@@ -27,6 +27,7 @@ Route::middleware(['auth', 'role:STAFF,ADMIN'])->prefix('nhan-vien')->name('staf
     Route::patch('/don-hang/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
     Route::patch('/don-hang/{order}/huy', [OrderController::class, 'cancel'])->name('orders.cancel');
     Route::patch('/don-hang/{order}/xac-nhan-thanh-toan', [OrderController::class, 'confirmPayment'])->name('orders.confirm-payment');
+    Route::get('/don-hang/{order}/vnpay-url', [OrderController::class, 'getVnpayUrl'])->name('orders.vnpay-url');
 
     // Route quản lý bàn (Sơ đồ mặt bằng)
     Route::get('/so-do-ban', [TableController::class, 'index'])->name('tables.index');
