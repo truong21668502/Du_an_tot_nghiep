@@ -127,9 +127,9 @@ class OrderController extends Controller
             : null;
         $order->save();
 
-        if ($order->table_id && in_array($order->status, ['COMPLETED', 'CANCELLED'])) {
-            $order->table()->update(['status' => 'EMPTY']);
-        }
+        // if ($order->table_id && in_array($order->status, ['COMPLETED', 'CANCELLED'])) {
+        //     $order->table()->update(['status' => 'EMPTY']);
+        // }
 
         if ($request->wantsJson()) {
             return response()->json([

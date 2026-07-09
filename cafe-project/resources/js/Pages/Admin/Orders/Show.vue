@@ -2,6 +2,22 @@
 import { ref } from "vue";
 import { router } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
+import { onMounted, onUnmounted } from 'vue'
+
+onMounted(() => {
+    if (window.Echo) {
+        window.Echo.channel('staff-orders')
+            .listen('.order.status-updated', (e) => {
+                if (e.order.id === order.value.id) {
+                    order.value = e.order
+                }
+            })
+    }
+})
+
+onUnmounted(() => {
+    if (window.Echo) window.Echo.leaveChannel('staff-orders')
+})
 
 const props = defineProps({ order: Object });
 

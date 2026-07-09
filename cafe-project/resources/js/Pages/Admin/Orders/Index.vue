@@ -2,12 +2,37 @@
 import { ref } from "vue";
 import { router, Link } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
+import { onMounted, onUnmounted } from 'vue'
+
 
 const props = defineProps({
     orders: Object,
     tables: Array,
     filters: Object,
 });
+
+// Chuyển orders.data thành local reactive state để cập nhật realtime
+const localOrders = ref([...props.orders.data])
+
+onMounted(() => {
+    if (window.Echo) {
+        window.Echo.channel('staff-orders')
+            .listen('.order.created', (e) => {
+                const exists = localOrders.value.some((o) => o.id === e.order.id)
+                if (!exists) localOrders.value.unshift(e.order)
+            })
+            .listen('.order.status-updated', (e) => {
+                const index = localOrders.value.findIndex((o) => o.id === e.order.id)
+                if (index !== -1) localOrders.value[index] = e.order
+            })
+    }
+})
+
+onUnmounted(() => {
+    if (window.Echo) window.Echo.leaveChannel('staff-orders')
+})
+
+
 
 const search = ref(props.filters?.search ?? "");
 const status = ref(props.filters?.status ?? "");
@@ -112,7 +137,7 @@ const formatDate = (value) => new Date(value).toLocaleString("vi-VN");
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-outline-variant/10 font-sans text-body-medium text-on-surface">
-                            <tr v-for="order in orders.data" :key="order.id"
+                            <tr v-for="order in localOrders" :key="order.id"
                                 class="hover:bg-surface-container-low/50 cursor-pointer"
                                 @click="router.visit(`/quan-tri/don-hang/${order.id}`)">
                                 <td class="p-4 font-bold text-primary">#{{ order.id }}</td>
@@ -132,7 +157,7 @@ const formatDate = (value) => new Date(value).toLocaleString("vi-VN");
                                     </span>
                                 </td>
                                 <td class="p-4 text-on-surface-variant text-body-small">{{ formatDate(order.created_at)
-                                }}</td>
+                                    }}</td>
                             </tr>
                         </tbody>
                     </table>
