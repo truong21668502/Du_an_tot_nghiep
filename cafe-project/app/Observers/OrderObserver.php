@@ -2,16 +2,13 @@
 
 namespace App\Observers;
 
-use App\Models\Order;
-use App\Models\Table;
 use App\Events\OrderStatusUpdated;
 use App\Events\TableStatusUpdated;
+use App\Models\Order;
+use Illuminate\Support\Facades\Log;
 
 class OrderObserver
 {
-    /**
-     * Handle the Order "created" event.
-     */
     public function created(Order $order): void
     {
         if ($order->table_id) {
@@ -23,16 +20,24 @@ class OrderObserver
         }
     }
 
-    /**
-     * Handle the Order "updated" event.
-     */
     public function updated(Order $order): void
     {
+        Log::info('OrderObserver::updated được gọi', [
+            'order_id' => $order->id,
+            'wasChanged' => $order->wasChanged('status'),
+            'status' => $order->status,
+        ]);
+
         if (!$order->wasChanged('status')) {
             return;
         }
 
-        broadcast(new OrderStatusUpdated($order));
+        try {
+            event(new OrderStatusUpdated($order));
+            Log::info('Dispatch OrderStatusUpdated THÀNH CÔNG', ['order_id' => $order->id]);
+        } catch (\Throwable $e) {
+            Log::error('Dispatch OrderStatusUpdated LỖI: ' . $e->getMessage());
+        }
 
         if ($order->table_id && in_array($order->status, ['COMPLETED', 'CANCELLED'])) {
             $hasActiveOrder = Order::where('table_id', $order->table_id)
@@ -50,27 +55,13 @@ class OrderObserver
         }
     }
 
-    /**
-     * Handle the Order "deleted" event.
-     */
     public function deleted(Order $order): void
     {
-        //
     }
-
-    /**
-     * Handle the Order "restored" event.
-     */
     public function restored(Order $order): void
     {
-        //
     }
-
-    /**
-     * Handle the Order "force deleted" event.
-     */
     public function forceDeleted(Order $order): void
     {
-        //
     }
 }

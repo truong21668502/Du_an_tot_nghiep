@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import StaffLayout from '../../Layouts/StaffLayout.vue';
@@ -18,10 +18,9 @@ const openOrderDetails = async (order) => {
     selectedOrder.value = order;
     isOrderModalOpen.value = true;
 
-    // Fetch VNPAY URL if bank transfer and pending
     if (order?.payment?.payment_method !== 'CASH' && order?.payment?.payment_status === 'PENDING') {
         try {
-            vnpayQrUrl.value = null; // reset while loading
+            vnpayQrUrl.value = null;
             const res = await axios.get(route('staff.orders.vnpay-url', order.id));
             vnpayQrUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(res.data.url)}`;
         } catch (error) {
@@ -91,6 +90,7 @@ const confirmPayment = (orderId) => {
     }
 }
 
+// ===== ECHO (giữ nguyên, không xóa dù chưa xác nhận hoạt động) =====
 onMounted(() => {
     if (window.Echo) {
         window.Echo.channel('staff-orders')
@@ -98,6 +98,20 @@ onMounted(() => {
                 const exists = orders.value.some(order => order.id === e.order.id);
                 if (!exists) {
                     orders.value.push(e.order);
+                }
+            })
+            .listen('.order.status-updated', (e) => {
+                const index = orders.value.findIndex(o => o.id === e.order.id);
+                if (['COMPLETED', 'CANCELLED'].includes(e.order.status)) {
+                    if (index !== -1) orders.value.splice(index, 1);
+                    if (selectedOrder.value && selectedOrder.value.id === e.order.id) {
+                        closeOrderModal();
+                    }
+                } else if (index !== -1) {
+                    orders.value.splice(index, 1, e.order);
+                    if (selectedOrder.value && selectedOrder.value.id === e.order.id) {
+                        selectedOrder.value = e.order;
+                    }
                 }
             })
             .listen('.order.payment-confirmed', (e) => {
@@ -113,17 +127,46 @@ onMounted(() => {
     }
 });
 
+// ===== POLLING — phương án chắc chắn hoạt động, không phụ thuộc Echo/Reverb =====
+let pollInterval = null;
+
+onMounted(() => {
+    pollInterval = setInterval(() => {
+        router.reload({
+            only: ['initialOrders'],
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: (page) => {
+                const freshOrders = page.props.initialOrders || [];
+                orders.value = freshOrders;
+
+                // Nếu đang mở modal xem chi tiết 1 đơn, đồng bộ lại theo dữ liệu mới
+                if (selectedOrder.value) {
+                    const stillExists = freshOrders.find(o => o.id === selectedOrder.value.id);
+                    if (stillExists) {
+                        selectedOrder.value = stillExists;
+                    } else {
+                        // Đơn không còn trong danh sách active (đã COMPLETED/CANCELLED) → đóng modal
+                        closeOrderModal();
+                    }
+                }
+            },
+        });
+    }, 4000);
+});
+
 onUnmounted(() => {
     if (window.Echo) {
         window.Echo.leaveChannel('staff-orders');
+    }
+    if (pollInterval) {
+        clearInterval(pollInterval);
     }
 });
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 };
-
-import { computed } from 'vue';
 
 const filteredOrders = computed(() => {
     if (filterStatus.value === 'ALL') return orders.value;
@@ -135,6 +178,7 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
 </script>
 
 <template>
+
     <Head title="Đơn hàng - Nắng Coffee" />
 
     <StaffLayout>
@@ -148,27 +192,27 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                 <h2 class="text-display-lg-mobile md:text-display-lg text-on-background font-serif">Đơn Hàng</h2>
             </div>
 
-            <!-- Summary chips -->
             <div class="flex items-center gap-2 pb-1">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-error/10 text-error border border-error/20">
-                    <span class="w-1.5 h-1.5 rounded-full bg-error" :class="pendingCount > 0 ? 'animate-pulse' : ''"></span>
+                <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-error/10 text-error border border-error/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-error"
+                        :class="pendingCount > 0 ? 'animate-pulse' : ''"></span>
                     {{ pendingCount }} chờ xử lý
                 </span>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
+                <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
                     <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
                     {{ processingCount }} đang xử lý
                 </span>
             </div>
         </div>
 
-        <!-- Filter tabs -->
         <div class="flex items-center gap-2 mb-6 flex-wrap">
             <button v-for="tab in [
                 { label: 'Tất cả', value: 'ALL', count: orders.length },
                 { label: 'Chờ xử lý', value: 'PENDING', count: pendingCount },
                 { label: 'Đang xử lý', value: 'PROCESSING', count: processingCount }
-            ]" :key="tab.value"
-                @click="filterStatus = tab.value"
+            ]" :key="tab.value" @click="filterStatus = tab.value"
                 class="flex items-center gap-2 px-4 py-2 rounded-xl text-label-sm font-bold transition-all duration-200 border"
                 :class="filterStatus === tab.value
                     ? 'bg-primary text-on-primary border-primary shadow-sm'
@@ -181,7 +225,6 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
             </button>
         </div>
 
-        <!-- Empty state -->
         <div v-if="filteredOrders.length === 0"
             class="rounded-2xl p-14 flex flex-col items-center justify-center text-center bg-surface-container-low border border-outline-variant/20">
             <div class="w-20 h-20 rounded-3xl bg-surface-container-high flex items-center justify-center mb-5">
@@ -189,11 +232,11 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
             </div>
             <h3 class="text-headline-sm font-bold text-on-surface mb-2">Tuyệt vời!</h3>
             <p class="text-body-md text-on-surface-variant max-w-xs">
-                {{ filterStatus === 'ALL' ? 'Hiện tại không có đơn hàng nào cần xử lý.' : `Không có đơn hàng nào với trạng thái này.` }}
+                {{ filterStatus === 'ALL' ? 'Hiện tại không có đơn hàng nào cần xử lý.' : `Không có đơn hàng nào với
+                trạng thái này.` }}
             </p>
         </div>
 
-        <!-- Orders grid -->
         <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <div v-for="order in filteredOrders" :key="order.id" @click="openOrderDetails(order)"
                 class="group relative overflow-hidden rounded-2xl border cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
@@ -201,12 +244,10 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                     ? 'bg-surface-container-low border-error/30 hover:border-error/60'
                     : 'bg-surface-container-low border-outline-variant/20 hover:border-primary/40'">
 
-                <!-- Top strip -->
                 <div class="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
                     :class="order.status === 'PENDING' ? 'bg-error' : 'bg-primary'"></div>
 
                 <div class="p-5">
-                    <!-- Header -->
                     <div class="flex items-start gap-3 mb-4">
                         <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold font-mono text-label-sm flex-shrink-0"
                             :class="order.status === 'PENDING' ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'">
@@ -216,9 +257,9 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                             <h4 class="text-label-md font-bold text-on-surface truncate">
                                 {{ order.table ? order.table.table_name : 'Mang đi / Giao hàng' }}
                             </h4>
-                            <p class="text-[11px] text-on-surface-variant mt-0.5 uppercase tracking-wider">{{ order.order_type }}</p>
+                            <p class="text-[11px] text-on-surface-variant mt-0.5 uppercase tracking-wider">{{
+                                order.order_type }}</p>
                         </div>
-                        <!-- Status -->
                         <span v-if="order.status === 'PENDING'"
                             class="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20">
                             <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>Chờ xử lý
@@ -229,28 +270,27 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                         </span>
                     </div>
 
-                    <!-- Items -->
                     <ul class="space-y-1.5 mb-4">
-                        <li v-for="detail in order.details" :key="detail.id"
-                            class="flex items-start gap-2 text-[12px]">
+                        <li v-for="detail in order.details" :key="detail.id" class="flex items-start gap-2 text-[12px]">
                             <span class="font-bold text-primary mt-px">{{ detail.quantity }}×</span>
                             <span class="text-on-surface flex-1 truncate">{{ detail.product?.product_name }}</span>
                         </li>
                     </ul>
 
-                    <!-- Footer -->
                     <div class="flex items-center justify-between pt-3 border-t border-outline-variant/15">
-                        <span class="text-headline-sm font-bold text-on-surface">{{ formatCurrency(order.final_amount) }}</span>
-                        <span class="text-[11px] text-on-surface-variant/60 flex items-center gap-1 group-hover:text-primary transition-colors">
+                        <span class="text-headline-sm font-bold text-on-surface">{{ formatCurrency(order.final_amount)
+                            }}</span>
+                        <span
+                            class="text-[11px] text-on-surface-variant/60 flex items-center gap-1 group-hover:text-primary transition-colors">
                             Chi tiết
-                            <span class="material-symbols-outlined text-[14px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                            <span
+                                class="material-symbols-outlined text-[14px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
                         </span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ===== ORDER DETAIL MODAL ===== -->
         <Transition name="fade">
             <div v-if="isOrderModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeOrderModal"></div>
@@ -258,8 +298,8 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                     <div v-if="isOrderModalOpen"
                         class="relative bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] border border-outline-variant/20">
 
-                        <!-- Header -->
-                        <div class="px-6 py-4 border-b border-outline-variant/20 flex justify-between items-center bg-surface">
+                        <div
+                            class="px-6 py-4 border-b border-outline-variant/20 flex justify-between items-center bg-surface">
                             <div class="flex items-center gap-3">
                                 <div class="w-9 h-9 rounded-xl flex items-center justify-center text-label-sm font-bold font-mono flex-shrink-0"
                                     :class="selectedOrder?.status === 'PENDING' ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'">
@@ -267,7 +307,8 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                 </div>
                                 <div>
                                     <h3 class="text-label-lg font-bold text-on-background">Chi tiết đơn hàng</h3>
-                                    <p class="text-[11px] text-on-surface-variant uppercase tracking-wider">{{ selectedOrder?.order_type }}</p>
+                                    <p class="text-[11px] text-on-surface-variant uppercase tracking-wider">{{
+                                        selectedOrder?.order_type }}</p>
                                 </div>
                             </div>
                             <button @click="closeOrderModal"
@@ -276,19 +317,22 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                             </button>
                         </div>
 
-                        <!-- Body -->
                         <div class="p-5 overflow-y-auto flex-1 space-y-4 hide-scrollbar">
 
-                            <!-- Info -->
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="bg-surface rounded-xl p-4 border border-outline-variant/20">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">Vị trí / Khách</p>
+                                    <p
+                                        class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">
+                                        Vị trí / Khách</p>
                                     <p class="text-label-lg font-bold text-on-surface">
                                         {{ selectedOrder?.table ? selectedOrder.table.table_name : 'Khách mang đi' }}
                                     </p>
                                 </div>
-                                <div class="bg-surface rounded-xl p-4 border border-outline-variant/20 flex flex-col items-end justify-between">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1 self-start">Trạng thái</p>
+                                <div
+                                    class="bg-surface rounded-xl p-4 border border-outline-variant/20 flex flex-col items-end justify-between">
+                                    <p
+                                        class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1 self-start">
+                                        Trạng thái</p>
                                     <span v-if="selectedOrder?.status === 'PENDING'"
                                         class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20">
                                         <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>Chờ xử lý
@@ -300,18 +344,23 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                 </div>
                             </div>
 
-                            <!-- Items -->
                             <div class="rounded-xl border border-outline-variant/20 overflow-hidden">
-                                <div class="bg-surface-container-low px-4 py-2.5 flex justify-between items-center border-b border-outline-variant/20">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Danh sách món</span>
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Trạng thái pha chế</span>
+                                <div
+                                    class="bg-surface-container-low px-4 py-2.5 flex justify-between items-center border-b border-outline-variant/20">
+                                    <span
+                                        class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Danh
+                                        sách món</span>
+                                    <span
+                                        class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Trạng
+                                        thái pha chế</span>
                                 </div>
                                 <ul class="divide-y divide-outline-variant/15">
                                     <li v-for="detail in selectedOrder?.details" :key="detail.id"
                                         class="p-4 flex items-center justify-between gap-4 hover:bg-surface-container-low/40 transition-colors">
                                         <div class="flex-1 min-w-0">
                                             <p class="text-body-md text-on-surface">
-                                                <span class="font-bold text-primary mr-1.5">{{ detail?.quantity }}×</span>
+                                                <span class="font-bold text-primary mr-1.5">{{ detail?.quantity
+                                                    }}×</span>
                                                 {{ detail?.product?.product_name }}
                                             </p>
                                             <div v-if="detail?.note"
@@ -320,7 +369,8 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                                 <span class="text-[11px] italic">{{ detail.note }}</span>
                                             </div>
                                         </div>
-                                        <span class="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border whitespace-nowrap"
+                                        <span
+                                            class="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border whitespace-nowrap"
                                             :class="{
                                                 'bg-surface-container-high border-outline/20 text-on-surface-variant': detail?.barista_status === 'PENDING',
                                                 'bg-secondary-container border-secondary/20 text-on-secondary-container': detail?.barista_status === 'PREPARING',
@@ -329,37 +379,41 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                             }">
                                             {{ detail?.barista_status === 'PENDING' ? '⏳ Chờ pha'
                                                 : detail?.barista_status === 'PREPARING' ? '☕ Đang làm'
-                                                : detail?.barista_status === 'COMPLETED' ? '✓ Đã xong'
-                                                : '✕ Đã hủy' }}
+                                                    : detail?.barista_status === 'COMPLETED' ? '✓ Đã xong'
+                                                        : '✕ Đã hủy' }}
                                         </span>
                                     </li>
                                 </ul>
                             </div>
 
-                            <!-- Mã QR VNPay -->
-                            <div v-if="selectedOrder?.payment?.payment_method !== 'CASH' && selectedOrder?.payment?.payment_status === 'PENDING'" 
-                                 class="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-outline-variant/30 mt-3 shadow-sm">
+                            <div v-if="selectedOrder?.payment?.payment_method !== 'CASH' && selectedOrder?.payment?.payment_status === 'PENDING'"
+                                class="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-outline-variant/30 mt-3 shadow-sm">
                                 <p class="text-[13px] font-bold text-[#005BAA] mb-3 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[18px]">qr_code_scanner</span> Quét mã thanh toán VNPay
+                                    <span class="material-symbols-outlined text-[18px]">qr_code_scanner</span> Quét mã
+                                    thanh toán VNPay
                                 </p>
                                 <div v-if="vnpayQrUrl" class="relative">
-                                    <img :src="vnpayQrUrl" alt="VNPay QR" class="w-full h-auto object-contain border p-1 shadow-sm" />
+                                    <img :src="vnpayQrUrl" alt="VNPay QR"
+                                        class="w-full h-auto object-contain border p-1 shadow-sm" />
                                 </div>
-                                <div v-else class="w-40 h-40 flex items-center justify-center bg-gray-50 animate-pulse border border-outline-variant/30">
+                                <div v-else
+                                    class="w-40 h-40 flex items-center justify-center bg-gray-50 animate-pulse border border-outline-variant/30">
                                     <span class="material-symbols-outlined text-gray-300 text-[32px]">qr_code</span>
                                 </div>
-                                <p class="text-[14px] text-error font-bold mt-3">Số tiền: {{ formatCurrency(selectedOrder?.final_amount) }}</p>
+                                <p class="text-[14px] text-error font-bold mt-3">Số tiền: {{
+                                    formatCurrency(selectedOrder?.final_amount) }}</p>
                             </div>
 
-                            <!-- Total -->
-                            <div class="flex justify-between items-center p-4 bg-primary/5 rounded-xl border border-primary/15">
+                            <div
+                                class="flex justify-between items-center p-4 bg-primary/5 rounded-xl border border-primary/15">
                                 <span class="text-body-md text-on-surface-variant font-medium">Tổng thanh toán:</span>
-                                <span class="text-headline-sm text-primary font-bold">{{ formatCurrency(selectedOrder?.final_amount) }}</span>
+                                <span class="text-headline-sm text-primary font-bold">{{
+                                    formatCurrency(selectedOrder?.final_amount) }}</span>
                             </div>
                         </div>
 
-                        <!-- Footer -->
-                        <div class="px-5 py-4 bg-surface border-t border-outline-variant/20 flex gap-3 justify-end flex-wrap">
+                        <div
+                            class="px-5 py-4 bg-surface border-t border-outline-variant/20 flex gap-3 justify-end flex-wrap">
                             <button @click="closeOrderModal"
                                 class="px-5 py-2 rounded-xl text-label-md font-bold text-on-surface-variant hover:bg-surface-container transition-colors">
                                 Đóng lại
@@ -367,16 +421,17 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                             <button v-if="selectedOrder?.payment?.payment_status === 'PENDING'"
                                 @click="confirmPayment(selectedOrder.id)"
                                 class="px-5 py-2 rounded-xl bg-emerald-600/10 text-emerald-700 border border-emerald-600/30 font-bold text-label-md hover:bg-emerald-600/20 flex items-center gap-2 transition-all">
-                                <span class="material-symbols-outlined text-[18px]">payments</span> 
-                                {{ selectedOrder?.payment?.payment_method === 'CASH' ? 'Thu tiền mặt' : 'Xác nhận đã thanh toán' }}
+                                <span class="material-symbols-outlined text-[18px]">payments</span>
+                                {{
+                                    selectedOrder?.payment?.payment_method === 'CASH'
+                                        ? 'Thu tiền mặt' : 'Xác nhận đã thanh toán'
+                                }}
                             </button>
-                            <button v-if="selectedOrder?.status === 'PENDING'"
-                                @click="cancelOrder(selectedOrder.id)"
+                            <button v-if="selectedOrder?.status === 'PENDING'" @click="cancelOrder(selectedOrder.id)"
                                 class="px-5 py-2 rounded-xl bg-error/10 text-error border border-error/30 font-bold text-label-md hover:bg-error/20 flex items-center gap-2 transition-all">
                                 <span class="material-symbols-outlined text-[18px]">cancel</span> Hủy đơn
                             </button>
-                            <button v-if="selectedOrder?.status === 'PENDING'"
-                                @click="acceptOrder(selectedOrder.id)"
+                            <button v-if="selectedOrder?.status === 'PENDING'" @click="acceptOrder(selectedOrder.id)"
                                 class="px-6 py-2 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:bg-primary/90 flex items-center gap-2 transition-all shadow-sm">
                                 <span class="material-symbols-outlined text-[18px]">check_circle</span> Tiếp nhận đơn
                             </button>
@@ -394,10 +449,33 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-.slide-up-enter-active, .slide-up-leave-active { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-.slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateY(24px) scale(0.96); }
-.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-.hide-scrollbar::-webkit-scrollbar { display: none; }
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+}
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
 </style>

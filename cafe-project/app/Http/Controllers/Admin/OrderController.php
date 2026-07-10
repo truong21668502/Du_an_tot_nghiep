@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Table;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Events\OrderStatusUpdated;
 
 class OrderController extends Controller
 {
@@ -127,9 +128,14 @@ class OrderController extends Controller
             : null;
         $order->save();
 
-        // if ($order->table_id && in_array($order->status, ['COMPLETED', 'CANCELLED'])) {
-        //     $order->table()->update(['status' => 'EMPTY']);
-        // }
+        broadcast(new OrderStatusUpdated(
+            $order->fresh([
+                'table',
+                'payment',
+                'details.product',
+                'details.variant',
+            ])
+        ));
 
         if ($request->wantsJson()) {
             return response()->json([

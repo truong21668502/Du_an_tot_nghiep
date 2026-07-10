@@ -4,21 +4,15 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Order;
+use Illuminate\Support\Facades\Log;
 
-
-class OrderStatusUpdated
+class OrderStatusUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    /**
-     * Create a new event instance.
-     */
 
     public function __construct(public Order $order)
     {
@@ -36,16 +30,13 @@ class OrderStatusUpdated
 
     public function broadcastWith(): array
     {
+        Log::info('OrderStatusUpdated broadcast', [
+            'order_id' => $this->order->id,
+            'status' => $this->order->status,
+        ]);
+
         return [
-            'order' => $this->order
-                ->load(['table', 'details.product', 'details.variant', 'payment'])
-                ->toArray(),
+            'order' => $this->order->fresh()->toArray(),
         ];
     }
-
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, Channel>
-     */
 }
