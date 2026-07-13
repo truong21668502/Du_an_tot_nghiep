@@ -89,7 +89,10 @@ const addItemToOrder = () => {
         toast.error("Vui lòng chọn đủ món và kích cỡ (size)!");
         return;
     }
-    
+    if (currentItem.value.note && currentItem.value.note.length > 255) {
+        toast.error("Ghi chú quá dài (tối đa 255 ký tự)!");
+        return;
+    }
     // gộp món nếu trùng hoàn toàn sản phẩm, size và ghi chú
     const existingIndex = newOrderForm.value.items.findIndex(i => 
         i.product_id === currentItem.value.product.id && 
@@ -139,6 +142,13 @@ const submitNewOrder = () => {
             isCreateModalOpen.value = false;
             newOrderForm.value = { order_type: 'TAKE_AWAY', table_id: '', payment_method: 'CASH', payment_status: 'PAID', items: [] };
             toast.success("Tạo đơn thành công!");
+        },
+        onError: (errors) => {
+            // Lặp qua tất cả các lỗi trả về từ hàm validate() của Backend
+            for (const key in errors) {
+                // Hiển thị từng lỗi lên Toast
+                toast.error(errors[key]);
+            }
         }
     });
 };

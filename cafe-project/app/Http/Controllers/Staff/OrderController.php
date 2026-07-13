@@ -32,6 +32,7 @@ class OrderController extends Controller
         $request->validate([
             'order_type' => 'required',
             'items' => 'required|array|min:1',
+            'items.*.note' => 'nullable|string|max:255',
             'total_amount' => 'required|numeric',
         ]);
 
@@ -78,13 +79,19 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Đơn hàng đã được tạo!');
     }
 
-    public function accept(Order $order)
+    public function accept(Order $order, Request $request)
     {
         if ($order->status !== 'PENDING') {
-            return redirect()->back()->with('error', 'Đơn hàng này đã được xử lý!');
+            return response()->json(['error' => 'Đơn hàng này đã được xử lý!'], 400);
         }
 
         $order->update(['status' => 'PROCESSING']);
+
+        // Nếu request đến bằng axios (không phải Inertia full visit), trả JSON
+        if ($request->expectsJson() || $request->header('X-Inertia') === null) {
+            return response()->json(['status' => 'PROCESSING']);
+        }
+
         return redirect()->back();
     }
 

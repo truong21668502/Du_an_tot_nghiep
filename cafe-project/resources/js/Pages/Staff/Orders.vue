@@ -1,8 +1,11 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import StaffLayout from '../../Layouts/StaffLayout.vue';
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
+
 
 const props = defineProps({
     initialOrders: Array,
@@ -37,17 +40,23 @@ const closeOrderModal = () => {
     setTimeout(() => selectedOrder.value = null, 300);
 };
 
-const acceptOrder = (orderId) => {
-    router.patch(route('staff.orders.accept', orderId), {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            const index = orders.value.findIndex(o => o.id === orderId);
-            if (index !== -1) orders.value[index].status = 'PROCESSING';
-            if (selectedOrder.value && selectedOrder.value.id === orderId) {
-                selectedOrder.value.status = 'PROCESSING';
+const acceptOrder = async (orderId) => {
+    try {
+        await axios.patch(route('staff.orders.accept', orderId));
+        // Thay thế toàn bộ object để Vue phát hiện thay đổi chắc chắn
+        const index = orders.value.findIndex(o => o.id === orderId);
+        if (index !== -1) {
+            orders.value[index] = { ...orders.value[index], status: 'PROCESSING' };
+            if (selectedOrder.value?.id === orderId) {
+                await nextTick();
+                selectedOrder.value = orders.value[index];
             }
         }
-    });
+        toast.success(`Đã tiếp nhận đơn hàng #${orderId}`);
+    } catch (error) {
+        console.error('Lỗi tiếp nhận đơn:', error);
+        toast.error('Không thể tiếp nhận đơn hàng này!');
+    }
 };
 
 const completeOrder = (orderId) => {
@@ -435,9 +444,13 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                 class="px-6 py-2 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:bg-primary/90 flex items-center gap-2 transition-all shadow-sm">
                                 <span class="material-symbols-outlined text-[18px]">check_circle</span> Tiếp nhận đơn
                             </button>
+                            <!-- Nút Hoàn thành: chỉ bấm được khi đã thanh toán -->
                             <button v-else-if="selectedOrder?.status === 'PROCESSING'"
-                                @click="completeOrder(selectedOrder.id)"
-                                class="px-6 py-2 rounded-xl bg-secondary text-on-secondary font-bold text-label-md hover:bg-secondary/90 flex items-center gap-2 transition-all shadow-sm">
+                                @click="selectedOrder?.payment?.payment_status === 'PAID' ? completeOrder(selectedOrder.id) : toast.warning('⚠️ Đơn chưa được thanh toán, không thể hoàn thành!')"
+                                :class="selectedOrder?.payment?.payment_status === 'PAID'
+                                    ? 'bg-secondary text-on-secondary hover:bg-secondary/90 shadow-sm cursor-pointer'
+                                    : 'bg-surface-container-high text-on-surface-variant/50 border border-outline-variant/30 cursor-not-allowed'"
+                                class="px-6 py-2 rounded-xl bg-secondary text-on-secondary font-bold text-label-md flex items-center gap-2 transition-all">
                                 <span class="material-symbols-outlined text-[18px]">task_alt</span> Đã hoàn thành
                             </button>
                         </div>

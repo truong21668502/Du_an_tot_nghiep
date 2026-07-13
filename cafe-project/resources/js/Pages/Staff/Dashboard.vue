@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import StaffLayout from '../../Layouts/StaffLayout.vue';
@@ -46,19 +46,27 @@ const closeOrderModal = () => {
     setTimeout(() => selectedOrder.value = null, 300);
 };
 
-const acceptOrder = (orderId) => {
-    router.patch(route('staff.orders.accept', orderId), {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            const index = orders.value.findIndex(o => o.id === orderId);
-            if (index !== -1) orders.value[index].status = 'PROCESSING';
+const acceptOrder = async (orderId) => {
+    try {
+        await axios.patch(route('staff.orders.accept', orderId));
+        // Thay thế toàn bộ object để Vue phát hiện thay đổi chắc chắn
+        const index = orders.value.findIndex(o => o.id === orderId);
+        if (index !== -1) {
+            orders.value[index] = { ...orders.value[index], status: 'PROCESSING' };
+            // selectedOrder cũng trỏ sang object mới (giữ nguyên payment)
             if (selectedOrder.value?.id === orderId) {
-                selectedOrder.value.status = 'PROCESSING';
+                await nextTick();
+                selectedOrder.value = orders.value[index];
             }
-            toast.success(`Đã tiếp nhận đơn hàng #${orderId}`);
         }
-    });
+        showCancelConfirm.value = false;
+        toast.success(`Đã tiếp nhận đơn hàng #${orderId}`);
+    } catch (error) {
+        console.error('Lỗi tiếp nhận đơn:', error);
+        toast.error('Không thể tiếp nhận đơn hàng này!');
+    }
 };
+
 
 const completeOrder = (orderId) => {
     router.patch(route('staff.orders.complete', orderId), {}, {
@@ -236,15 +244,6 @@ const closeTableModal = () => {
 
 // Cập nhật trạng thái bàn
 const updateTableStatus = (tableId, newStatus) => {
-    if (newStatus === 'EMPTY') {
-        const table = tables.value.find(t => t.id === tableId);
-        const hasUnpaidOrders = table?.orders?.some(o => o.payment?.payment_status !== 'PAID');
-        if (hasUnpaidOrders) {
-            toast.error('❌ KHÔNG THỂ DỌN BÀN: Bàn này vẫn còn đơn hàng chưa thanh toán!');
-            return;
-        }
-    }
-
     router.patch(route('staff.tables.update-status', tableId), { status: newStatus }, {
         preserveScroll: true,
         onSuccess: () => {
@@ -741,6 +740,11 @@ onUnmounted(() => {
                                             <p class="text-[11px] mt-0.5 text-on-surface-variant">
                                                 Size {{ detail.variant?.size || '---' }}
                                             </p>
+                                            <div v-if="detail?.note"
+                                                class="mt-1.5 flex items-center gap-1 text-tertiary">
+                                                <span class="material-symbols-outlined text-[13px]">edit_note</span>
+                                                <span class="text-[11px] italic">{{ detail.note }}</span>
+                                            </div>
                                         </div>
                                         <span
                                             class="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border whitespace-nowrap"
@@ -865,9 +869,13 @@ onUnmounted(() => {
                                     <span class="material-symbols-outlined text-[18px]">check_circle</span> Tiếp nhận
                                     đơn
                                 </button>
+                                <!-- Nút Hoàn thành: chỉ bấm được khi đã thanh toán -->
                                 <button v-else-if="selectedOrder?.status === 'PROCESSING'"
-                                    @click="completeOrder(selectedOrder.id)"
-                                    class="px-6 py-2 rounded-xl font-bold text-[13px] text-on-secondary flex items-center gap-2 transition-all shadow-sm hover:opacity-90 bg-secondary">
+                                    @click="selectedOrder?.payment?.payment_status === 'PAID' ? completeOrder(selectedOrder.id) : toast.warning('⚠️ Đơn chưa được thanh toán, không thể hoàn thành!')"
+                                    :class="selectedOrder?.payment?.payment_status === 'PAID'
+                                        ? 'bg-secondary text-on-secondary hover:bg-secondary/90 shadow-sm cursor-pointer'
+                                        : 'bg-surface-container-high text-on-surface-variant/50 border border-outline-variant/30 cursor-not-allowed'"
+                                    class="px-6 py-2 rounded-xl font-bold text-[13px] flex items-center gap-2 transition-all">
                                     <span class="material-symbols-outlined text-[18px]">task_alt</span> Hoàn thành
                                 </button>
                             </div>
