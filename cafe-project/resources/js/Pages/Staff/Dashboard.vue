@@ -23,7 +23,7 @@ const vnpayQrUrl = ref(null);
 const openOrderDetails = async (order) => {
     selectedOrder.value = order;
     isOrderModalOpen.value = true;
-    
+
     // Nếu thanh toán chuyển khoản và đang chờ thanh toán
     if (order?.payment?.payment_method !== 'CASH' && order?.payment?.payment_status === 'PENDING') {
         try {
@@ -76,7 +76,7 @@ const cancelOrder = (orderId) => {
         preserveScroll: true,
         onSuccess: () => {
             orders.value = orders.value.filter(o => o.id !== orderId);
-            
+
             // Cập nhật lại tables state
             tables.value.forEach(t => {
                 if (t.orders) {
@@ -102,7 +102,7 @@ const confirmPayment = (orderId) => {
             if (selectedOrder.value?.id === orderId && selectedOrder.value.payment) {
                 selectedOrder.value.payment.payment_status = 'PAID';
             }
-            
+
             // Cập nhật local state cho tables
             tables.value.forEach(t => {
                 if (t.orders) {
@@ -344,6 +344,29 @@ onMounted(() => {
             });
 
         window.Echo.channel('staff-orders')
+            .listen('.order.status-updated', (e) => {
+                const index = orders.value.findIndex(o => o.id === e.order.id);
+
+                if (['COMPLETED', 'CANCELLED'].includes(e.order.status)) {
+                    if (index !== -1) orders.value.splice(index, 1);
+                    if (selectedOrder.value?.id === e.order.id) closeOrderModal();
+
+                    // Cập nhật lại bàn liên quan
+                    if (e.order.table_id) {
+                        const tableIndex = tables.value.findIndex(t => t.id === e.order.table_id);
+                        if (tableIndex !== -1 && tables.value[tableIndex].orders) {
+                            tables.value[tableIndex].orders = tables.value[tableIndex].orders.filter(o => o.id !== e.order.id);
+                        }
+                    }
+                } else if (index !== -1) {
+                    orders.value[index] = e.order;
+                    if (selectedOrder.value?.id === e.order.id) {
+                        selectedOrder.value = e.order;
+                    }
+                }
+            });
+
+        window.Echo.channel('staff-orders')
             .listen('.order.payment-confirmed', (e) => {
                 const index = orders.value.findIndex(o => o.id === e.id);
                 if (index !== -1 && orders.value[index].payment) {
@@ -351,7 +374,7 @@ onMounted(() => {
                     orders.value[index].status = e.status;
                     toast.success(`Đơn ${e.order_code} đã thanh toán xong!`);
                 }
-                
+
                 // Đồng thời cập nhật trạng thái đơn trong sơ đồ bàn
                 tables.value.forEach(t => {
                     if (t.orders) {
@@ -385,6 +408,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+
     <Head title="Bảng điều khiển - Nắng Coffee" />
 
     <StaffLayout>
@@ -432,10 +456,11 @@ onUnmounted(() => {
         <div class="flex gap-5 h-[calc(100vh-240px)] min-h-[500px]">
 
             <!-- ===== SƠ ĐỒ BÀN ===== -->
-            <div class="flex-1 min-w-0 flex flex-col relative rounded-2xl border bg-surface-container-low border-outline-variant/30 overflow-hidden">
-                
+            <div
+                class="flex-1 min-w-0 flex flex-col relative rounded-2xl border bg-surface-container-low border-outline-variant/30 overflow-hidden">
+
                 <!-- Ảnh nền quán Cafe -->
-                <img src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1783495774/background_nangcoffee_gdibni.png" 
+                <img src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1783495774/background_nangcoffee_gdibni.png"
                     alt="Cafe Background"
                     class="absolute inset-0 w-full h-full object-cover opacity-[0.15] pointer-events-none" />
 
@@ -443,15 +468,23 @@ onUnmounted(() => {
                 <div class="floor-plan-wrap relative z-10 flex-1 overflow-y-auto hide-scrollbar">
 
                     <!-- Ghi chú trạng thái -->
-                    <div class="flex items-center justify-between px-6 py-3 border-b bg-surface/80 backdrop-blur-md border-outline-variant/20 sticky top-0 z-20">
-                        <div class="font-bold text-[13px] tracking-wider uppercase flex items-center gap-2 text-on-surface-variant">
+                    <div
+                        class="flex items-center justify-between px-6 py-3 border-b bg-surface/80 backdrop-blur-md border-outline-variant/20 sticky top-0 z-20">
+                        <div
+                            class="font-bold text-[13px] tracking-wider uppercase flex items-center gap-2 text-on-surface-variant">
                             <span class="material-symbols-outlined text-[18px]">info</span>
                             TRẠNG THÁI BÀN
                         </div>
                         <div class="flex items-center gap-4 text-[12px] font-medium text-on-surface-variant">
-                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-surface-container-lowest border border-outline-variant shadow-sm"></span> Trống</span>
-                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full shadow-sm bg-primary/10 border border-primary/30"></span> Có khách</span>
-                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full shadow-sm bg-error/10 border border-error/30"></span> Cần xử lý</span>
+                            <span class="flex items-center gap-1.5"><span
+                                    class="w-3 h-3 rounded-full bg-surface-container-lowest border border-outline-variant shadow-sm"></span>
+                                Trống</span>
+                            <span class="flex items-center gap-1.5"><span
+                                    class="w-3 h-3 rounded-full shadow-sm bg-primary/10 border border-primary/30"></span>
+                                Có khách</span>
+                            <span class="flex items-center gap-1.5"><span
+                                    class="w-3 h-3 rounded-full shadow-sm bg-error/10 border border-error/30"></span>
+                                Cần xử lý</span>
                         </div>
                     </div>
 
@@ -460,29 +493,30 @@ onUnmounted(() => {
                         <div v-for="(areaTables, areaName) in groupedTables" :key="areaName">
                             <!-- Tên khu vực -->
                             <div class="flex items-center gap-2 mb-5">
-                                <div class="area-pill text-on-surface-variant bg-surface-container-lowest/80 border border-outline-variant/20">
+                                <div
+                                    class="area-pill text-on-surface-variant bg-surface-container-lowest/80 border border-outline-variant/20">
                                     <span class="material-symbols-outlined text-[13px]">location_on</span>
                                     {{ areaName }}
                                 </div>
                                 <div class="flex-1 border-t border-dashed border-outline-variant/40"></div>
                                 <span class="text-[12px] font-medium text-on-surface-variant/70">
-                                    {{ areaTables.filter(t => t.status === 'OCCUPIED').length }} / {{ areaTables.length }} bàn
+                                    {{areaTables.filter(t => t.status === 'OCCUPIED').length}} / {{ areaTables.length
+                                    }} bàn
                                 </span>
                             </div>
 
                             <!-- Lưới bàn -->
                             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                                <button v-for="table in areaTables" :key="table.id"
-                                    @click="openTableDetails(table)"
+                                <button v-for="table in areaTables" :key="table.id" @click="openTableDetails(table)"
                                     class="relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
                                     :class="[
-                                        table.status === 'OCCUPIED' 
-                                            ? (tableHasPendingOrder(table) 
-                                                ? 'bg-error/5 border-error/40 shadow-sm' 
-                                                : 'bg-primary/5 border-primary/30 shadow-sm') 
+                                        table.status === 'OCCUPIED'
+                                            ? (tableHasPendingOrder(table)
+                                                ? 'bg-error/5 border-error/40 shadow-sm'
+                                                : 'bg-primary/5 border-primary/30 shadow-sm')
                                             : 'bg-surface-container-lowest border-outline-variant/30 hover:border-primary/40'
                                     ]">
-                                    
+
                                     <!-- Chuông thông báo -->
                                     <div v-if="tableHasPendingOrder(table)"
                                         class="absolute -top-2 -right-2 w-7 h-7 rounded-full text-on-error bg-error flex items-center justify-center shadow-lg animate-bounce">
@@ -496,14 +530,15 @@ onUnmounted(() => {
                                     </span>
 
                                     <!-- Tên bàn -->
-                                    <span class="font-bold text-[14px] mb-1.5 text-center leading-tight transition-colors"
+                                    <span
+                                        class="font-bold text-[14px] mb-1.5 text-center leading-tight transition-colors"
                                         :class="table.status === 'OCCUPIED' ? (tableHasPendingOrder(table) ? 'text-error' : 'text-on-surface') : 'text-on-surface-variant'">
                                         {{ table.table_name }}
                                     </span>
 
                                     <!-- Ghế ngồi -->
                                     <div class="flex flex-wrap justify-center gap-0.5 mb-2 px-2">
-                                        <span v-for="i in table.capacity" :key="i" 
+                                        <span v-for="i in table.capacity" :key="i"
                                             class="material-symbols-outlined text-[15px] transition-colors"
                                             :class="table.status === 'OCCUPIED' ? (tableHasPendingOrder(table) ? 'text-error/40' : 'text-primary/40') : 'text-outline-variant/50'">
                                             chair
@@ -519,14 +554,15 @@ onUnmounted(() => {
                                             {{ formatCurrencyShort(calculateTotalAmount(table.orders)) }}
                                         </span>
                                     </div>
-                                    
+
                                     <div v-else-if="table.status === 'OCCUPIED'"
                                         class="mt-auto pt-2 border-t w-full text-center transition-colors border-primary/20">
                                         <span class="font-medium text-[11px] text-primary/60">Chưa gọi món</span>
                                     </div>
 
                                     <!-- Chữ trống (khi chưa gọi món/trống) -->
-                                    <div v-else class="mt-auto pt-2 border-t w-full text-center transition-colors border-outline-variant/20">
+                                    <div v-else
+                                        class="mt-auto pt-2 border-t w-full text-center transition-colors border-outline-variant/20">
                                         <span class="font-medium text-[11px] text-on-surface-variant/50">Trống</span>
                                     </div>
                                 </button>
@@ -562,8 +598,7 @@ onUnmounted(() => {
 
                 <!-- Danh sách đơn hàng -->
                 <div v-else class="flex-1 overflow-y-auto hide-scrollbar space-y-3 pr-1">
-                    <div v-for="order in orders" :key="order.id"
-                        @click="openOrderDetails(order)"
+                    <div v-for="order in orders" :key="order.id" @click="openOrderDetails(order)"
                         class="order-card group cursor-pointer rounded-xl border p-4 transition-all hover:shadow-md hover:-translate-y-0.5"
                         :class="order.status === 'PENDING'
                             ? 'bg-error/5 border-error/30 hover:border-error/50'
@@ -576,13 +611,15 @@ onUnmounted(() => {
                                     Đơn #{{ order.id }}
                                 </p>
                                 <div class="flex items-center gap-1.5 mt-0.5">
-                                    <span class="material-symbols-outlined text-[12px] text-on-surface-variant">table_restaurant</span>
+                                    <span
+                                        class="material-symbols-outlined text-[12px] text-on-surface-variant">table_restaurant</span>
                                     <span class="text-[12px] text-on-surface-variant">
                                         {{ order.table ? order.table.table_name : 'Mang đi' }}
                                     </span>
                                 </div>
                             </div>
-                            <span class="text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap flex-shrink-0 border"
+                            <span
+                                class="text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap flex-shrink-0 border"
                                 :class="order.status === 'PENDING'
                                     ? 'bg-error/10 text-error border-error/20'
                                     : 'bg-primary/10 text-primary border-primary/20'">
@@ -608,7 +645,8 @@ onUnmounted(() => {
                             <span class="text-[13px] font-bold text-on-surface">
                                 {{ formatCurrency(order.final_amount) }}
                             </span>
-                            <span class="text-[11px] text-right flex items-center gap-1 group-hover:gap-2 transition-all text-on-surface-variant hover:text-primary">
+                            <span
+                                class="text-[11px] text-right flex items-center gap-1 group-hover:gap-2 transition-all text-on-surface-variant hover:text-primary">
                                 Chi tiết
                                 <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
                             </span>
@@ -634,7 +672,8 @@ onUnmounted(() => {
                         class="relative bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] border border-outline-variant/20">
 
                         <!-- Header -->
-                        <div class="px-6 py-4 border-b flex justify-between items-center bg-surface-container-low border-outline-variant/20">
+                        <div
+                            class="px-6 py-4 border-b flex justify-between items-center bg-surface-container-low border-outline-variant/20">
                             <div class="flex items-center gap-3">
                                 <div class="w-9 h-9 rounded-xl flex items-center justify-center text-[13px] font-bold flex-shrink-0"
                                     :class="selectedOrder?.status === 'PENDING'
@@ -644,7 +683,8 @@ onUnmounted(() => {
                                 </div>
                                 <div>
                                     <h3 class="text-[15px] font-bold text-on-surface">Chi tiết đơn hàng</h3>
-                                    <p class="text-[11px] uppercase tracking-wider text-on-surface-variant">{{ selectedOrder?.order_type }}</p>
+                                    <p class="text-[11px] uppercase tracking-wider text-on-surface-variant">{{
+                                        selectedOrder?.order_type }}</p>
                                 </div>
                             </div>
                             <button @click="closeOrderModal"
@@ -657,13 +697,17 @@ onUnmounted(() => {
                         <div class="p-5 overflow-y-auto flex-1 space-y-4 hide-scrollbar">
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="rounded-xl p-4 border bg-surface border-outline-variant/20">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider mb-1 text-on-surface-variant">Vị trí / Khách</p>
+                                    <p
+                                        class="text-[10px] font-bold uppercase tracking-wider mb-1 text-on-surface-variant">
+                                        Vị trí / Khách</p>
                                     <p class="text-[15px] font-bold text-on-surface">
                                         {{ selectedOrder?.table ? selectedOrder.table.table_name : 'Khách mang đi' }}
                                     </p>
                                 </div>
                                 <div class="rounded-xl p-4 border text-right bg-surface border-outline-variant/20">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider mb-1 text-on-surface-variant">Trạng thái</p>
+                                    <p
+                                        class="text-[10px] font-bold uppercase tracking-wider mb-1 text-on-surface-variant">
+                                        Trạng thái</p>
                                     <span v-if="selectedOrder?.status === 'PENDING'"
                                         class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20">
                                         <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>Chờ xử lý
@@ -676,23 +720,30 @@ onUnmounted(() => {
                             </div>
 
                             <div class="rounded-xl border overflow-hidden border-outline-variant/20">
-                                <div class="px-4 py-2.5 flex justify-between border-b bg-surface-container-low border-outline-variant/20">
-                                    <span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Danh sách món</span>
-                                    <span class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Trạng thái</span>
+                                <div
+                                    class="px-4 py-2.5 flex justify-between border-b bg-surface-container-low border-outline-variant/20">
+                                    <span
+                                        class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Danh
+                                        sách món</span>
+                                    <span
+                                        class="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Trạng
+                                        thái</span>
                                 </div>
                                 <ul class="divide-y divide-outline-variant/10">
                                     <li v-for="detail in selectedOrder?.details" :key="detail.id"
                                         class="p-4 flex items-center justify-between gap-4">
                                         <div class="flex-1 min-w-0">
                                             <p class="text-[14px] text-on-surface">
-                                                <span class="font-bold mr-1.5 text-primary">×{{ detail?.quantity }}</span>
+                                                <span class="font-bold mr-1.5 text-primary">×{{ detail?.quantity
+                                                }}</span>
                                                 {{ detail?.product?.product_name }}
                                             </p>
                                             <p class="text-[11px] mt-0.5 text-on-surface-variant">
                                                 Size {{ detail.variant?.size || '---' }}
                                             </p>
                                         </div>
-                                        <span class="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border whitespace-nowrap"
+                                        <span
+                                            class="flex-shrink-0 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border whitespace-nowrap"
                                             :class="{
                                                 'bg-error/5 border-error/20 text-error': detail?.barista_status === 'PENDING',
                                                 'bg-primary/5 border-primary/20 text-primary': detail?.barista_status === 'PREPARING',
@@ -701,50 +752,62 @@ onUnmounted(() => {
                                             }">
                                             {{ detail?.barista_status === 'PENDING' ? '⏳ Chờ pha'
                                                 : detail?.barista_status === 'PREPARING' ? '☕ Đang làm'
-                                                : detail?.barista_status === 'COMPLETED' ? '✓ Đã xong'
-                                                : '✕ Đã hủy' }}
+                                                    : detail?.barista_status === 'COMPLETED' ? '✓ Đã xong'
+                                                        : '✕ Đã hủy' }}
                                         </span>
                                     </li>
                                 </ul>
                             </div>
 
                             <!-- Mã QR VNPay (chuyển khoản) -->
-                            <div v-if="selectedOrder?.payment?.payment_method !== 'CASH' && selectedOrder?.payment?.payment_status === 'PENDING'" 
-                                 class="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-outline-variant/30 shadow-sm">
+                            <div v-if="selectedOrder?.payment?.payment_method !== 'CASH' && selectedOrder?.payment?.payment_status === 'PENDING'"
+                                class="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-outline-variant/30 shadow-sm">
                                 <p class="text-[13px] font-bold text-[#005BAA] mb-3 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[18px]">qr_code_scanner</span> Quét mã thanh toán VNPay
+                                    <span class="material-symbols-outlined text-[18px]">qr_code_scanner</span> Quét mã
+                                    thanh toán VNPay
                                 </p>
                                 <div v-if="vnpayQrUrl" class="relative">
-                                    <img :src="vnpayQrUrl" alt="VNPay QR" class="w-full h-auto object-contain border p-1 shadow-sm" />
+                                    <img :src="vnpayQrUrl" alt="VNPay QR"
+                                        class="w-full h-auto object-contain border p-1 shadow-sm" />
                                 </div>
-                                <div v-else class="w-40 h-40 flex items-center justify-center bg-gray-50 animate-pulse border border-outline-variant/30">
+                                <div v-else
+                                    class="w-40 h-40 flex items-center justify-center bg-gray-50 animate-pulse border border-outline-variant/30">
                                     <span class="material-symbols-outlined text-gray-300 text-[32px]">qr_code</span>
                                 </div>
-                                <p class="text-[14px] text-error font-bold mt-3">Số tiền: {{ formatCurrency(selectedOrder?.final_amount) }}</p>
+                                <p class="text-[14px] text-error font-bold mt-3">Số tiền: {{
+                                    formatCurrency(selectedOrder?.final_amount) }}</p>
                             </div>
 
-                            <div class="flex justify-between items-center p-4 rounded-xl border bg-surface-container-low border-outline-variant/20">
+                            <div
+                                class="flex justify-between items-center p-4 rounded-xl border bg-surface-container-low border-outline-variant/20">
                                 <span class="text-[14px] text-on-surface-variant font-medium">Tổng thanh toán:</span>
-                                <span class="text-[18px] font-bold text-primary">{{ formatCurrency(selectedOrder?.final_amount) }}</span>
+                                <span class="text-[18px] font-bold text-primary">{{
+                                    formatCurrency(selectedOrder?.final_amount) }}</span>
                             </div>
                         </div>
 
                         <!-- Footer -->
                         <div class="px-5 py-4 border-t space-y-3 bg-surface-container-low border-outline-variant/20">
-                            
+
                             <!-- Xác nhận thanh toán -->
                             <template v-if="selectedOrder?.payment?.payment_status === 'PENDING'">
-                                <button v-if="!showPaymentConfirm"
-                                    @click="showPaymentConfirm = true"
+                                <button v-if="!showPaymentConfirm" @click="showPaymentConfirm = true"
                                     class="w-full px-5 py-2.5 rounded-xl font-bold text-[13px] flex items-center justify-center gap-2 transition-all border bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20">
-                                    <span class="material-symbols-outlined text-[18px]">payments</span> {{ selectedOrder?.payment?.payment_method === 'CASH' ? 'Thu tiền mặt' : 'Xác nhận đã thanh toán' }}
+                                    <span class="material-symbols-outlined text-[18px]">payments</span> {{
+                                        selectedOrder?.payment?.payment_method === 'CASH'
+                                            ? 'Thu tiền mặt' : 'Xác nhận đã thanh toán' }}
                                 </button>
-                                <div v-else class="rounded-xl border-2 border-secondary/30 bg-secondary/5 p-4 space-y-3">
+                                <div v-else
+                                    class="rounded-xl border-2 border-secondary/30 bg-secondary/5 p-4 space-y-3">
                                     <div class="flex items-center gap-2 text-secondary">
                                         <span class="material-symbols-outlined text-[20px]">payments</span>
-                                        <p class="text-[13px] font-bold">{{ selectedOrder?.payment?.payment_method === 'CASH' ? 'Xác nhận thu tiền mặt?' : 'Xác nhận đã thanh toán?' }}</p>
+                                        <p class="text-[13px] font-bold">{{ selectedOrder?.payment?.payment_method ===
+                                            'CASH' ? 'Xác nhận thu tiền mặt?' : 'Xác nhận đã thanh toán?' }}</p>
                                     </div>
-                                    <p class="text-[12px] text-on-surface-variant">{{ selectedOrder?.payment?.payment_method === 'CASH' ? 'Khách đã đưa' : 'Đã nhận đủ' }}: {{ formatCurrency(selectedOrder?.final_amount) }}</p>
+                                    <p class="text-[12px] text-on-surface-variant">{{
+                                        selectedOrder?.payment?.payment_method === 'CASH' ?
+                                            'Khách đã đưa' : 'Đã nhận đủ' }}: {{ formatCurrency(selectedOrder?.final_amount)
+                                        }}</p>
                                     <div class="flex gap-2">
                                         <button @click="showPaymentConfirm = false"
                                             class="flex-1 py-2.5 rounded-xl border border-outline-variant/40 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container transition-all">
@@ -753,7 +816,8 @@ onUnmounted(() => {
                                         <button @click="confirmPayment(selectedOrder.id)"
                                             class="flex-1 py-2.5 rounded-xl bg-secondary text-on-secondary font-bold text-[13px] hover:bg-secondary/90 transition-all shadow-sm">
                                             <span class="flex items-center justify-center gap-1.5">
-                                                <span class="material-symbols-outlined text-[16px]">check</span> Xác nhận
+                                                <span class="material-symbols-outlined text-[16px]">check</span> Xác
+                                                nhận
                                             </span>
                                         </button>
                                     </div>
@@ -762,12 +826,14 @@ onUnmounted(() => {
 
                             <!-- Xác nhận huỷ đơn -->
                             <template v-if="selectedOrder?.status === 'PENDING'">
-                                <div v-if="showCancelConfirm" class="rounded-xl border-2 border-error/30 bg-error/5 p-4 space-y-3">
+                                <div v-if="showCancelConfirm"
+                                    class="rounded-xl border-2 border-error/30 bg-error/5 p-4 space-y-3">
                                     <div class="flex items-center gap-2 text-error">
                                         <span class="material-symbols-outlined text-[20px]">warning</span>
                                         <p class="text-[13px] font-bold">Xác nhận huỷ đơn?</p>
                                     </div>
-                                    <p class="text-[12px] text-on-surface-variant">Hành động này sẽ huỷ đơn hàng #{{ selectedOrder?.id }} và không thể hoàn tác.</p>
+                                    <p class="text-[12px] text-on-surface-variant">Hành động này sẽ huỷ đơn hàng #{{
+                                        selectedOrder?.id }} và không thể hoàn tác.</p>
                                     <div class="flex gap-2">
                                         <button @click="showCancelConfirm = false"
                                             class="flex-1 py-2.5 rounded-xl border border-outline-variant/40 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container transition-all">
@@ -784,18 +850,20 @@ onUnmounted(() => {
                             </template>
 
                             <!-- Nút thao tác -->
-                            <div v-if="!showCancelConfirm && !showPaymentConfirm" class="flex gap-3 justify-end flex-wrap">
+                            <div v-if="!showCancelConfirm && !showPaymentConfirm"
+                                class="flex gap-3 justify-end flex-wrap">
                                 <button @click="closeOrderModal"
-                                    class="px-5 py-2 rounded-xl text-[13px] font-bold hover:bg-surface-container text-on-surface-variant transition-colors">Đóng lại</button>
-                                <button v-if="selectedOrder?.status === 'PENDING'"
-                                    @click="showCancelConfirm = true"
+                                    class="px-5 py-2 rounded-xl text-[13px] font-bold hover:bg-surface-container text-on-surface-variant transition-colors">Đóng
+                                    lại</button>
+                                <button v-if="selectedOrder?.status === 'PENDING'" @click="showCancelConfirm = true"
                                     class="px-5 py-2 rounded-xl font-bold text-[13px] flex items-center gap-2 transition-all border bg-error/5 text-error border-error/20 hover:bg-error/10">
                                     <span class="material-symbols-outlined text-[18px]">cancel</span> Hủy đơn
                                 </button>
                                 <button v-if="selectedOrder?.status === 'PENDING'"
                                     @click="acceptOrder(selectedOrder.id)"
                                     class="px-6 py-2 rounded-xl font-bold text-[13px] text-on-primary flex items-center gap-2 transition-all shadow-sm hover:opacity-90 bg-primary">
-                                    <span class="material-symbols-outlined text-[18px]">check_circle</span> Tiếp nhận đơn
+                                    <span class="material-symbols-outlined text-[18px]">check_circle</span> Tiếp nhận
+                                    đơn
                                 </button>
                                 <button v-else-if="selectedOrder?.status === 'PROCESSING'"
                                     @click="completeOrder(selectedOrder.id)"
@@ -831,14 +899,17 @@ onUnmounted(() => {
                                     </span>
                                 </div>
                                 <div class="min-w-0">
-                                    <h3 class="font-serif text-headline-sm font-bold text-on-surface truncate">{{ selectedTable?.table_name }}</h3>
-                                    <p class="text-[12px] text-on-surface-variant mt-0.5 uppercase tracking-wider truncate">
+                                    <h3 class="font-serif text-headline-sm font-bold text-on-surface truncate">{{
+                                        selectedTable?.table_name }}</h3>
+                                    <p
+                                        class="text-[12px] text-on-surface-variant mt-0.5 uppercase tracking-wider truncate">
                                         {{ selectedTable?.area }} • {{ selectedTable?.capacity }} người
                                     </p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 flex-shrink-0">
-                                <span class="text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider whitespace-nowrap"
+                                <span
+                                    class="text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider whitespace-nowrap"
                                     :class="selectedTable?.status === 'OCCUPIED'
                                         ? 'bg-primary text-on-primary'
                                         : 'bg-surface-container-high text-on-surface-variant border border-outline-variant/20'">
@@ -855,10 +926,13 @@ onUnmounted(() => {
                         <div class="p-5 space-y-4 max-h-[70vh] overflow-y-auto hide-scrollbar">
 
                             <!-- Order details (if occupied) -->
-                            <template v-if="selectedTable?.status === 'OCCUPIED' && selectedTable?.orders && selectedTable.orders.length > 0">
+                            <template
+                                v-if="selectedTable?.status === 'OCCUPIED' && selectedTable?.orders && selectedTable.orders.length > 0">
                                 <div class="rounded-xl border border-outline-variant/20 overflow-hidden">
-                                    <div class="bg-surface-container-low px-4 py-2.5 flex justify-between items-center border-b border-outline-variant/20">
-                                        <span class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                                    <div
+                                        class="bg-surface-container-low px-4 py-2.5 flex justify-between items-center border-b border-outline-variant/20">
+                                        <span
+                                            class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
                                             <span class="material-symbols-outlined text-[14px]">receipt_long</span>
                                             Thông tin đơn hàng
                                         </span>
@@ -874,17 +948,22 @@ onUnmounted(() => {
                                                 :key="'grouped-' + index"
                                                 class="flex justify-between items-start gap-3 py-2 border-b border-outline-variant/10 last:border-0">
                                                 <div class="flex-1">
-                                                    <p class="text-[14px] text-on-surface font-medium">{{ detail.product?.product_name }}</p>
+                                                    <p class="text-[14px] text-on-surface font-medium">{{
+                                                        detail.product?.product_name }}</p>
                                                     <p class="text-[12px] text-on-surface-variant mt-0.5">
-                                                        Size {{ detail.variant?.size || '---' }} • {{ formatCurrency(detail.unit_price) }}
+                                                        Size {{ detail.variant?.size || '---' }} • {{
+                                                            formatCurrency(detail.unit_price) }}
                                                     </p>
                                                 </div>
-                                                <span class="font-bold text-on-surface text-[14px] flex-shrink-0">×{{ detail.quantity }}</span>
+                                                <span class="font-bold text-on-surface text-[14px] flex-shrink-0">×{{
+                                                    detail.quantity }}</span>
                                             </div>
                                         </div>
 
-                                        <div class="flex justify-between items-center pt-2 border-t border-outline-variant/20">
-                                            <span class="text-[13px] text-on-surface-variant font-medium">Tổng cộng:</span>
+                                        <div
+                                            class="flex justify-between items-center pt-2 border-t border-outline-variant/20">
+                                            <span class="text-[13px] text-on-surface-variant font-medium">Tổng
+                                                cộng:</span>
                                             <span class="font-bold text-primary text-label-lg">
                                                 {{ formatCurrency(calculateTotalAmount(selectedTable.orders)) }}
                                             </span>
@@ -892,15 +971,16 @@ onUnmounted(() => {
 
                                         <div class="flex justify-between items-center">
                                             <span class="text-[13px] text-on-surface-variant">Thanh toán:</span>
-                                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider"
+                                            <span
+                                                class="text-[11px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider"
                                                 :class="selectedTable.orders.every(o => o.payment?.payment_status === 'PAID')
                                                     ? 'bg-secondary-container text-secondary'
                                                     : 'bg-error/10 text-error border border-error/20'">
-                                                {{ selectedTable.orders.every(o => o.payment?.payment_status === 'PAID')
+                                                {{selectedTable.orders.every(o => o.payment?.payment_status === 'PAID')
                                                     ? '✓ Đã thanh toán'
                                                     : selectedTable.orders.some(o => o.payment?.payment_status === 'PAID')
                                                         ? '◑ Một phần'
-                                                        : '○ Chưa thanh toán' }}
+                                                        : '○ Chưa thanh toán'}}
                                             </span>
                                         </div>
                                     </div>
@@ -910,13 +990,15 @@ onUnmounted(() => {
                             <!-- Trạng thái trống -->
                             <div v-if="selectedTable?.status === 'EMPTY'"
                                 class="flex items-center gap-3 p-4 rounded-xl bg-surface-container-low border border-outline-variant/20">
-                                <span class="material-symbols-outlined text-on-surface-variant/40 text-[24px]">chair</span>
+                                <span
+                                    class="material-symbols-outlined text-on-surface-variant/40 text-[24px]">chair</span>
                                 <p class="text-[13px] text-on-surface-variant">Bàn đang trống, chưa có khách.</p>
                             </div>
 
                             <!-- Các nút thao tác -->
                             <div class="space-y-2.5">
-                                <button v-if="selectedTable?.status === 'OCCUPIED' && selectedTable?.orders && selectedTable.orders.length > 0"
+                                <button
+                                    v-if="selectedTable?.status === 'OCCUPIED' && selectedTable?.orders && selectedTable.orders.length > 0"
                                     @click="printBill(selectedTable)"
                                     class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-bold text-label-md hover:bg-surface-container-highest transition-all">
                                     <span class="material-symbols-outlined text-[20px]">print</span> In hóa đơn
@@ -928,17 +1010,18 @@ onUnmounted(() => {
                                 </button>
                                 <!-- Xác nhận dọn bàn: 2 bước -->
                                 <template v-if="selectedTable?.status === 'OCCUPIED'">
-                                    <button v-if="!showCleanConfirm"
-                                        @click="showCleanConfirm = true"
+                                    <button v-if="!showCleanConfirm" @click="showCleanConfirm = true"
                                         class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-outline-variant/40 font-bold text-on-surface hover:bg-surface-container transition-all text-label-md">
-                                        <span class="material-symbols-outlined text-[18px]">cleaning_services</span> Khách về — Dọn bàn
+                                        <span class="material-symbols-outlined text-[18px]">cleaning_services</span>
+                                        Khách về — Dọn bàn
                                     </button>
                                     <div v-else class="rounded-xl border-2 border-error/30 bg-error/5 p-4 space-y-3">
                                         <div class="flex items-center gap-2 text-error">
                                             <span class="material-symbols-outlined text-[20px]">warning</span>
                                             <p class="text-[13px] font-bold">Xác nhận dọn bàn?</p>
                                         </div>
-                                        <p class="text-[12px] text-on-surface-variant">Hành động này sẽ chuyển bàn về trạng thái trống và xoá các đơn hàng liên kết.</p>
+                                        <p class="text-[12px] text-on-surface-variant">Hành động này sẽ chuyển bàn về
+                                            trạng thái trống và xoá các đơn hàng liên kết.</p>
                                         <div class="flex gap-2">
                                             <button @click="showCleanConfirm = false"
                                                 class="flex-1 py-2.5 rounded-xl border border-outline-variant/40 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container transition-all">
@@ -947,7 +1030,8 @@ onUnmounted(() => {
                                             <button @click="updateTableStatus(selectedTable.id, 'EMPTY')"
                                                 class="flex-1 py-2.5 rounded-xl bg-error text-on-error font-bold text-[13px] hover:bg-error/90 transition-all shadow-sm">
                                                 <span class="flex items-center justify-center gap-1.5">
-                                                    <span class="material-symbols-outlined text-[16px]">check</span> Xác nhận
+                                                    <span class="material-symbols-outlined text-[16px]">check</span> Xác
+                                                    nhận
                                                 </span>
                                             </button>
                                         </div>
@@ -977,67 +1061,158 @@ onUnmounted(() => {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
 .stat-chip:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
 }
+
 .stat-chip-icon {
-    width: 44px; height: 44px;
+    width: 44px;
+    height: 44px;
     border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    background-image: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
 }
+
 .stat-num {
-    font-size: 24px; font-weight: 800; line-height: 1.1;
-    color: #334155; /* Neutral dark color, can be overridden inline */
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #334155;
+    /* Neutral dark color, can be overridden inline */
 }
+
 .stat-label {
-    font-size: 13px; color: #64748B; margin-top: 4px; font-weight: 500; white-space: nowrap;
+    font-size: 13px;
+    color: #64748B;
+    margin-top: 4px;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
 /* ===== FLOOR PLAN ===== */
 .floor-plan-wrap {
     position: relative;
 }
+
 .coffee-bar-strip {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    background: #8D6E63; color: #fff;
-    font-size: 11px; font-weight: 700; letter-spacing: 0.15em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #8D6E63;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
     padding: 8px 20px;
     text-transform: uppercase;
 }
+
 .area-pill {
-    display: inline-flex; align-items: center; gap: 5px;
-    background: rgba(255,255,255,0.75); backdrop-filter: blur(4px);
-    border: 1px solid #C8A97E50; border-radius: 99px;
-    padding: 4px 12px; font-size: 11px; font-weight: 700;
-    color: #8D6E63; text-transform: uppercase; letter-spacing: .1em;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(4px);
+    border: 1px solid #C8A97E50;
+    border-radius: 99px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #8D6E63;
+    text-transform: uppercase;
+    letter-spacing: .1em;
 }
 
 /* Plant corners */
-.plant-tl, .plant-tr, .plant-bl, .plant-br {
-    position: absolute; font-size: 28px; opacity: 0.6; pointer-events: none;
+.plant-tl,
+.plant-tr,
+.plant-bl,
+.plant-br {
+    position: absolute;
+    font-size: 28px;
+    opacity: 0.6;
+    pointer-events: none;
 }
-.plant-tl { top: 40px; left: 12px; }
-.plant-tr { top: 40px; right: 12px; transform: scaleX(-1); }
-.plant-bl { bottom: 12px; left: 12px; }
-.plant-br { bottom: 12px; right: 12px; transform: scaleX(-1); }
+
+.plant-tl {
+    top: 40px;
+    left: 12px;
+}
+
+.plant-tr {
+    top: 40px;
+    right: 12px;
+    transform: scaleX(-1);
+}
+
+.plant-bl {
+    bottom: 12px;
+    left: 12px;
+}
+
+.plant-br {
+    bottom: 12px;
+    right: 12px;
+    transform: scaleX(-1);
+}
 
 
 
 /* Legend */
-.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #8D6E63; }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #8D6E63;
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
 
 /* Order card */
-.order-card { background: #FAF6F0; }
+.order-card {
+    background: #FAF6F0;
+}
 
 /* Transitions */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-.slide-up-enter-active, .slide-up-leave-active { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-.slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateY(24px) scale(0.96); }
-.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-.hide-scrollbar::-webkit-scrollbar { display: none; }
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+}
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
 </style>

@@ -144,6 +144,6 @@ class OrderController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Cập nhật trạng thái đơn hàng thành công.');
+        return back()->with('toast-success', 'Cập nhật trạng thái đơn hàng thành công.');
     }
 }
