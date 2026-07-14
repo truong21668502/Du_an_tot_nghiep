@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use Illuminate\Support\Facades\Http;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -12,6 +12,31 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group.
 |
 */
+
+Route::get('/ai-api', function(){
+
+$response = Http::withHeaders([
+    'Authorization' => 'Bearer ' . env('GEMINI_API_KEY'),
+    'Content-Type' => 'application/json',
+])->post(
+    'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    [
+        'model' => 'gemini-3.1-flash-lite',
+        'messages' => [
+            [
+                'role' => 'user',
+                'content' => 'chào bạn'
+            ]
+        ]
+    ]
+);
+
+$message = $response->json('choices.0.message.content');
+
+dd($message);
+echo $message;
+});
+
 
 // Public Routes - Không cần đăng nhập
 require __DIR__ . '/web/public.php';

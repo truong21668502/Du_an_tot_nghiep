@@ -1,6 +1,7 @@
 ﻿<script setup>
 import { ref, computed, watch } from 'vue'
 import { usePage, router, Link } from '@inertiajs/vue3'
+import ChatBox from '@/Components/Chat/ChatBox.vue'
 import { toast } from "vue3-toastify";
 const isMobileMenuOpen = ref(false)
 const page = usePage()
@@ -175,6 +176,7 @@ router.on('navigate', () => {
     </nav>
     <main class="flex-grow pt-20">
       <slot />
+      <ChatBox />
     </main>
     <footer class="w-full py-16 px-margin-mobile md:px-gutter bg-surface-container-low border-t border-surface-container-highest/20">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-[1280px] mx-auto">

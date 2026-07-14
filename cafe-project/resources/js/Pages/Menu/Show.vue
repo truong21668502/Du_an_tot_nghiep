@@ -29,6 +29,8 @@ const allImages = computed(() => {
   if (product.value?.image_url) return [product.value.image_url, ...imgs.map(i => i.url)]
   return imgs.map(i => i.url)
 })
+
+console.log(page.props);
 </script>
 <template>
   <div class="w-full">

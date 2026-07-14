@@ -13,6 +13,9 @@ use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\CheckoutController;
 use App\Http\Controllers\Customer\OrderController;
 use App\Http\Controllers\Customer\VnpayController;
+
+use App\Http\Controllers\Customer\ChatController;
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -71,6 +74,30 @@ Route::middleware('auth')->group(function () {
     Route::delete('/bai-viet/{postId}/binh-luan/{comment}', [PostCommentController::class, 'destroy'])
         ->name('comments.destroy');
 });
+
+// !!!!!!!!!!!!!!! KHÔNG TỰ TIỆN RỜ VÀO QUAN TRỌNG !!!!!!!!!!!!!!!!!!!!!!!!!!
+Route::post('/chat', [ChatController::class, 'message'])->name('chat.message');
+Route::get('/chat-test', function () {
+    return Inertia::render('ChatTest');
+});
+
+Route::prefix('chat')->group(function () {
+    Route::post('/', [ChatController::class, 'message'])->name('chat.message');
+    
+    // History management
+    Route::get('/history', [ChatController::class, 'getHistory'])->name('chat.history');
+    Route::get('/conversations', [ChatController::class, 'getConversations'])->name('chat.conversations');
+    
+    // Delete operations
+    Route::delete('/messages', [ChatController::class, 'deleteMessages'])->name('chat.delete-messages');
+    Route::delete('/messages/all', [ChatController::class, 'deleteAllMessages'])->name('chat.delete-all-messages');
+    Route::delete('/conversation', [ChatController::class, 'deleteConversation'])->name('chat.delete-conversation');
+    
+    // Summary
+    Route::post('/regenerate-summary', [ChatController::class, 'regenerateSummary'])->name('chat.regenerate-summary');
+});
+
+
 
 
 
