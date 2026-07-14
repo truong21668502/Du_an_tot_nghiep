@@ -5,7 +5,7 @@ return [
     'openrouter_url' => env('GEMINI_API_URL'),
 
     'models' => [
-        'primary'   => "gemini-3.1-flash-lite",
+        'primary'   => env('GEMINI_AI_MODEL'),
         'secondary' => env('AI_SECONDARY_MODEL'),
         'tertiary'  => env('AI_TERTIARY_MODEL'),
     ],
