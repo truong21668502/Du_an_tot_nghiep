@@ -78,7 +78,7 @@ class ImportReceiptController extends Controller
             return back()->withInput()->with('error', 'Lỗi khi lưu phiếu nhập: ' . $e->getMessage());
         }
 
-        return redirect()->route('admin.kho.index')->with('success', 'Tạo phiếu nhập kho thành công!');
+        return redirect()->route('admin.kho.index')->with('toast-success', 'Tạo phiếu nhập kho thành công!');
     }
 
     /**
@@ -225,7 +225,7 @@ class ImportReceiptController extends Controller
             return back()->withInput()->with('error', 'Lỗi khi cập nhật phiếu nhập: ' . $e->getMessage());
         }
 
-        return redirect()->route('admin.kho.nhap.index')->with('success', 'Cập nhật phiếu nhập thành công!');
+        return redirect()->route('admin.kho.nhap.index')->with('toast-success', 'Cập nhật phiếu nhập thành công!');
     }
 
     /**
@@ -274,7 +274,7 @@ class ImportReceiptController extends Controller
             return response()->json(['message' => 'Đã huỷ phiếu nhập và hoàn lại tồn kho.']);
         }
 
-        return redirect()->route('admin.kho.nhap.index')->with('success', 'Đã huỷ phiếu nhập và hoàn lại tồn kho.');
+        return redirect()->route('admin.kho.nhap.index')->with('toast-success', 'Đã huỷ phiếu nhập và hoàn lại tồn kho.');
     }
     public function quickStoreMaterial(Request $request)
     {

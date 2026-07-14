@@ -1,13 +1,31 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { router } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
 
 const props = defineProps({ order: Object });
 
+// State cục bộ để có thể cập nhật realtime, khác với prop gốc chỉ đọc
+const localOrder = ref(props.order);
+
 const cancelReason = ref("");
 const showCancelModal = ref(false);
 const processing = ref(false);
+
+onMounted(() => {
+    if (window.Echo) {
+        window.Echo.channel('staff-orders')
+            .listen('.order.status-updated', (e) => {
+                if (e.order.id === localOrder.value.id) {
+                    localOrder.value = e.order;
+                }
+            });
+    }
+});
+
+onUnmounted(() => {
+    if (window.Echo) window.Echo.leaveChannel('staff-orders');
+});
 
 const getNextActions = (order) => {
     if (order.status === "PENDING") {
@@ -53,7 +71,7 @@ const confirmCancel = () => {
 const sendUpdate = (status, reason = null) => {
     processing.value = true;
     router.patch(
-        `/quan-tri/don-hang/${props.order.id}/status`,
+        `/quan-tri/don-hang/${localOrder.value.id}/status`,
         { status, cancel_reason: reason },
         {
             preserveScroll: true,
@@ -81,11 +99,12 @@ const formatDate = (value) => new Date(value).toLocaleString("vi-VN");
 
             <div class="flex items-start justify-between">
                 <div>
-                    <h1 class="font-sans text-headline-md text-on-surface">Đơn hàng #{{ order.id }}</h1>
-                    <p class="font-sans text-body-medium text-on-surface-variant">{{ formatDate(order.created_at) }}</p>
+                    <h1 class="font-sans text-headline-md text-on-surface">Đơn hàng #{{ localOrder.id }}</h1>
+                    <p class="font-sans text-body-medium text-on-surface-variant">{{ formatDate(localOrder.created_at)
+                    }}</p>
                 </div>
                 <div class="flex gap-2">
-                    <button v-for="action in getNextActions(order)" :key="action.value" :disabled="processing"
+                    <button v-for="action in getNextActions(localOrder)" :key="action.value" :disabled="processing"
                         @click="updateStatus(action.value)"
                         class="px-5 py-2.5 rounded-full font-sans text-label-large transition-colors" :class="action.value === 'CANCELLED'
                             ? 'bg-error-container text-error hover:bg-error-container/80'
@@ -98,14 +117,18 @@ const formatDate = (value) => new Date(value).toLocaleString("vi-VN");
 
             <div
                 class="bg-surface rounded-2xl border border-outline-variant/20 p-6 grid grid-cols-2 gap-4 font-sans text-body-medium shadow-sm">
-                <div><span class="text-on-surface-variant">Khách hàng:</span> {{ order.user?.name ?? "Khách vãng lai" }}
+                <div><span class="text-on-surface-variant">Khách hàng:</span>
+                    {{
+                        localOrder.user?.name ?? "Khách vãng lai"
+                    }}
                 </div>
-                <div><span class="text-on-surface-variant">Bàn:</span> {{ order.table?.table_name ?? "—" }}</div>
+                <div><span class="text-on-surface-variant">Bàn:</span> {{ localOrder.table?.table_name ?? "—" }}</div>
                 <div><span class="text-on-surface-variant">Loại đơn:</span>
-                    {{ order.order_type === "DINE_IN" ? "Tại chỗ" : "Mang đi" }}</div>
+                    {{ localOrder.order_type === "DINE_IN" ? "Tại chỗ" : "Mang đi" }}</div>
                 <div>
                     <span class="text-on-surface-variant">Thanh toán:</span>
-                    {{ order.payment?.payment_method ?? "—" }} ({{ order.payment?.payment_status ?? "chưa có" }})
+                    {{ localOrder.payment?.payment_method ?? "—" }} ({{ localOrder.payment?.payment_status ?? "chưa có"
+                    }})
                 </div>
             </div>
 
@@ -122,7 +145,7 @@ const formatDate = (value) => new Date(value).toLocaleString("vi-VN");
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-outline-variant/10 font-sans text-body-medium text-on-surface">
-                        <tr v-for="d in order.details" :key="d.id">
+                        <tr v-for="d in localOrder.details" :key="d.id">
                             <td class="p-4">{{ d.product?.product_name }}</td>
                             <td class="p-4 text-on-surface-variant">{{ d.variant?.size ?? "—" }}</td>
                             <td class="p-4 text-center">{{ d.quantity }}</td>
@@ -135,15 +158,15 @@ const formatDate = (value) => new Date(value).toLocaleString("vi-VN");
 
             <div
                 class="bg-surface rounded-2xl border border-outline-variant/20 p-6 space-y-1 text-right font-sans text-body-medium shadow-sm">
-                <div class="text-on-surface-variant">Tạm tính: {{ formatMoney(order.total_amount) }}</div>
-                <div class="text-on-surface-variant">Giảm giá: -{{ formatMoney(order.discount_amount) }}</div>
+                <div class="text-on-surface-variant">Tạm tính: {{ formatMoney(localOrder.total_amount) }}</div>
+                <div class="text-on-surface-variant">Giảm giá: -{{ formatMoney(localOrder.discount_amount) }}</div>
                 <div class="text-headline-small font-bold text-on-surface">Thành tiền: {{
-                    formatMoney(order.final_amount) }}</div>
+                    formatMoney(localOrder.final_amount) }}</div>
             </div>
 
-            <div v-if="order.cancel_reason"
+            <div v-if="localOrder.cancel_reason"
                 class="bg-error-container/20 rounded-2xl p-4 font-sans text-body-medium text-error">
-                Lý do hủy: {{ order.cancel_reason }}
+                Lý do hủy: {{ localOrder.cancel_reason }}
             </div>
 
             <div v-if="showCancelModal"

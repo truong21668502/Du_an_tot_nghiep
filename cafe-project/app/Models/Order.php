@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Observers\OrderObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 
-
+#[ObservedBy(OrderObserver::class)]
 class Order extends Model
 {
     use HasFactory;
@@ -21,24 +23,36 @@ class Order extends Model
      * Các thuộc tính có thể fill dữ liệu hàng loạt (Mass Assignable).
      */
     protected $fillable = [
-        'user_id', 'cart_token', 'table_id', 'coupon_id',
-        'total_amount', 'discount_amount', 'final_amount',
-        'order_type', 'status', 'cancel_reason', 'note',
-        'receiver_name', 'receiver_phone', 'address_detail', 'ward', 'city',
+        'user_id',
+        'cart_token',
+        'table_id',
+        'coupon_id',
+        'total_amount',
+        'discount_amount',
+        'final_amount',
+        'order_type',
+        'status',
+        'cancel_reason',
+        'note',
+        'receiver_name',
+        'receiver_phone',
+        'address_detail',
+        'ward',
+        'city',
     ];
 
     /**
      * Tự động ép kiểu dữ liệu khi lấy từ database.
      */
     protected $casts = [
-        'user_id'         => 'integer',
-        'table_id'        => 'integer',
-        'coupon_id'       => 'integer',
-        'total_amount'    => 'decimal:2',
+        'user_id' => 'integer',
+        'table_id' => 'integer',
+        'coupon_id' => 'integer',
+        'total_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
-        'final_amount'    => 'decimal:2',
-        'created_at'      => 'datetime',
-        'updated_at'      => 'datetime',
+        'final_amount' => 'decimal:2',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     /**
