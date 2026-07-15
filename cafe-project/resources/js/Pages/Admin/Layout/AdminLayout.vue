@@ -48,6 +48,7 @@ const menuGroups = [
         children: [
             { label: "Danh mục", href: "/quan-tri/danh-muc", icon: "category" },
             { label: "Sản phẩm", href: "/quan-tri/san-pham", icon: "coffee" },
+            { label: "Công thức", href: "/quan-tri/cong-thuc", icon: "science" },
         ],
     },
     {
@@ -157,7 +158,7 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                         <span class="material-symbols-outlined text-xl flex-shrink-0">{{ child.icon }}</span>
                         <span v-if="!collapsed" class="truncate">{{
                             child.label
-                            }}</span>
+                        }}</span>
                     </a>
                 </div>
             </nav>

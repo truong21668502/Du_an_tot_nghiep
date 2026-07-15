@@ -10,44 +10,27 @@ class Recipe extends Model
 {
     use HasFactory;
 
-    // Khai báo chính xác tên bảng trong Database
     protected $table = 'recipes';
 
-    /**
-     * Các thuộc tính cho phép gán dữ liệu hàng loạt (Mass Assignable).
-     * Khớp chính xác 100% với các trường trong ảnh thiết kế của bạn.
-     */
     protected $fillable = [
-        'product_id',
+        'variant_id',
         'material_id',
-        'size',
         'quantity_needed',
     ];
 
-    /**
-     * Tự động ép kiểu dữ liệu khi lấy từ database ra Eloquent Object.
-     */
     protected $casts = [
-        'product_id'      => 'integer',
-        'material_id'     => 'integer',
-        'quantity_needed' => 'decimal:2', // Định dạng số thập phân cho định lượng (g, ml...)
-        'created_at'      => 'datetime',
-        'updated_at'      => 'datetime',
+        'variant_id' => 'integer',
+        'material_id' => 'integer',
+        'quantity_needed' => 'decimal:2',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    /**
-     * Mối quan hệ: Công thức này thuộc về một Sản phẩm (Product) nhất định.
-     * Liên kết thông qua khóa ngoại 'product_id'
-     */
-    public function product(): BelongsTo
+    public function variant(): BelongsTo
     {
-        return $this->belongsTo(Product::class, 'product_id', 'id');
+        return $this->belongsTo(ProductVariant::class, 'variant_id', 'id');
     }
 
-    /**
-     * Mối quan hệ: Công thức này sử dụng một Nguyên liệu (Material) nhất định.
-     * Liên kết thông qua khóa ngoại 'material_id'
-     */
     public function material(): BelongsTo
     {
         return $this->belongsTo(Material::class, 'material_id', 'id');

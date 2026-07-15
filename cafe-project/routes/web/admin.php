@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\ImportReceiptController;
 use App\Http\Controllers\Admin\MaterialController;
 use App\Http\Controllers\Admin\StockAdjustmentController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\RecipeController;
 
 
 /*
@@ -134,4 +135,12 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
         Route::get('/dieu-chinh-ton/tao', [StockAdjustmentController::class, 'create'])->name('dieu-chinh.create');
         Route::post('/dieu-chinh-ton', [StockAdjustmentController::class, 'store'])->name('dieu-chinh.store');
     });
+
+    Route::get('cong-thuc', [RecipeController::class, 'index'])->name('recipes.index');
+    Route::get('cong-thuc/{variant}', [RecipeController::class, 'show'])->name('recipes.show');
+    Route::post('cong-thuc/{variant}', [RecipeController::class, 'sync'])->name('recipes.sync');
+    Route::delete('cong-thuc/nguyen-lieu/{recipe}', [RecipeController::class, 'destroy'])->name('recipes.destroy');
+    Route::post('cong-thuc/{fromVariant}/sao-chep/{toVariant}', [RecipeController::class, 'copy'])
+        ->name('recipes.copy');
+    Route::get('cong-thuc/{variant}/gia-von', [RecipeController::class, 'cost'])->name('recipes.cost');
 });

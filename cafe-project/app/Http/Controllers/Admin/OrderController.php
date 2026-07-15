@@ -8,6 +8,7 @@ use App\Models\Table;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Events\OrderStatusUpdated;
+use App\Services\RecipeStockService;
 
 class OrderController extends Controller
 {
@@ -63,7 +64,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show(Request $request, Order $order)
+    public function show(Request $request, Order $order, RecipeStockService $recipeStockService)
     {
         $order->load([
             'table:id,table_name,area',
@@ -80,10 +81,11 @@ class OrderController extends Controller
 
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,
+            'missingRecipeVariants' => $recipeStockService->findVariantsWithoutRecipe($order),
         ]);
     }
 
-    public function updateStatus(Request $request, Order $order)
+    public function updateStatus(Request $request, Order $order, RecipeStockService $recipeStockService)
     {
         $validated = $request->validate([
             'status' => 'required|in:PENDING,PROCESSING,READY,DELIVERING,COMPLETED,CANCELLED',
@@ -120,6 +122,24 @@ class OrderController extends Controller
             }
 
             return back()->with('error', $message);
+        }
+
+        if ($validated['status'] === 'COMPLETED') {
+            $insufficient = $recipeStockService->checkAvailability($order);
+
+            if (!empty($insufficient)) {
+                $names = collect($insufficient)->pluck('material_name')->implode(', ');
+                $message = "Không đủ nguyên liệu để hoàn thành đơn: {$names}.";
+
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'message' => $message,
+                        'insufficient' => $insufficient,
+                    ], 422);
+                }
+
+                return back()->with('toast-error', $message);
+            }
         }
 
         $order->status = $validated['status'];
