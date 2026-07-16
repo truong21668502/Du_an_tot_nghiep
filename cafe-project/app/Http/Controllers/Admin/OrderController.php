@@ -15,7 +15,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $query = Order::query()
-            ->with(['table:id,table_name,area', 'user:id,name,phone', 'payment'])
+            ->with(['table:id,table_name,area', 'user:id,full_name,phone', 'payment'])
             ->withCount('details');
 
         if ($request->filled('status')) {
@@ -43,7 +43,7 @@ class OrderController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('id', 'like', "%{$search}%")
                     ->orWhereHas('user', function ($uq) use ($search) {
-                        $uq->where('name', 'like', "%{$search}%")
+                        $uq->where('full_name', 'like', "%{$search}%")
                             ->orWhere('phone', 'like', "%{$search}%");
                     });
             });
@@ -68,7 +68,7 @@ class OrderController extends Controller
     {
         $order->load([
             'table:id,table_name,area',
-            'user:id,name,phone,email',
+            'user:id,full_name,phone,email',
             'coupon:id,code,discount_type,discount_value',
             'payment',
             'details.product:id,product_name,image_url',

@@ -262,8 +262,8 @@ async function saveRecipe() {
                             <div v-if="costData.has_missing_cost_data"
                                 class="mb-3 rounded-lg bg-error-container/30 px-3 py-2">
                                 <p class="text-body-sm text-on-error-container">
-                                    ⚠️ Một số nguyên liệu chưa có phiếu nhập kho nào — giá vốn hiển thị bên dưới chưa
-                                    chính xác (đang tính là 0đ).
+                                    ⚠️ Một số nguyên liệu chưa có đủ dữ liệu nhập kho — giá vốn hiển thị bên dưới có thể
+                                    chưa chính xác.
                                 </p>
                             </div>
 
@@ -283,6 +283,8 @@ async function saveRecipe() {
                                     × {{ item.cost_per_unit.toLocaleString('vi-VN') }}đ/{{ item.unit }}
                                     = {{ item.line_cost.toLocaleString('vi-VN') }}đ
                                     <span v-if="!item.has_cost_data" class="italic">(chưa có dữ liệu nhập kho)</span>
+                                    <span v-else-if="item.is_partial_data" class="italic">(dữ liệu nhập kho chưa đầy
+                                        đủ)</span>
                                 </li>
                             </ul>
                         </div>
