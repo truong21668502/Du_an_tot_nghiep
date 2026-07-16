@@ -15,7 +15,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $query = Order::query()
-            ->with(['table:id,table_name,area', 'user:id,full_name,phone', 'payment'])
+            ->with(['table:id,table_name,area', 'user:id,full_name,phone_number', 'payment'])
             ->withCount('details');
 
         if ($request->filled('status')) {
@@ -49,8 +49,6 @@ class OrderController extends Controller
             });
         }
 
-        // Đơn hàng cần theo dõi realtime nên sắp mới nhất lên đầu (khác pattern
-        // alphabetical đang dùng cho kho, vì bản chất workflow khác nhau)
         $orders = $query->latest('created_at')->paginate(20)->withQueryString();
 
         if ($request->wantsJson()) {
@@ -99,7 +97,7 @@ class OrderController extends Controller
                 return response()->json(['message' => $message], 422);
             }
 
-            return back()->with('error', $message);
+            return back()->with('toast-error', $message);
         }
 
         // DELIVERING chỉ hợp lệ với đơn giao hàng
@@ -110,7 +108,7 @@ class OrderController extends Controller
                 return response()->json(['message' => $message], 422);
             }
 
-            return back()->with('error', $message);
+            return back()->with('toast-error', $message);
         }
 
         // Không cho hủy khi đã bắt đầu giao hàng
@@ -121,7 +119,7 @@ class OrderController extends Controller
                 return response()->json(['message' => $message], 422);
             }
 
-            return back()->with('error', $message);
+            return back()->with('toast-error', $message);
         }
 
         if ($validated['status'] === 'COMPLETED') {

@@ -53,100 +53,114 @@ function userDisplayName(user) {
 
 <template>
     <AdminLayout title="Lịch Sử Điều Chỉnh Tồn Kho">
-        <div class="p-6 max-w-6xl mx-auto space-y-6">
+        <div class="space-y-6 font-sans">
 
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div class="flex items-center gap-3">
-                    <Link :href="route('admin.kho.index')" class="text-sm text-gray-400 hover:text-gray-600 transition">
-                        ← Quay lại kho</Link>
-                    <span class="text-gray-200">/</span>
-                    <h1 class="text-xl font-bold text-gray-800">Lịch Sử Điều Chỉnh Tồn Kho</h1>
+                    <Link :href="route('admin.kho.index')"
+                        class="inline-flex items-center gap-1 text-label-large text-on-surface-variant hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined text-md">arrow_back</span> Quay lại kho
+                    </Link>
+                    <span class="text-outline-variant">/</span>
+                    <h1 class="text-headline-md font-bold text-on-surface">Lịch Sử Điều Chỉnh Tồn Kho</h1>
                 </div>
                 <Link :href="route('admin.kho.dieu-chinh.create')"
-                    class="text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl transition">
-                    + Điều chỉnh tồn kho
+                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 rounded-full font-bold transition-colors shadow-sm cursor-pointer">
+                    <span class="material-symbols-outlined text-md">add</span> Điều chỉnh tồn kho
                 </Link>
             </div>
 
             <div
-                class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 grid grid-cols-1 md:grid-cols-5 gap-3">
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block">Nguyên liệu</label>
+                class="bg-surface rounded-2xl border border-outline-variant/20 shadow-sm p-5 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-label-medium text-on-surface-variant font-bold">Nguyên liệu</label>
                     <select v-model="filters.material_id" @change="applyFilters"
-                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        class="w-full border border-outline-variant bg-surface rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
                         <option value="">Tất cả</option>
                         <option v-for="m in materials" :key="m.id" :value="m.id">{{ m.material_name }}</option>
                     </select>
                 </div>
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block">Lý do</label>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-label-medium text-on-surface-variant font-bold">Lý do</label>
                     <select v-model="filters.reason" @change="applyFilters"
-                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        class="w-full border border-outline-variant bg-surface rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
                         <option value="">Tất cả</option>
                         <option v-for="(label, value) in reasonLabels" :key="value" :value="value">{{ label }}</option>
                     </select>
                 </div>
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block">Từ ngày</label>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-label-medium text-on-surface-variant font-bold">Từ ngày</label>
                     <input v-model="filters.from_date" @change="applyFilters" type="date"
-                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                        class="w-full border border-outline-variant bg-surface rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block">Đến ngày</label>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-label-medium text-on-surface-variant font-bold">Đến ngày</label>
                     <input v-model="filters.to_date" @change="applyFilters" type="date"
-                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                        class="w-full border border-outline-variant bg-surface rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
-                <div class="flex items-end">
+                <div class="flex flex-col">
                     <button @click="resetFilters"
-                        class="text-sm text-gray-500 hover:text-gray-700 border border-gray-200 px-4 py-2 rounded-lg transition w-full">Xoá
-                        lọc</button>
+                        class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-outline-variant/50 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface rounded-xl transition-colors font-bold w-full">
+                        <span class="material-symbols-outlined text-sm">filter_alt_off</span> Xoá lọc
+                    </button>
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-500 text-left">
-                            <th class="px-4 py-3 font-medium">Thời gian</th>
-                            <th class="px-4 py-3 font-medium">Nguyên liệu</th>
-                            <th class="px-4 py-3 font-medium text-right">Trước</th>
-                            <th class="px-4 py-3 font-medium text-right">Sau</th>
-                            <th class="px-4 py-3 font-medium text-right">Chênh lệch</th>
-                            <th class="px-4 py-3 font-medium">Lý do</th>
-                            <th class="px-4 py-3 font-medium">Người thực hiện</th>
-                            <th class="px-4 py-3 font-medium">Ghi chú</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-if="adjustments.data.length === 0">
-                            <td colspan="8" class="text-center py-12 text-gray-400">Chưa có điều chỉnh nào.</td>
-                        </tr>
-                        <tr v-for="a in adjustments.data" :key="a.id" class="border-t border-gray-100">
-                            <td class="px-4 py-3 text-gray-500 whitespace-nowrap">{{ formatDate(a.created_at) }}</td>
-                            <td class="px-4 py-3 text-gray-700 font-medium">{{ a.material?.material_name || '—' }}</td>
-                            <td class="px-4 py-3 text-right font-mono text-gray-500">{{ formatNum(a.quantity_before) }}
-                            </td>
-                            <td class="px-4 py-3 text-right font-mono text-gray-700">{{ formatNum(a.quantity_after) }}
-                            </td>
-                            <td class="px-4 py-3 text-right font-mono font-semibold"
-                                :class="Number(a.change_amount) > 0 ? 'text-green-600' : (Number(a.change_amount) < 0 ? 'text-red-500' : 'text-gray-400')">
-                                {{ Number(a.change_amount) > 0 ? '+' : '' }}{{ formatNum(a.change_amount) }}
-                            </td>
-                            <td class="px-4 py-3 text-gray-500">{{ reasonLabels[a.reason] || a.reason }}</td>
-                            <td class="px-4 py-3 text-gray-500">{{ userDisplayName(a.user) }}</td>
-                            <td class="px-4 py-3 text-gray-400 max-w-[200px] truncate" :title="a.note">{{ a.note || '—'
-                                }}</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="bg-surface rounded-2xl border border-outline-variant/20 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr
+                                class="bg-surface-container border-b-2 border-outline-variant/20 font-sans text-label-large text-on-surface-variant">
+                                <th class="p-4">Thời gian</th>
+                                <th class="p-4">Nguyên liệu</th>
+                                <th class="p-4 text-right">Trước</th>
+                                <th class="p-4 text-right">Sau</th>
+                                <th class="p-4 text-right">Chênh lệch</th>
+                                <th class="p-4">Lý do</th>
+                                <th class="p-4">Người thực hiện</th>
+                                <th class="p-4">Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-outline-variant/10 font-sans text-body-medium text-on-surface">
+                            <tr v-if="adjustments.data.length === 0">
+                                <td colspan="8" class="text-center py-12 text-on-surface-variant font-medium">
+                                    Chưa có điều chỉnh nào.
+                                </td>
+                            </tr>
+                            <tr v-for="a in adjustments.data" :key="a.id"
+                                class="hover:bg-surface-container-low/50 transition-colors">
+                                <td class="p-4 text-on-surface-variant whitespace-nowrap">{{ formatDate(a.created_at) }}
+                                </td>
+                                <td class="p-4 font-bold text-on-surface">{{ a.material?.material_name || '—' }}</td>
+                                <td class="p-4 text-right font-mono text-on-surface-variant">{{
+                                    formatNum(a.quantity_before) }}</td>
+                                <td class="p-4 text-right font-mono text-on-surface">{{ formatNum(a.quantity_after) }}
+                                </td>
+                                <td class="p-4 text-right font-mono font-bold"
+                                    :class="Number(a.change_amount) > 0 ? 'text-tertiary' : (Number(a.change_amount) < 0 ? 'text-error' : 'text-on-surface-variant')">
+                                    {{ Number(a.change_amount) > 0 ? '+' : '' }}{{ formatNum(a.change_amount) }}
+                                </td>
+                                <td class="p-4 text-on-surface-variant">{{ reasonLabels[a.reason] || a.reason }}</td>
+                                <td class="p-4 text-on-surface-variant">{{ userDisplayName(a.user) }}</td>
+                                <td class="p-4 text-on-surface-variant/70 max-w-[200px] truncate" :title="a.note">{{
+                                    a.note || '—' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <div v-if="adjustments.links?.length > 3" class="flex justify-center gap-1">
+            <div v-if="adjustments.links?.length > 3"
+                class="flex items-center justify-center gap-1 mt-6 mb-3 font-sans">
                 <template v-for="(link, idx) in adjustments.links" :key="idx">
-                    <Link v-if="link.url" :href="link.url" v-html="link.label"
-                        class="px-3 py-1.5 text-sm rounded-lg transition"
-                        :class="link.active ? 'bg-indigo-600 text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'" />
-                    <span v-else v-html="link.label" class="px-3 py-1.5 text-sm rounded-lg text-gray-300" />
+                    <Link v-if="link.url" :href="link.url" v-html="link.label" preserve-scroll
+                        class="px-3 py-1.5 text-label-medium rounded-lg transition-all"
+                        :class="link.active
+                            ? 'bg-primary text-on-primary font-bold shadow-sm'
+                            : 'bg-surface border border-outline-variant/50 text-on-surface-variant hover:bg-surface-container-high'" />
+                    <span v-else v-html="link.label"
+                        class="px-3 py-1.5 text-label-medium rounded-lg text-on-surface-variant/40 opacity-50 cursor-not-allowed" />
                 </template>
             </div>
 

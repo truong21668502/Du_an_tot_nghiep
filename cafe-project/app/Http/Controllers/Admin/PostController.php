@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PostController extends Controller
 {
@@ -16,7 +17,6 @@ class PostController extends Controller
     {
         return Inertia::render('Admin/Posts/Index', [
             'posts' => Post::with(['category', 'user'])->latest()->paginate(10),
-            // Truyền thêm categories để load vào thẻ select trong Modal
             'categories' => PostCategory::select('id', 'name')->get()
         ]);
     }
@@ -34,16 +34,20 @@ class PostController extends Controller
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:post_categories,id',
             'content' => 'required|string',
-            'thumbnail_url' => 'nullable|string', // Nhận link ảnh
+            'thumbnail_url' => 'nullable|string',
             'slug' => 'nullable|string'
         ]);
 
         $validated['slug'] = $request->slug ?: Str::slug($request->title);
         $validated['user_id'] = Auth::id();
 
-        Post::create($validated);
+        try {
+            Post::create($validated);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('toast-error', 'Thêm bài viết thất bại, vui lòng thử lại!');
+        }
 
-        return redirect()->route('admin.posts.index')->with('message', 'Thêm bài viết thành công');
+        return redirect()->route('admin.posts.index')->with('toast-success', 'Thêm bài viết thành công!');
     }
 
     public function edit(Post $post)
@@ -66,14 +70,23 @@ class PostController extends Controller
 
         $validated['slug'] = $request->slug ?: Str::slug($request->title);
 
-        $post->update($validated);
+        try {
+            $post->update($validated);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('toast-error', 'Cập nhật bài viết thất bại, vui lòng thử lại!');
+        }
 
-        return redirect()->route('admin.posts.index')->with('message', 'Cập nhật thành công');
+        return redirect()->route('admin.posts.index')->with('toast-success', 'Cập nhật bài viết thành công!');
     }
 
     public function destroy(Post $post)
     {
-        $post->delete();
-        return redirect()->back()->with('message', 'Đã xóa bài viết');
+        try {
+            $post->delete();
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('toast-error', 'Xóa bài viết thất bại, có thể bài viết đang được liên kết!');
+        }
+
+        return redirect()->back()->with('toast-success', 'Đã xóa bài viết thành công!');
     }
 }

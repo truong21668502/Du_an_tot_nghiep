@@ -75,7 +75,7 @@ class ImportReceiptController extends Controller
                 }
             });
         } catch (\Throwable $e) {
-            return back()->withInput()->with('error', 'Lỗi khi lưu phiếu nhập: ' . $e->getMessage());
+            return back()->withInput()->with('toast-error', 'Lỗi khi lưu phiếu nhập: ' . $e->getMessage());
         }
 
         return redirect()->route('admin.kho.index')->with('toast-success', 'Tạo phiếu nhập kho thành công!');
@@ -136,7 +136,7 @@ class ImportReceiptController extends Controller
     {
         if (!$importReceipt->isActive()) {
             return redirect()->route('admin.kho.nhap.index')
-                ->with('error', 'Phiếu này đã bị huỷ, không thể sửa.');
+                ->with('toast-error', 'Phiếu này đã bị huỷ, không thể sửa.');
         }
 
         $importReceipt->load('details');
@@ -162,7 +162,7 @@ class ImportReceiptController extends Controller
     public function update(Request $request, ImportReceipt $importReceipt)
     {
         if (!$importReceipt->isActive()) {
-            return back()->with('error', 'Phiếu này đã bị huỷ, không thể sửa.');
+            return back()->with('toast-error', 'Phiếu này đã bị huỷ, không thể sửa.');
         }
 
         $request->validate([
@@ -222,7 +222,7 @@ class ImportReceiptController extends Controller
                 ]);
             });
         } catch (\Throwable $e) {
-            return back()->withInput()->with('error', 'Lỗi khi cập nhật phiếu nhập: ' . $e->getMessage());
+            return back()->withInput()->with('toast-error', 'Lỗi khi cập nhật phiếu nhập: ' . $e->getMessage());
         }
 
         return redirect()->route('admin.kho.nhap.index')->with('toast-success', 'Cập nhật phiếu nhập thành công!');
@@ -237,7 +237,7 @@ class ImportReceiptController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['message' => 'Phiếu này đã bị huỷ trước đó.'], 422);
             }
-            return back()->with('error', 'Phiếu này đã bị huỷ trước đó.');
+            return back()->with('toast-error', 'Phiếu này đã bị huỷ trước đó.');
         }
 
         $request->validate([
@@ -266,7 +266,7 @@ class ImportReceiptController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['message' => 'Lỗi khi huỷ phiếu nhập: ' . $e->getMessage()], 500);
             }
-            return back()->with('error', 'Lỗi khi huỷ phiếu nhập: ' . $e->getMessage());
+            return back()->with('toast-error', 'Lỗi khi huỷ phiếu nhập: ' . $e->getMessage());
         }
 
         // QUAN TRỌNG: trả JSON thay vì redirect khi gọi qua axios/AJAX
@@ -276,6 +276,7 @@ class ImportReceiptController extends Controller
 
         return redirect()->route('admin.kho.nhap.index')->with('toast-success', 'Đã huỷ phiếu nhập và hoàn lại tồn kho.');
     }
+
     public function quickStoreMaterial(Request $request)
     {
         $validated = $request->validate([
