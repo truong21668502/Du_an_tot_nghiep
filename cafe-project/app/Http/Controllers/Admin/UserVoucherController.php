@@ -19,7 +19,7 @@ class UserVoucherController extends Controller
         // Query bảng trung gian, kết nối (Eager Load) sang bảng users và coupons
         $query = CouponUser::with([
             'user:id,full_name,phone_number,email', 
-            'coupon:id,code,discount_type,discount_value,max_discount_amount,min_order_value,used_count,usage_limit'
+            'coupon:id,code,discount_type,discount_value,max_discount_amount,min_order_value,used_count,usage_limit,expiration_date'
         ]);
 
         //Bộ lọc tìm kiếm: Theo Tên khách, Số điện thoại hoặc ký tự Mã giảm giá
@@ -43,8 +43,8 @@ class UserVoucherController extends Controller
             $query->where('coupon_id', $request->coupon_id);
         }
 
-        // Giả định tên model của bạn là Coupon, chỉ lấy các trường cần thiết
-        $allCoupons = Coupon::select('id', 'code', 'discount_type', 'discount_value')->get();
+        // lấy tất cả mã giảm giá trừ các mã đã hết hạn
+        $allCoupons = Coupon::select('id', 'code', 'discount_type', 'discount_value', 'expiration_date')->where('expiration_date', '>', now())->get();
 
         // Lấy danh sách toàn bộ khách hàng đang hoạt động để nạp vào ô tặng lẻ
         $allCustomers = User::where('role', 'CUSTOMER')

@@ -67,6 +67,10 @@ const formatDateTime = (dateStr) => {
     const month = String(d.getMonth() + 1).padStart(2, '0');
     return `${hours}:${minutes} — ${day}/${month}/${d.getFullYear()}`;
 };
+
+const isExpired = (date) => {
+    return new Date(date) < new Date();
+};
 </script>
 
 <template>
@@ -186,8 +190,21 @@ const formatDateTime = (dateStr) => {
                                     <span class="text-outline">{{ coupon.usage_limit ?? '∞' }}</span> Lượt
                                 </td>
 
-                                <td class="p-4 font-mono text-body-small text-on-surface-variant">
-                                    {{ formatDateTime(coupon.expiration_date) }}
+                                <td class="p-4 font-mono text-body-small">
+                                    <div class="flex items-center gap-2">
+                                        <span :class="isExpired(coupon.expiration_date) ? 'text-error font-medium' : 'text-on-surface-variant'">
+                                            {{ formatDateTime(coupon.expiration_date) }}
+                                        </span>
+                                    
+                                        <span v-if="isExpired(coupon.expiration_date)" 
+                                                class="bg-red-100 text-red-800 px-2 py-0.5 rounded-lg font-medium">
+                                            Hết hạn
+                                        </span>
+                                        <span v-else 
+                                                class="bg-green-100 text-green-800 px-2 py-0.5 rounded-lg font-medium">
+                                            Còn hạn
+                                        </span>
+                                    </div>
                                 </td>
 
                                 <td class="p-4">

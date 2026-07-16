@@ -116,11 +116,13 @@ const submitForm = () => {
                     <div class="flex flex-col gap-1">
                         <label class="text-label-large text-on-surface-variant font-bold">Giá trị đơn tối thiểu (đ)</label>
                         <input v-model.number="form.min_order_value" type="number" step="0.01" min="0" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface text-on-surface font-mono" required />
+                        <span v-if="form.errors.min_order_value" class="text-body-small text-error flex items-center gap-0.5"><span class="material-symbols-outlined text-sm">error</span>{{ form.errors.min_order_value }}</span>
                     </div>
 
                     <div class="flex flex-col gap-1">
                         <label class="text-label-large text-on-surface-variant font-bold">Tổng giới hạn lượt dùng</label>
                         <input v-model.number="form.usage_limit" type="number" placeholder="Để trống nếu vô biên" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface text-on-surface font-mono" />
+                        <span v-if="form.errors.usage_limit" class="text-body-small text-error flex items-center gap-0.5"><span class="material-symbols-outlined text-sm">error</span>{{ form.errors.usage_limit }}</span>
                     </div>
                 </div>
 
@@ -140,6 +142,10 @@ const submitForm = () => {
                         </select>
                     </div>
                 </div>
+
+                <p class="text-body-small text-on-surface-variant">
+                    Lưu ý: Đối với giảm theo % thì chỉ được giảm tối đa là 50% và giảm tối đa 50.000đ
+                </p>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-outline-variant/20 flex-shrink-0">
                     <button type="button" @click="$emit('close')" class="px-5 py-2.5 hover:bg-surface-container-high text-primary font-sans text-label-large rounded-full transition-colors cursor-pointer">Hủy bỏ</button>

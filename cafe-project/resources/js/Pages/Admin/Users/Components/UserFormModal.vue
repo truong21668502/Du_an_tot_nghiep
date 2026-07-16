@@ -155,7 +155,7 @@ const submitForm = () => {
                     </div>
                     <div class="flex flex-col gap-1">
                         <label class="text-label-large text-on-surface-variant font-bold">Ngày tháng năm sinh</label>
-                        <input v-model="form.date_of_birth" type="datet" class="px-4 py-1.5 rounded-xl border border-outline-variant bg-surface text-body-small font-mono text-on-surface focus:outline-none focus:border-primary" />
+                        <input v-model="form.date_of_birth" type="date" class="px-4 py-1.5 rounded-xl border border-outline-variant bg-surface text-body-small font-mono text-on-surface focus:outline-none focus:border-primary" />
                     </div>
                 </div>
 

@@ -15,7 +15,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $query = Order::query()
-            ->with(['table:id,table_name,area', 'user:id,full_name,phone', 'payment'])
+            ->with(['table:id,table_name,area', 'user:id,full_name,phone_number', 'payment'])
             ->withCount('details');
 
         if ($request->filled('status')) {
@@ -68,7 +68,7 @@ class OrderController extends Controller
     {
         $order->load([
             'table:id,table_name,area',
-            'user:id,full_name,phone,email',
+            'user:id,full_name,phone_number,email',
             'coupon:id,code,discount_type,discount_value',
             'payment',
             'details.product:id,product_name,image_url',

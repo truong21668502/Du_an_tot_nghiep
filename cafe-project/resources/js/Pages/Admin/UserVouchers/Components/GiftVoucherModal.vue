@@ -1,6 +1,8 @@
 <script setup>
 import { watch } from "vue";
 import { useForm } from "@inertiajs/vue3";
+import vSelect from "vue-select";
+import "vue-select/dist/vue-select.css";
 
 const props = defineProps({
     isOpen: { type: Boolean, required: true },
@@ -67,14 +69,29 @@ const submitForm = () => {
                     <p class="text-body-small text-outline">Bật tùy chọn này để chạy chiến dịch kích cầu tiêu dùng, hệ thống tự động phát vào ví của mọi thành viên.</p>
                 </div>
 
-                <div v-if="!form.send_to_all" class="flex flex-col gap-1 animate-fade-in">
-                    <label class="text-label-large text-on-surface-variant font-bold">Chọn khách hàng nhận (Sự kiện lẻ/Sinh nhật) *</label>
-                    <select v-model="form.user_id" class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface text-on-surface cursor-pointer focus:outline-none focus:border-primary" :required="!form.send_to_all">
-                        <option value="" disabled selected>-- Chọn một khách hàng cụ thể --</option>
-                        <option v-for="u in users" :key="u.id" :value="u.id">
-                            {{ u.full_name }} — {{ u.phone_number || 'No Phone' }}
-                        </option>
-                    </select>
+                <div class="flex flex-col gap-1">
+                    <label class="text-label-large text-on-surface-variant font-bold">Chọn khách hàng nhận *</label>
+
+                    <v-select 
+                        v-model="form.user_id" 
+                        :options="users" 
+                        :reduce="user => user.id" 
+                        label="full_name"
+                        placeholder="Tìm theo tên hoặc SĐT..."
+                        class="style-chooser"
+                    >
+                        <template #option="{ full_name, phone_number }">
+                            <div class="flex flex-col cursor-pointer">
+                                <span class="font-bold">{{ full_name }}</span>
+                                <span class="text-body-small text-outline">{{ phone_number }}</span>
+                            </div>
+                        </template>
+                    
+                        <template #selected-option="{ full_name, phone_number }">
+                            {{ full_name }} ({{ phone_number }})
+                        </template>
+                    </v-select>
+                
                     <span v-if="form.errors.user_id" class="text-body-small text-error">{{ form.errors.user_id }}</span>
                 </div>
 
@@ -88,3 +105,14 @@ const submitForm = () => {
         </div>
     </div>
 </template>
+
+<style>
+.style-chooser .vs__dropdown-toggle {
+    border-radius: 0.75rem; /* Tương ứng với rounded-xl của bạn */
+    padding: 5px;
+    border: 1px solid #c4c6d0; /* Màu border-outline-variant */
+}
+.style-chooser .vs__search::placeholder {
+    color: #74777f;
+}
+</style>

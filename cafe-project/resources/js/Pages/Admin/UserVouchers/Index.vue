@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { router, Link } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
 import GiftVoucherModal from "./Components/GiftVoucherModal.vue";
@@ -7,6 +7,19 @@ import GiftVoucherModal from "./Components/GiftVoucherModal.vue";
 const props = defineProps({
     vouchers: { type: Object, required: true },
     filters: { type: Object, default: () => ({}) },
+});
+
+const showOnlyExpired = ref(false); // Mặc định là hiển thị tất cả
+
+const filteredVouchers = computed(() => {
+    // Lọc theo các bộ lọc cũ (search, is_used, coupon_id) trước
+    let list = props.vouchers.data; 
+
+    // Sau đó lọc thêm điều kiện "Hết hạn" nếu người dùng bấm nút
+    if (showOnlyExpired.value) {
+        list = list.filter(v => isExpired(v.coupon?.expiration_date));
+    }
+    return list;
 });
 
 // Trạng thái cụm bộ lọc tự động
@@ -48,6 +61,10 @@ const formatDateTime = (dateStr) => {
     return `${hours}:${minutes} — ${day}/${month}/${d.getFullYear()}`;
 };
 
+const isExpired = (date) => {
+    return new Date(date) < new Date();
+};
+
 const isGiftModalOpen = ref(false);
 
 
@@ -62,9 +79,18 @@ const isGiftModalOpen = ref(false);
                     <p class="text-body-medium text-on-surface-variant">Giám sát danh sách phân phối mã giảm giá và lịch sử áp dụng voucher của từng khách hàng.</p>
                 </div>
 
+                <button @click="showOnlyExpired = !showOnlyExpired" 
+                    :class="showOnlyExpired ? 'bg-error text-white' : 'bg-red-50 text-error hover:bg-red-100'"
+                    class="inline-flex gap-2 px-5 py-2.5 rounded-full text-label-medium transition border border-error/20 cursor-pointer">
+                        <span class="material-symbols-outlined text-md">
+                            {{ showOnlyExpired ? 'visibility' : 'warning' }}
+                        </span>
+                        {{ showOnlyExpired ? 'Xem tất cả mã' : 'Chỉ hiện mã hết hạn' }}
+                </button>
+
                 <button 
                     @click="isGiftModalOpen = true" 
-                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm cursor-pointer"
+                    class="inline-flex gap-2 items-center px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm cursor-pointer"
                 >
                     <span class="material-symbols-outlined text-md">redeem</span>
                     Phát hành / Tặng Voucher
@@ -134,11 +160,14 @@ const isGiftModalOpen = ref(false);
                                 <th class="p-4">Đơn tối thiểu</th>
                                 <th class="p-4">Sức chứa (Lượt dùng)</th>
                                 <th class="p-4">Tình trạng dùng</th>
+                                <th class="p-4">Thời hạn</th>
                                 <th class="p-4 text-right w-28">Hành động</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-outline-variant/10 text-body-medium text-on-surface">
-                            <tr v-for="v in vouchers.data" :key="v.id" class="hover:bg-surface-container-low/50 transition-colors">
+                            <tr v-for="v in filteredVouchers" :key="v.id" 
+                            :class="{'opacity-50 grayscale': isExpired(v.coupon?.expiration_date)}"
+                            class="hover:bg-surface-container-low/50 transition-colors">
                                 <td class="p-4 font-mono text-body-small text-outline">#{{ v.id }}</td>
                                 
                                 <td class="p-4 text-left">
@@ -203,7 +232,18 @@ const isGiftModalOpen = ref(false);
                                         'px-3 py-0.5 rounded-full text-label-medium font-bold',
                                         v.is_used ? 'bg-surface-container-high text-outline line-through' : 'bg-primary-container text-on-primary-container'
                                     ]">
-                                        {{ v.is_used ? 'Đã sử dụng' : 'Chưa sử dụng' }}
+                                        {{ v.is_used ? 'Đã dùng' : 'Chưa dùng' }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span v-if="v.coupon && isExpired(v.coupon.expiration_date)" 
+                                            class="bg-red-100 text-red-800 px-2 py-0.5 rounded-lg font-medium">
+                                        Hết hạn
+                                    </span>
+                                    <span v-else-if="v.coupon" 
+                                            class="bg-green-100 text-green-800 px-2 py-0.5 rounded-lg font-medium">
+                                        Còn hạn
                                     </span>
                                 </td>
 

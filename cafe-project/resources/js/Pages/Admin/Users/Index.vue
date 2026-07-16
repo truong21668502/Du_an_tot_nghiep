@@ -122,6 +122,11 @@ const deleteUser = (id) => {
             </div>
 
             <div class="bg-surface p-4 rounded-2xl border border-outline-variant/20 shadow-sm space-y-3">
+                <div class="flex items-center gap-2 text-label-large text-outline font-bold uppercase tracking-wider select-none">
+                    <span class="material-symbols-outlined text-lg">filter_list</span>
+                    <span>Bộ lọc</span>
+                </div>
+                
                 <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 text-body-medium">
                     <div class="sm:col-span-4 flex items-center gap-2 px-3 py-2 rounded-xl border border-outline-variant bg-surface-container-low focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
                         <span class="material-symbols-outlined text-outline text-xl select-none">search</span>
