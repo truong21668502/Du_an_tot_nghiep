@@ -12,7 +12,6 @@ class PostCategoryController extends Controller
     public function index()
     {
         return Inertia::render('Admin/PostCategories/Index', [
-            // Lấy kèm số lượng bài viết trong mỗi danh mục (withCount)
             'categories' => PostCategory::withCount('posts')->latest()->paginate(10)
         ]);
     }
@@ -25,8 +24,14 @@ class PostCategoryController extends Controller
             'description' => 'nullable|string',
         ]);
         $data['slug'] = $data['slug'] ?: Str::slug($data['name']);
-        PostCategory::create($data);
-        return back();
+
+        try {
+            PostCategory::create($data);
+        } catch (\Throwable $e) {
+            return back()->with('toast-error', 'Thêm danh mục thất bại, vui lòng thử lại!');
+        }
+
+        return back()->with('toast-success', 'Thêm danh mục thành công!');
     }
 
     public function update(Request $request, PostCategory $postCategory)
@@ -37,17 +42,29 @@ class PostCategoryController extends Controller
             'description' => 'nullable|string',
         ]);
         $data['slug'] = $data['slug'] ?: Str::slug($data['name']);
-        $postCategory->update($data);
-        return back();
+
+        try {
+            $postCategory->update($data);
+        } catch (\Throwable $e) {
+            return back()->with('toast-error', 'Cập nhật danh mục thất bại, vui lòng thử lại!');
+        }
+
+        return back()->with('toast-success', 'Cập nhật danh mục thành công!');
     }
 
     public function destroy(PostCategory $postCategory)
     {
-        // Có thể kiểm tra nếu có bài viết thì không cho xóa
+        // Kiểm tra nếu có bài viết thì không cho xóa
         if ($postCategory->posts()->count() > 0) {
-            return back()->withErrors(['message' => 'Không thể xóa danh mục đang có bài viết!']);
+            return back()->with('toast-error', 'Không thể xóa danh mục đang có bài viết!');
         }
-        $postCategory->delete();
-        return back();
+
+        try {
+            $postCategory->delete();
+        } catch (\Throwable $e) {
+            return back()->with('toast-error', 'Xóa danh mục thất bại, vui lòng thử lại!');
+        }
+
+        return back()->with('toast-success', 'Đã xóa danh mục thành công!');
     }
 }

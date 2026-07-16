@@ -186,7 +186,7 @@ const statusLabel = (status) => status === 'cancelled' ? 'Đã huỷ' : 'Đang h
                                 <th class="p-4">Nhà cung cấp</th>
                                 <th class="p-4">Người tạo</th>
                                 <th class="p-4 text-right">Tổng tiền</th>
-                                <th class="px-4 py-3 font-medium text-center">Trạng thái</th>
+                                <th class="p-4 text-center">Trạng thái</th>
                                 <th class="p-4 text-center w-32">Hành động</th>
                             </tr>
                         </thead>
@@ -201,15 +201,14 @@ const statusLabel = (status) => status === 'cancelled' ? 'Đã huỷ' : 'Đang h
                                 :class="r.status === 'cancelled' ? 'opacity-60' : ''">
                                 <td class="p-4 font-mono font-bold text-on-surface-variant">#{{ r.id }}</td>
                                 <td class="p-4">{{ formatDate(r.created_at) }}</td>
-                                <td class="p-4 font-bold text-primary hover:text-primary-dark">{{ r.supplier_name || '—'
-                                    }}</td>
+                                <td class="p-4 font-bold text-primary">{{ r.supplier_name || '—' }}</td>
                                 <td class="p-4">{{ userDisplayName(r.user) }}</td>
                                 <td class="p-4 text-right font-bold text-primary font-mono text-label-large">
                                     {{ formatNum(r.total_cost) }}₫
                                 </td>
-                                <td class="px-4 py-3 text-center">
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium"
-                                        :class="r.status === 'cancelled' ? 'bg-gray-100 text-gray-500' : 'bg-green-50 text-green-600'">
+                                <td class="p-4 text-center">
+                                    <span class="px-2.5 py-1 rounded-full text-label-small font-bold"
+                                        :class="r.status === 'cancelled' ? 'bg-surface-container-high text-on-surface-variant' : 'bg-tertiary-container text-on-tertiary-container'">
                                         {{ statusLabel(r.status) }}
                                     </span>
                                 </td>
@@ -252,7 +251,7 @@ const statusLabel = (status) => status === 'cancelled' ? 'Đã huỷ' : 'Đang h
                             <span class="material-symbols-outlined text-primary">receipt_long</span>
                             Chi tiết phiếu nhập <span v-if="selectedReceipt" class="text-primary ml-1">#{{
                                 selectedReceipt.id
-                                }}</span>
+                            }}</span>
                         </h2>
                         <button @click="closeModal"
                             class="p-2 text-on-surface-variant hover:bg-surface-container-high hover:text-error rounded-full transition-colors flex items-center justify-center">
@@ -307,7 +306,7 @@ const statusLabel = (status) => status === 'cancelled' ? 'Đã huỷ' : 'Đang h
                                 <div class="flex flex-col gap-1">
                                     <p class="text-label-medium font-bold text-on-surface-variant">Người tạo</p>
                                     <p class="text-body-medium text-on-surface">{{ userDisplayName(selectedReceipt.user)
-                                        }}</p>
+                                    }}</p>
                                 </div>
                                 <div class="flex flex-col gap-1">
                                     <p class="text-label-medium font-bold text-on-surface-variant">Tổng chi phí</p>

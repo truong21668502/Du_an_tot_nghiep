@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import AdminLayout from "../Layout/AdminLayout.vue";
 
@@ -8,6 +8,16 @@ const props = defineProps({
 })
 
 const flash = computed(() => usePage().props.flash ?? {})
+
+const searchQuery = ref('')
+
+const filteredMaterials = computed(() => {
+    if (!searchQuery.value.trim()) return props.materials
+    const q = searchQuery.value.trim().toLowerCase()
+    return props.materials.filter(m =>
+        m.material_name?.toLowerCase().includes(q)
+    )
+})
 
 function formatQty(val) {
     return Number(val).toLocaleString('vi-VN')
@@ -27,13 +37,25 @@ function formatQty(val) {
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 class="font-sans text-headline-md text-on-surface">Kho nguyên liệu</h1>
-                    <p class="font-sans text-body-medium text-on-surface-variant">{{ materials.length }} nguyên liệu
-                        đang quản lý.</p>
+                    <p class="font-sans text-body-medium text-on-surface-variant">{{ filteredMaterials.length }} / {{
+                        materials.length }} nguyên liệu đang quản lý.</p>
                 </div>
                 <Link :href="route('admin.kho.nhap.create')"
                     class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 rounded-full cursor-pointer transition-colors shadow-sm">
                     <span class="material-symbols-outlined text-md">add</span>Tạo phiếu nhập kho
                 </Link>
+            </div>
+
+            <!-- Ô tìm kiếm -->
+            <div class="relative">
+                <span
+                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl">search</span>
+                <input v-model="searchQuery" type="text" placeholder="Tìm nguyên liệu theo tên..."
+                    class="w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant/20 rounded-2xl font-sans text-body-medium text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
+                <button v-if="searchQuery" @click="searchQuery = ''"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors">
+                    <span class="material-symbols-outlined text-xl">close</span>
+                </button>
             </div>
 
             <!-- 1 bảng duy nhất, không nhóm theo danh mục -->
@@ -53,7 +75,7 @@ function formatQty(val) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-outline-variant/10 font-sans text-body-medium text-on-surface">
-                            <tr v-for="m in materials" :key="m.id"
+                            <tr v-for="m in filteredMaterials" :key="m.id"
                                 class="hover:bg-surface-container-low/50 transition-colors">
                                 <td class="p-4 text-center text-on-surface-variant text-body-small">{{ m.id }}</td>
                                 <td class="p-4 text-left">
@@ -87,9 +109,9 @@ function formatQty(val) {
                     </table>
                 </div>
 
-                <div v-if="materials.length === 0"
+                <div v-if="filteredMaterials.length === 0"
                     class="p-12 text-center text-on-surface-variant font-sans text-body-medium">
-                    Chưa có nguyên liệu nào trong kho.
+                    {{ searchQuery ? 'Không tìm thấy nguyên liệu phù hợp.' : 'Chưa có nguyên liệu nào trong kho.' }}
                 </div>
             </div>
 

@@ -43,78 +43,97 @@ function submit() {
 
 <template>
     <AdminLayout title="Điều Chỉnh Tồn Kho">
-        <div class="p-6 max-w-2xl mx-auto space-y-6">
+        <div class="max-w-2xl mx-auto space-y-6 font-sans">
 
-            <Link :href="route('admin.kho.dieu-chinh.index')"
-                class="text-sm text-gray-400 hover:text-gray-600 transition">
-                ← Quay lại lịch sử điều chỉnh
-            </Link>
+            <div class="flex items-center gap-3">
+                <Link :href="route('admin.kho.dieu-chinh.index')"
+                    class="inline-flex items-center gap-1 text-label-large text-on-surface-variant hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined text-md">arrow_back</span> Quay lại lịch sử điều chỉnh
+                </Link>
+            </div>
 
-            <h1 class="text-xl font-bold text-gray-800">Điều Chỉnh Tồn Kho (Kiểm Kê)</h1>
+            <h1 class="text-headline-md font-bold text-on-surface">Điều Chỉnh Tồn Kho (Kiểm Kê)</h1>
 
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+            <div class="bg-surface w-full rounded-2xl border border-outline-variant/20 shadow-sm p-6 space-y-5">
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nguyên liệu</label>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-label-medium text-on-surface-variant font-bold">Nguyên liệu</label>
                     <select v-model="form.material_id"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface outline-none text-body-medium focus:ring-2 focus:ring-primary/20 transition-all">
                         <option value="">-- Chọn nguyên liệu --</option>
                         <option v-for="m in materials" :key="m.id" :value="m.id">{{ m.material_name }}</option>
                     </select>
-                    <p v-if="form.errors.material_id" class="text-xs text-red-500 mt-1">{{ form.errors.material_id }}
-                    </p>
+                    <span v-if="form.errors.material_id"
+                        class="text-body-small text-error flex items-center gap-0.5 mt-1">
+                        <span class="material-symbols-outlined text-sm">error</span>{{ form.errors.material_id }}
+                    </span>
                 </div>
 
-                <div v-if="selectedMaterial" class="bg-gray-50 rounded-xl p-4 text-sm">
-                    <p class="text-gray-500">
+                <div v-if="selectedMaterial"
+                    class="bg-surface-container-low border border-outline-variant/20 rounded-xl p-4 text-body-medium">
+                    <p class="text-on-surface-variant">
                         Tồn hệ thống hiện tại:
-                        <span class="font-mono font-bold text-gray-700">
+                        <span class="font-mono font-bold text-on-surface">
                             {{ formatNum(selectedMaterial.quantity_in_stock) }} {{ selectedMaterial.base_unit }}
                         </span>
                     </p>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1">
                         Số lượng thực tế đếm được
-                        <span v-if="selectedMaterial" class="text-gray-400">({{ selectedMaterial.base_unit }})</span>
+                        <span v-if="selectedMaterial"
+                            class="text-primary bg-primary/10 px-1.5 py-0.5 rounded text-[10px]">
+                            {{ selectedMaterial.base_unit }}
+                        </span>
                     </label>
                     <input v-model="form.actual_quantity" type="number" min="0" step="0.01" placeholder="0"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-                    <p v-if="form.errors.actual_quantity" class="text-xs text-red-500 mt-1">{{
-                        form.errors.actual_quantity }}</p>
+                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium font-mono" />
+                    <span v-if="form.errors.actual_quantity"
+                        class="text-body-small text-error flex items-center gap-0.5 mt-1">
+                        <span class="material-symbols-outlined text-sm">error</span>{{ form.errors.actual_quantity }}
+                    </span>
                 </div>
 
-                <div v-if="diff !== null" class="rounded-xl p-4 text-sm font-medium"
-                    :class="diff === 0 ? 'bg-gray-50 text-gray-500' : (diff > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600')">
-                    Chênh lệch:
-                    <span class="font-mono font-bold">{{ diff > 0 ? '+' : '' }}{{ formatNum(diff) }} {{
-                        selectedMaterial?.base_unit }}</span>
-                    <span v-if="diff > 0"> (tồn thực tế nhiều hơn hệ thống)</span>
-                    <span v-else-if="diff < 0"> (hao hụt so với hệ thống)</span>
-                    <span v-else> (khớp với hệ thống)</span>
+                <div v-if="diff !== null" class="rounded-xl p-4 text-body-medium font-bold flex items-center gap-2"
+                    :class="diff === 0 ? 'bg-surface-container-low text-on-surface-variant' : (diff > 0 ? 'bg-tertiary-container/40 text-on-tertiary-container' : 'bg-error-container/30 text-error')">
+                    <span class="material-symbols-outlined">
+                        {{ diff === 0 ? 'check_circle' : (diff > 0 ? 'trending_up' : 'trending_down') }}
+                    </span>
+                    <span>
+                        Chênh lệch:
+                        <span class="font-mono font-bold">{{ diff > 0 ? '+' : '' }}{{ formatNum(diff) }} {{
+                            selectedMaterial?.base_unit }}</span>
+                        <span v-if="diff > 0"> (tồn thực tế nhiều hơn hệ thống)</span>
+                        <span v-else-if="diff < 0"> (hao hụt so với hệ thống)</span>
+                        <span v-else> (khớp với hệ thống)</span>
+                    </span>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Lý do điều chỉnh</label>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-label-medium text-on-surface-variant font-bold">Lý do điều chỉnh</label>
                     <select v-model="form.reason"
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface outline-none text-body-medium focus:ring-2 focus:ring-primary/20 transition-all">
                         <option v-for="r in reasons" :key="r.value" :value="r.value">{{ r.label }}</option>
                     </select>
-                    <p v-if="form.errors.reason" class="text-xs text-red-500 mt-1">{{ form.errors.reason }}</p>
+                    <span v-if="form.errors.reason" class="text-body-small text-error flex items-center gap-0.5 mt-1">
+                        <span class="material-symbols-outlined text-sm">error</span>{{ form.errors.reason }}
+                    </span>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú (tuỳ chọn)</label>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-label-medium text-on-surface-variant font-bold">Ghi chú (tuỳ chọn)</label>
                     <textarea v-model="form.note" rows="3"
                         placeholder="VD: Đếm lại kho ngày 29/06, phát hiện thiếu 2kg..."
-                        class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"></textarea>
+                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium"></textarea>
                 </div>
 
-                <div class="flex justify-end pt-2">
+                <div class="flex justify-end pt-2 border-t border-outline-variant/20">
                     <button @click="submit" :disabled="form.processing"
-                        class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-xl transition">
-                        {{ form.processing ? 'Đang lưu...' : '💾 Lưu điều chỉnh' }}
+                        class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-full shadow-md hover:bg-primary/90 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span v-if="form.processing" class="material-symbols-outlined animate-spin">sync</span>
+                        <span v-else class="material-symbols-outlined">save</span>
+                        {{ form.processing ? 'Đang lưu...' : 'Lưu điều chỉnh' }}
                     </button>
                 </div>
 
@@ -122,3 +141,19 @@ function submit() {
         </div>
     </AdminLayout>
 </template>
+
+<style scoped>
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+</style>

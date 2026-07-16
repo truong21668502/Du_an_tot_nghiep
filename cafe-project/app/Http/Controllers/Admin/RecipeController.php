@@ -60,25 +60,35 @@ class RecipeController extends Controller
             'items.*.quantity_needed' => ['required', 'numeric', 'min:0.01'],
         ]);
 
-        DB::transaction(function () use ($variant, $validated) {
-            $keepIds = [];
+        try {
+            DB::transaction(function () use ($variant, $validated) {
+                $keepIds = [];
 
-            foreach ($validated['items'] as $item) {
-                $recipe = Recipe::updateOrCreate(
-                    [
-                        'variant_id' => $variant->id,
-                        'material_id' => $item['material_id'],
-                    ],
-                    ['quantity_needed' => $item['quantity_needed']]
-                );
+                foreach ($validated['items'] as $item) {
+                    $recipe = Recipe::updateOrCreate(
+                        [
+                            'variant_id' => $variant->id,
+                            'material_id' => $item['material_id'],
+                        ],
+                        ['quantity_needed' => $item['quantity_needed']]
+                    );
 
-                $keepIds[] = $recipe->id;
+                    $keepIds[] = $recipe->id;
+                }
+
+                Recipe::where('variant_id', $variant->id)
+                    ->whereNotIn('id', $keepIds)
+                    ->delete();
+            });
+        } catch (\Throwable $e) {
+            $message = 'Lỗi khi lưu công thức: ' . $e->getMessage();
+
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $message], 422);
             }
 
-            Recipe::where('variant_id', $variant->id)
-                ->whereNotIn('id', $keepIds)
-                ->delete();
-        });
+            return back()->with('toast-error', $message);
+        }
 
         $recipes = $variant->recipes()
             ->with('material:id,material_name,base_unit')

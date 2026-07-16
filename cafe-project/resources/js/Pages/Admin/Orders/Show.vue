@@ -90,7 +90,7 @@ const formatDate = (value) => new Date(value).toLocaleString("vi-VN");
 
 <template>
     <AdminLayout>
-        <div class="space-y-6 max-w-3xl">
+        <div class="space-y-6 max-w-3xl mx-auto">
             <button
                 class="inline-flex items-center gap-1 font-sans text-body-medium text-on-surface-variant hover:text-primary"
                 @click="router.visit('/quan-tri/don-hang')">
@@ -101,7 +101,7 @@ const formatDate = (value) => new Date(value).toLocaleString("vi-VN");
                 <div>
                     <h1 class="font-sans text-headline-md text-on-surface">Đơn hàng #{{ localOrder.id }}</h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">{{ formatDate(localOrder.created_at)
-                    }}</p>
+                        }}</p>
                 </div>
                 <div class="flex gap-2">
                     <button v-for="action in getNextActions(localOrder)" :key="action.value" :disabled="processing"
