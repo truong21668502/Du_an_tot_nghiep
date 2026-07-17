@@ -1,263 +1,311 @@
 <script setup>
-import { ref } from 'vue';
-import { Head } from '@inertiajs/vue3';
-import BaristaLayout from '../../Layouts/BaristaLayout.vue';
-import { toast } from "vue3-toastify";
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
+import axios from 'axios';
+import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
-// Dữ liệu mẫu (Thay bằng props từ Controller truyền sang sau này)
-const orders = ref([
-    {
-        id: 1042,
-        product_name: 'Cà Phê Sữa Đá Nắng',
-        table: 'Bàn 04',
-        time_ago: '5 phút trước',
-        note: 'Ít đá, Thêm shot Espresso',
-        status: 'urgent',
-        recipe: {
-            ingredients: [
-                { name: 'Espresso (Double)', amount: '60ml' },
-                { name: 'Sữa đặc', amount: '25ml' },
-                { name: 'Sữa tươi', amount: '40ml' },
-                { name: 'Đá', amount: 'Ít (50g)', is_alert: true }
-            ],
-            presentation: {
-                glass: 'Ly thủy tinh cao 350ml',
-                style: 'Tầng sữa dưới, cà phê trên'
-            }
+import BaristaLayout from '../../Layouts/BaristaLayout.vue';
+import QueueCard from './Partials/QueueCard.vue';
+import RecipePanel from './Partials/RecipePanel.vue';
+import StatsBar from './Partials/StatsBar.vue';
+
+// ===== Props từ Controller =====
+const props = defineProps({
+    initialQueue: { type: Array, default: () => [] },
+    todayDone: { type: Number, default: 0 },
+});
+
+// ===== State =====
+const queue = ref(props.initialQueue || []);
+const doneSoFar = ref(props.todayDone || 0);
+const selected = ref(null); // món đang chọn để xem công thức
+
+// ===== Computed stats =====
+const pendingCount = computed(() => queue.value.filter(d => d.barista_status === 'PENDING').length);
+const preparingCount = computed(() => queue.value.filter(d => d.barista_status === 'PREPARING').length);
+
+// Nhóm món theo Đơn hàng (Order)
+const groupedOrders = computed(() => {
+    const groups = {};
+    queue.value.forEach(detail => {
+        if (!groups[detail.order_id]) {
+            groups[detail.order_id] = {
+                order: detail.order,
+                details: [],
+            };
         }
-    },
-    {
-        id: 1043,
-        product_name: 'Cold Brew Cam Vàng',
-        table: 'Bàn 07',
-        time_ago: '2 phút trước',
-        note: 'Bình thường',
-        status: 'normal',
-        recipe: null
-    },
-    {
-        id: 1044,
-        product_name: 'Matcha Latte',
-        table: 'Mang đi',
-        time_ago: 'Vừa xong',
-        note: 'Sữa hạt yến mạch',
-        status: 'normal',
-        recipe: null
-    }
-]);
-
-// Quản lý Modal Công thức
-const selectedOrder = ref(null);
-const isRecipeModalOpen = ref(false);
-
-const openRecipeModal = (order) => {
-    selectedOrder.value = order;
-    isRecipeModalOpen.value = true;
-};
-
-const closeRecipeModal = () => {
-    isRecipeModalOpen.value = false;
-    setTimeout(() => selectedOrder.value = null, 300);
-};
-
-// Xử lý hoàn thành món
-const completeOrder = (orderId) => {
-    // Hiện thông báo Toast
-    toast.success(`Đã pha chế xong đơn #${orderId}!`, {
-        position: "bottom-right",
-        autoClose: 3000,
+        groups[detail.order_id].details.push(detail);
     });
 
-    // Xóa đơn khỏi danh sách hiển thị (Sau này dùng API thì gọi router.patch)
-    orders.value = orders.value.filter(o => o.id !== orderId);
+    const arr = Object.values(groups);
+    // Sắp xếp đơn cũ nhất lên trên
+    arr.sort((a, b) => new Date(a.order.created_at) - new Date(b.order.created_at));
 
-    // Đóng Modal
-    closeRecipeModal();
+    // Sắp xếp món trong đơn: PREPARING -> PENDING -> COMPLETED
+    arr.forEach(group => {
+        group.details.sort((a, b) => {
+            const statusOrder = { PREPARING: 0, PENDING: 1, COMPLETED: 2 };
+            return (statusOrder[a.barista_status] ?? 3) - (statusOrder[b.barista_status] ?? 3);
+        });
+    });
+
+    return arr;
+});
+
+// ===== Chọn món =====
+const selectDetail = (detail) => {
+    selected.value = selected.value?.id === detail.id ? null : detail;
 };
+
+const closePanel = () => { selected.value = null; };
+
+// ===== Quản lý trạng thái mở/đóng (Dropdown) của từng đơn =====
+const expandedOrders = ref({}); // object map order_id -> boolean
+
+const isOrderExpanded = (orderId) => {
+    // Mặc định mở nếu chưa được set false
+    return expandedOrders.value[orderId] !== false;
+};
+
+const toggleOrder = (orderId) => {
+    expandedOrders.value[orderId] = !isOrderExpanded(orderId);
+};
+
+// ===== Cập nhật trạng thái (PENDING → PREPARING → COMPLETED) =====
+const advanceStatus = async (detail) => {
+    try {
+        const res = await axios.patch(route('barista.detail.update-status', detail.id));
+        const newStatus = res.data.barista_status;
+
+        const idx = queue.value.findIndex(d => d.id === detail.id);
+        if (idx !== -1) {
+            // Thay object để Vue nhận biết thay đổi chắc chắn
+            queue.value[idx] = { ...queue.value[idx], barista_status: newStatus };
+
+            // Cập nhật selected nếu đang chọn món này
+            if (selected.value?.id === detail.id) {
+                selected.value = queue.value[idx];
+            }
+
+            if (newStatus === 'COMPLETED') {
+                doneSoFar.value++;
+                toast.success(`Đã hoàn thành: ${detail.product?.product_name}`, { autoClose: 2500 });
+                // Xóa khỏi queue sau 2 giây để nhân viên thấy trạng thái
+                setTimeout(() => {
+                    queue.value = queue.value.filter(d => d.id !== detail.id);
+                    if (selected.value?.id === detail.id) selected.value = null;
+                }, 2000);
+            } else {
+                toast.info(`Đang pha: ${detail.product?.product_name}`, { autoClose: 2000 });
+            }
+        }
+    } catch (err) {
+        console.error('Lỗi cập nhật trạng thái:', err);
+        toast.error('Không thể cập nhật trạng thái!');
+    }
+};
+
+// ===== Real-time: lắng nghe đơn mới + cập nhật trạng thái =====
+onMounted(() => {
+    if (!window.Echo) return;
+
+    // Reload queue khi có đơn mới hoặc cập nhật trạng thái đơn (để lấy danh sách công thức đầy đủ từ controller)
+    window.Echo.channel('staff-orders')
+        .listen('.order.created', (e) => {
+            // Pha chế chỉ nhận được đơn khi nhân viên thu ngân bấm "Tiếp nhận" (chuyển sang PROCESSING)
+        })
+        .listen('.order.status-updated', (e) => {
+            router.reload({
+                only: ['initialQueue'],
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    queue.value = page.props.initialQueue;
+                    if (e.order?.status === 'PROCESSING') {
+                        toast.info(`🔔 Đơn mới tiếp nhận! Bàn ${e.order.table?.table_name || 'mang đi'}`, {
+                            position: 'top-right',
+                            autoClose: 4000,
+                        });
+                    }
+                }
+            });
+        });
+
+    // Lắng nghe trạng thái đơn bị hủy
+    window.Echo.channel('staff-orders')
+        .listen('.order.cancelled', (e) => {
+            queue.value = queue.value.filter(d => d.order_id !== e.id);
+            if (selected.value && selected.value.order_id === e.id) {
+                selected.value = null;
+            }
+        });
+});
+
+onUnmounted(() => {
+    if (window.Echo) {
+        window.Echo.leaveChannel('staff-orders');
+    }
+});
 </script>
 
 <template>
 
-    <Head title="Đơn chờ pha chế - Barista" />
+    <Head title="Hàng đợi pha chế - Barista" />
 
-    <BaristaLayout>
-        <header class="mb-10">
-            <h2 class="text-headline-xl font-bold text-primary mb-2">Danh sách chờ pha chế</h2>
-            <p class="text-body-lg text-on-surface-variant">Bạn có <strong class="text-primary">{{ orders.length
-                    }}</strong> đơn hàng cần xử lý.</p>
-        </header>
+    <BaristaLayout :pending-count="pendingCount">
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div class="p-4 md:p-8 w-full">
 
-            <div v-for="order in orders" :key="order.id"
-                class="relative bg-surface-container-lowest rounded-2xl p-6 shadow-soft border-2 hover:shadow-md transition-all group flex flex-col justify-between h-full"
-                :class="order.status === 'urgent' ? 'border-primary' : 'border-outline-variant/30'">
-
-                <div v-if="order.status === 'urgent'"
-                    class="absolute top-0 left-0 w-1.5 h-full bg-primary rounded-l-2xl"></div>
-
+            <!-- ===== Header ===== -->
+            <div class="mb-6 flex items-end justify-between gap-4 flex-wrap">
                 <div>
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="font-bold text-label-md px-4 py-1.5 rounded-full"
-                            :class="order.status === 'urgent' ? 'bg-primary-container/30 text-primary' : 'bg-surface-variant text-on-surface-variant'">
-                            #{{ order.id }} • {{ order.table }}
-                        </span>
-                        <span class="text-label-sm font-medium flex items-center gap-1"
-                            :class="order.status === 'urgent' ? 'text-error' : 'text-on-surface-variant'">
-                            <span class="material-symbols-outlined text-[16px]">schedule</span>
-                            {{ order.time_ago }}
-                        </span>
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="inline-block w-1.5 h-5 rounded-full bg-primary"></span>
+                        <p class="text-[11px] font-bold uppercase tracking-[0.15em] text-primary">Barista Station</p>
                     </div>
-
-                    <h3 class="text-headline-md font-bold text-on-surface mb-2">{{ order.product_name }}</h3>
-
-                    <div v-if="order.note"
-                        class="inline-flex items-start gap-1 bg-surface-container text-tertiary px-3 py-2 rounded-lg border border-outline-variant/20 mb-4">
-                        <span class="material-symbols-outlined text-[16px] mt-0.5">edit_note</span>
-                        <span class="text-body-md italic">{{ order.note }}</span>
-                    </div>
+                    <h2 class="text-[28px] font-bold text-on-surface font-serif leading-tight">Hàng đợi pha chế</h2>
                 </div>
 
-                <div class="mt-6 flex gap-3">
-                    <button @click="completeOrder(order.id)"
-                        class="flex-1 bg-primary text-on-primary py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
-                        <span class="material-symbols-outlined text-[20px]">check_circle</span> Xong
-                    </button>
-                    <button @click="openRecipeModal(order)"
-                        class="p-3 bg-secondary-container text-on-secondary-container rounded-xl hover:opacity-90 transition-opacity"
-                        title="Xem công thức">
-                        <span class="material-symbols-outlined text-[20px]">menu_book</span>
-                    </button>
+                <!-- Live badge -->
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-error/10 border border-error/20 text-error text-[11px] font-bold"
+                    v-if="pendingCount > 0">
+                    <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>
+                    {{ pendingCount }} món đang chờ
+                </div>
+                <div v-else
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 text-secondary text-[13px] font-bold">
+                    <span class="material-symbols-outlined text-[16px]"
+                        style="font-variation-settings:'FILL' 1">check_circle</span>
+                    Không có đơn chờ
                 </div>
             </div>
 
-            <div v-if="orders.length === 0"
-                class="col-span-full py-20 flex flex-col items-center justify-center bg-surface-container-lowest rounded-2xl border border-dashed border-outline-variant/50">
-                <span class="material-symbols-outlined text-[64px] text-outline mb-4">local_cafe</span>
-                <p class="text-headline-md text-on-surface-variant">Tuyệt vời! Không còn đơn nào chờ.</p>
+            <!-- ===== Stats Bar ===== -->
+            <div class="mb-6">
+                <StatsBar :pending-count="pendingCount" :preparing-count="preparingCount" :today-done="doneSoFar" />
             </div>
 
-        </div>
+            <!-- ===== Layout: Queue + Recipe Panel ===== -->
+            <div class="flex gap-5 items-start">
 
-        <Transition name="fade">
-            <div v-if="isRecipeModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
-                <div class="absolute inset-0 bg-inverse-surface/60 backdrop-blur-sm" @click="closeRecipeModal"></div>
+                <!-- Danh sách Đơn hàng -->
+                <div class="transition-all duration-500 ease-in-out"
+                    :class="selected ? 'w-full lg:w-[420px] flex-shrink-0' : 'w-full'">
 
-                <Transition name="slide-up">
-                    <div v-if="isRecipeModalOpen"
-                        class="relative bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <!-- Trống -->
+                    <div v-if="groupedOrders.length === 0"
+                        class="flex flex-col items-center justify-center py-20 rounded-2xl border border-dashed border-outline-variant/30 bg-surface-container-lowest text-center">
+                        <span class="material-symbols-outlined text-[52px] text-on-surface-variant/30 mb-3"
+                            style="font-variation-settings:'FILL' 1">local_cafe</span>
+                        <p class="text-[15px] font-bold text-on-surface-variant/60">Tuyệt vời! Không còn đơn nào chờ.
+                        </p>
+                        <p class="text-[12px] text-on-surface-variant/40 mt-1">Hàng đợi trống — thư giãn một chút nhé ☕
+                        </p>
+                    </div>
 
-                        <div
-                            class="px-6 py-5 border-b border-outline-variant/30 flex justify-between items-start bg-surface">
-                            <div>
-                                <h2 class="text-headline-lg font-bold text-primary">{{ selectedOrder?.product_name }}
-                                </h2>
-                                <p class="text-body-md text-on-surface-variant mt-1">Đơn #{{ selectedOrder?.id }} • {{
-                                    selectedOrder?.table }}</p>
-                            </div>
-                            <button @click="closeRecipeModal"
-                                class="p-2 text-on-surface-variant hover:bg-surface-container hover:text-error rounded-full transition-colors">
-                                <span class="material-symbols-outlined">close</span>
-                            </button>
-                        </div>
+                    <!-- Nhóm theo đơn -->
+                    <TransitionGroup v-else tag="div" name="list" class="flex flex-col gap-5">
+                        <div v-for="group in groupedOrders" :key="group.order.id"
+                            class="bg-surface rounded-2xl border border-outline-variant/30 overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md">
 
-                        <div class="p-6 overflow-y-auto flex-1 bg-surface-container-lowest hide-scrollbar">
-
-                            <div v-if="selectedOrder?.note"
-                                class="mb-6 bg-error-container/20 border border-error/20 p-4 rounded-xl flex items-start gap-3">
-                                <span class="material-symbols-outlined text-error">campaign</span>
-                                <div>
+                            <!-- Header Đơn hàng -->
+                            <div @click="toggleOrder(group.order.id)"
+                                class="px-5 py-3 bg-surface-container-lowest border-b border-outline-variant/20 flex items-center justify-between cursor-pointer hover:bg-surface-container-low transition-colors">
+                                <div class="flex items-center gap-3">
                                     <span
-                                        class="block text-label-sm font-bold text-error uppercase tracking-wider mb-1">Lưu
-                                        ý từ khách</span>
-                                    <span class="text-body-md text-on-surface font-medium">{{ selectedOrder.note
-                                        }}</span>
+                                        class="material-symbols-outlined text-on-surface-variant transition-transform duration-300"
+                                        :class="isOrderExpanded(group.order.id) ? 'rotate-180' : ''">expand_more</span>
+                                    <div>
+                                        <h3 class="text-[15px] font-bold text-on-surface">Đơn #{{ group.order.id }} — {{
+                                            group.order.table?.table_name || 'Mang đi' }}</h3>
+                                        <p class="text-[12px] text-on-surface-variant mt-0.5">{{ new
+                                            Date(group.order.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit',
+                                            minute: '2-digit' }) }} • {{ group.details.length }} món</p>
+                                    </div>
+                                </div>
+                                <div class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[12px] font-bold">
+                                    {{group.details.filter(d => d.barista_status === 'COMPLETED').length}} / {{
+                                    group.details.length }} hoàn thành
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6" v-if="selectedOrder?.recipe">
-                                <div class="bg-surface-container p-5 rounded-2xl">
-                                    <h4
-                                        class="text-label-md text-on-surface-variant mb-4 uppercase tracking-wider font-bold flex items-center gap-2">
-                                        <span class="material-symbols-outlined text-[18px]">scale</span> Định lượng
-                                    </h4>
-                                    <ul class="space-y-3 text-body-md text-on-surface">
-                                        <li v-for="(item, index) in selectedOrder.recipe.ingredients" :key="index"
-                                            class="flex justify-between border-b border-surface-variant/80 pb-2 last:border-0"
-                                            :class="item.is_alert ? 'text-error font-bold' : ''">
-                                            <span>{{ item.name }}</span>
-                                            <span class="font-medium">{{ item.amount }}</span>
-                                        </li>
-                                    </ul>
+                            <!-- Danh sách món trong đơn -->
+                            <Transition name="dropdown">
+                                <div v-show="isOrderExpanded(group.order.id)">
+                                    <div class="p-4 grid grid-cols-1 gap-3 transition-all duration-500"
+                                        :class="selected ? '' : 'sm:grid-cols-2 xl:grid-cols-3'">
+                                        <QueueCard v-for="detail in group.details" :key="detail.id" :detail="detail"
+                                            :is-selected="selected?.id === detail.id" @select="selectDetail"
+                                            @advance="advanceStatus" />
+                                    </div>
                                 </div>
-
-                                <div
-                                    class="bg-surface-container p-5 rounded-2xl flex flex-col justify-center items-center text-center">
-                                    <h4
-                                        class="text-label-md text-on-surface-variant mb-4 uppercase tracking-wider font-bold w-full text-left flex items-center gap-2">
-                                        <span class="material-symbols-outlined text-[18px]">local_cafe</span> Cốc &
-                                        Trình bày
-                                    </h4>
-                                    <span
-                                        class="material-symbols-outlined text-[64px] text-tertiary font-light mb-3">local_cafe</span>
-                                    <p class="text-body-lg font-bold text-on-surface">{{
-                                        selectedOrder.recipe.presentation.glass }}</p>
-                                    <p class="text-body-md text-on-surface-variant mt-2">{{
-                                        selectedOrder.recipe.presentation.style }}</p>
-                                </div>
-                            </div>
-
-                            <div v-else
-                                class="py-10 text-center text-on-surface-variant italic border-2 border-dashed border-outline-variant/50 rounded-2xl">
-                                Đang cập nhật công thức cho món này...
-                            </div>
-
+                            </Transition>
                         </div>
+                    </TransitionGroup>
+                </div>
 
-                        <div class="px-6 py-5 bg-surface border-t border-outline-variant/30">
-                            <button @click="completeOrder(selectedOrder.id)"
-                                class="w-full bg-gradient-to-r from-primary to-secondary text-on-primary font-bold text-label-md py-4 rounded-xl shadow-lg hover:shadow-xl hover:opacity-95 transition-all flex justify-center items-center gap-2 uppercase tracking-wider">
-                                <span class="material-symbols-outlined">check_circle</span>
-                                Đã pha chế xong món này
-                            </button>
+                <!-- Recipe Panel (phải, khi có món được chọn) -->
+                <Transition name="slide-in">
+                    <div v-if="selected" class="flex-1 min-w-0 transition-all duration-500">
+                        <div class="lg:sticky lg:top-24" style="height: calc(100vh - 120px);">
+                            <RecipePanel :detail="selected" @advance="advanceStatus" @close="closePanel" />
                         </div>
                     </div>
                 </Transition>
             </div>
-        </Transition>
-
+        </div>
     </BaristaLayout>
 </template>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity 0.2s ease;
+.slide-in-enter-active,
+.slide-in-leave-active {
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.slide-in-enter-from,
+.slide-in-leave-to {
     opacity: 0;
+    transform: translateX(40px);
 }
 
-.slide-up-enter-active,
-.slide-up-leave-active {
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+/* Hiệu ứng danh sách trượt mượt mà */
+.list-move,
+.list-enter-active,
+.list-leave-active {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.slide-up-enter-from,
-.slide-up-leave-to {
+.list-enter-from {
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
+    transform: translateY(30px) scale(0.98);
 }
 
-.hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+.list-leave-to {
+    opacity: 0;
+    transform: translateX(-30px);
 }
 
-.hide-scrollbar::-webkit-scrollbar {
-    display: none;
+.list-leave-active {
+    position: absolute;
+}
+
+/* Hiệu ứng Dropdown (Accordion) */
+.dropdown-enter-active,
+.dropdown-leave-active {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    max-height: 2000px;
+    /* Số đủ lớn để chứa nội dung */
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 </style>

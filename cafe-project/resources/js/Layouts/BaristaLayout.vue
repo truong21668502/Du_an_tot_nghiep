@@ -1,54 +1,217 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { Link, usePage, router } from '@inertiajs/vue3';
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
+
+const currentUrl = computed(() => usePage().url);
+const isMobileMenuOpen = ref(false);
+
+// Nav links cho barista
+const navLinks = [
+    { label: 'Hàng đợi', href: '/pha-che/hang-doi', icon: 'coffee_maker' },
+    { label: 'Lịch sử', href: '/pha-che/lich-su', icon: 'history' },
+];
+
+const isActiveLink = (path) => {
+    if (path === '#') return false;
+    return currentUrl.value.startsWith(path);
+};
+
+// Đồng hồ thực — đồng nhất với StaffLayout
+const currentTime = ref('');
+const currentHour = ref('');
+let timeInterval = null;
+
+const updateTime = () => {
+    const now = new Date();
+    currentTime.value = new Intl.DateTimeFormat('vi-VN', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+    }).format(now);
+    currentHour.value = new Intl.DateTimeFormat('vi-VN', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    }).format(now);
+};
+
+onMounted(() => {
+    updateTime();
+    timeInterval = setInterval(updateTime, 1000);
+});
+onUnmounted(() => clearInterval(timeInterval));
+
+// Đóng mobile menu khi chuyển trang
+router.on('navigate', () => { isMobileMenuOpen.value = false; });
+
+// Badge số món đang chờ
+const props = defineProps({
+    pendingCount: { type: Number, default: 0 },
+});
 </script>
 
 <template>
-    <div class="bg-background text-on-background font-body-md min-h-screen flex flex-col md:flex-row">
-        
-        <header class="md:hidden flex justify-between items-center w-full px-5 py-4 bg-surface/60 backdrop-blur-xl sticky top-0 z-50 shadow-sm">
-            <div class="font-headline-lg text-headline-lg font-bold text-primary">Nắng Coffee</div>
-            <div class="flex items-center gap-4">
-                <span class="material-symbols-outlined text-primary text-2xl">account_circle</span>
-            </div>
-        </header>
+    <div class="flex h-screen overflow-hidden bg-background text-on-background antialiased">
 
-        <nav class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-surface-container-low py-6 shadow-soft z-40 border-r border-outline-variant/30">
-            <div class="px-8 mb-10">
-                <h1 class="font-headline-md text-headline-md text-primary font-bold">Nắng Coffee</h1>
-                <p class="font-label-md text-label-md text-on-surface-variant mt-1 tracking-wider uppercase">Barista Station</p>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto space-y-2 px-4">
-                <Link :href="route('barista.queue')" class="flex items-center gap-4 bg-primary-container text-on-primary-container rounded-xl px-4 py-3 transition-all font-bold shadow-sm">
-                    <span class="material-symbols-outlined icon-fill">coffee_maker</span>
-                    <span class="font-label-md text-label-md">Đơn Chờ Pha</span>
+        <!-- ===== SIDEBAR (Desktop) — giống hệt StaffLayout ===== -->
+        <aside
+            class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-surface-container-low shadow-soft py-6 z-40 border-r border-outline-variant/30">
+
+            <!-- Logo -->
+            <div class="px-6 mb-6">
+                <Link href="/pha-che/hang-doi"
+                    class="text-headline-sm text-primary tracking-tight hover:opacity-80 transition-opacity font-serif font-bold">
+                    Nắng Coffee
                 </Link>
-                <Link :href="route('barista.dashboard')" class="flex items-center gap-4 text-on-surface-variant hover:bg-surface-variant/50 rounded-xl px-4 py-3 transition-all font-medium">
-                    <span class="material-symbols-outlined">inventory_2</span>
-                    <span class="font-label-md text-label-md">Nguyên Liệu</span>
-                </Link>
+                <p class="text-label-sm text-on-surface-variant/70 mt-1">Barista Station</p>
             </div>
 
-            <div class="mt-auto space-y-2 pt-10 px-4">
-                <a href="#" class="flex items-center gap-4 text-on-surface-variant hover:bg-surface-variant/50 rounded-xl px-4 py-3 transition-all font-medium">
-                    <span class="material-symbols-outlined">settings</span>
-                    <span class="font-label-md text-label-md">Cài đặt</span>
+            <!-- Nav links -->
+            <nav class="flex-1 flex flex-col gap-2 text-label-md px-2 overflow-y-auto hide-scrollbar">
+                <Link v-for="link in navLinks" :key="link.label" :href="link.href" :class="[
+                    'flex items-center gap-4 rounded-xl px-4 py-3 transition-all duration-200 group relative',
+                    isActiveLink(link.href)
+                        ? 'bg-primary-container text-on-primary-container font-bold'
+                        : 'text-on-surface-variant hover:bg-surface-container-high hover:text-primary',
+                ]">
+                    <span
+                        :class="['material-symbols-outlined transition-colors duration-300', isActiveLink(link.href) ? 'icon-fill' : 'group-hover:text-primary']">
+                        {{ link.icon }}
+                    </span>
+                    {{ link.label }}
+                    <!-- Badge đang chờ -->
+                    <span v-if="link.icon === 'coffee_maker' && pendingCount > 0"
+                        class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-error text-white min-w-[20px] text-center">
+                        {{ pendingCount > 99 ? '99+' : pendingCount }}
+                    </span>
+                </Link>
+            </nav>
+
+            <!-- Footer: settings + logout -->
+            <div class="mt-auto flex flex-col gap-2 text-label-md px-2 pt-4 border-t border-outline-variant/30">
+                <a href="#"
+                    class="flex items-center gap-4 text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 hover:text-primary transition-colors duration-300 group">
+                    <span
+                        class="material-symbols-outlined group-hover:text-primary transition-colors duration-300">settings</span>
+                    Cài đặt
                 </a>
-                <Link :href="route('logout')" method="post" as="button" class="w-full flex items-center gap-4 text-error hover:bg-error-container/30 rounded-xl px-4 py-3 transition-all font-bold text-left">
-                    <span class="material-symbols-outlined">logout</span>
-                    <span class="font-label-md text-label-md">Đăng xuất</span>
+                <Link :href="route('logout')" method="post" as="button"
+                    class="flex items-center w-full text-left gap-4 text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 hover:text-error transition-colors duration-300 group">
+                    <span
+                        class="material-symbols-outlined group-hover:text-error transition-colors duration-300">logout</span>
+                    Đăng xuất
                 </Link>
             </div>
-        </nav>
+        </aside>
 
-        <main class="flex-1 md:ml-64 p-5 md:p-10 min-h-screen relative">
-            <div class="w-full">
+        <!-- ===== RIGHT: Main area (topbar + content) ===== -->
+        <div class="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden">
+
+            <!-- ===== TOPBAR — giống hệt StaffLayout ===== -->
+            <header
+                class="h-16 bg-surface/90 backdrop-blur-md border-b border-outline-variant/20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
+
+                <!-- Left: Mobile menu + Datetime -->
+                <div class="flex items-center gap-4">
+                    <button
+                        class="md:hidden p-2 text-primary hover:bg-primary-container/20 rounded-xl transition-colors"
+                        @click="isMobileMenuOpen = !isMobileMenuOpen">
+                        <span class="material-symbols-outlined text-[22px]">{{ isMobileMenuOpen ? 'close' : 'menu'
+                            }}</span>
+                    </button>
+                    <div class="hidden md:flex items-center gap-3">
+                        <!-- Live clock -->
+                        <div class="flex items-baseline gap-1.5">
+                            <span
+                                class="text-[22px] font-bold text-on-surface tabular-nums tracking-tight leading-none">{{
+                                currentHour }}</span>
+                        </div>
+                        <div class="w-px h-6 bg-outline-variant/40"></div>
+                        <div>
+                            <p class="text-[13px] text-on-surface-variant capitalize">{{ currentTime }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Badge + Avatar -->
+                <div class="flex items-center gap-3">
+                    <!-- Live badge -->
+                    <div v-if="pendingCount > 0"
+                        class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-error/10 border border-error/20 text-error text-[11px] font-bold">
+                        <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>
+                        {{ pendingCount }} chờ pha
+                    </div>
+
+                    <div class="w-px h-6 bg-outline-variant/30"></div>
+
+                    <!-- User -->
+                    <div class="flex items-center gap-2.5">
+                        <div
+                            class="w-8 h-8 rounded-xl overflow-hidden ring-2 ring-primary/20 bg-primary-container flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary text-[18px]"
+                                style="font-variation-settings:'FILL' 1">coffee_maker</span>
+                        </div>
+                        <div class="hidden sm:block">
+                            <p class="text-[14px] font-bold text-on-surface leading-none">Barista</p>
+                            <p class="text-[12px] text-on-surface-variant mt-0.5">Pha chế</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Mobile menu dropdown -->
+            <Transition name="slide-down">
+                <div v-if="isMobileMenuOpen"
+                    class="md:hidden absolute top-16 left-0 w-full bg-surface border-b border-outline-variant/30 px-4 py-4 shadow-lg z-20">
+                    <Link v-for="link in navLinks" :key="link.label" :href="link.href" :class="[
+                        'flex items-center gap-4 py-3.5 px-4 rounded-xl text-label-md transition-all duration-200',
+                        isActiveLink(link.href)
+                            ? 'text-primary font-bold bg-primary-container/20'
+                            : 'text-on-surface-variant hover:text-primary hover:bg-surface-container',
+                    ]">
+                        <span
+                            :class="['material-symbols-outlined', isActiveLink(link.href) ? 'icon-fill text-primary' : '']">{{
+                            link.icon }}</span>
+                        {{ link.label }}
+                    </Link>
+                </div>
+            </Transition>
+
+            <!-- ===== PAGE CONTENT ===== -->
+            <main class="flex-1 overflow-y-auto">
                 <slot />
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 </template>
 
 <style scoped>
-.icon-fill { font-variation-settings: 'FILL' 1; }
+.icon-fill {
+    font-variation-settings: 'FILL' 1;
+}
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.slide-down-enter-active,
+.slide-down-leave-active {
+    transition: all 0.2s ease;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+    opacity: 0;
+    transform: translateY(-8px);
+}
 </style>

@@ -132,6 +132,21 @@ onMounted(() => {
             })
             .listen('.order.cancelled', (e) => {
                 orders.value = orders.value.filter(o => o.id !== e.id);
+            })
+            .listen('.barista.detail.updated', (e) => {
+                const oIndex = orders.value.findIndex(o => o.id === e.order_id);
+                if (oIndex !== -1 && orders.value[oIndex].details) {
+                    const dIndex = orders.value[oIndex].details.findIndex(d => d.id === e.id);
+                    if (dIndex !== -1) {
+                        orders.value[oIndex].details[dIndex].barista_status = e.barista_status;
+                    }
+                }
+                if (selectedOrder.value?.id === e.order_id && selectedOrder.value.details) {
+                    const dIndex = selectedOrder.value.details.findIndex(d => d.id === e.id);
+                    if (dIndex !== -1) {
+                        selectedOrder.value.details[dIndex].barista_status = e.barista_status;
+                    }
+                }
             });
     }
 });
@@ -246,7 +261,7 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
             </p>
         </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <TransitionGroup name="list" tag="div" v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <div v-for="order in filteredOrders" :key="order.id" @click="openOrderDetails(order)"
                 class="group relative overflow-hidden rounded-2xl border cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
                 :class="order.status === 'PENDING'
@@ -298,7 +313,7 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                     </div>
                 </div>
             </div>
-        </div>
+        </TransitionGroup>
 
         <Transition name="fade">
             <div v-if="isOrderModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -481,6 +496,24 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
 .slide-up-leave-to {
     opacity: 0;
     transform: translateY(24px) scale(0.96);
+}
+
+/* Hiệu ứng danh sách trượt mượt mà */
+.list-move,
+.list-enter-active,
+.list-leave-active {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.list-enter-from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.98);
+}
+.list-leave-to {
+    opacity: 0;
+    transform: translateX(-30px);
+}
+.list-leave-active {
+    position: absolute;
 }
 
 .hide-scrollbar {

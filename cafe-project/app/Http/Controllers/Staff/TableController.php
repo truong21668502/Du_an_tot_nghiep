@@ -12,9 +12,9 @@ class TableController extends Controller
 {
     public function index()
     {
-        // Lấy tất cả bàn và chỉ nạp các đơn hàng đang hoạt động
+        // Lấy tất cả bàn và chỉ nạp các đơn hàng đang hoạt động (bao gồm cả hoàn thành)
         $tables = Table::with(['orders' => function($query) {
-            $query->whereIn('status', ['PENDING', 'PROCESSING'])
+            $query->whereIn('status', ['PENDING', 'PROCESSING', 'COMPLETED'])
                     ->with(['details.product', 'details.variant', 'payment'])
                     ->latest();
         }])->orderBy('id', 'asc')->get(); 
@@ -34,9 +34,14 @@ class TableController extends Controller
             'status' => $request->status
         ]);
 
+        // Nếu dọn bàn, ta tách các đơn hàng cũ (đã hoàn thành/hủy) ra khỏi bàn để khách mới vào không thấy
+        if ($request->status === 'EMPTY') {
+            $table->orders()->whereIn('status', ['COMPLETED', 'CANCELLED'])->update(['table_id' => null]);
+        }
+
         // Chỉ nạp lại các đơn hàng đang hoạt động cho bàn này
         $table->load(['orders' => function($query) {
-            $query->whereIn('status', ['PENDING', 'PROCESSING'])
+            $query->whereIn('status', ['PENDING', 'PROCESSING', 'COMPLETED'])
                     ->with(['details.product', 'details.variant', 'payment'])
                     ->latest();
         }]);

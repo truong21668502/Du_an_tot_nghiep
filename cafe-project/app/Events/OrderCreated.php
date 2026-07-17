@@ -26,8 +26,14 @@ class OrderCreated implements ShouldBroadcastNow
 
     public function broadcastWith(): array
     {
-        return [
-            'order' => $this->order->toArray()
-        ];
+        // Load đầy đủ để cả Staff và Barista đều dùng được
+        $order = $this->order->loadMissing([
+            'table',
+            'details.product',
+            'details.variant',
+            'payment',
+        ]);
+
+        return ['order' => $order->toArray()];
     }
 }

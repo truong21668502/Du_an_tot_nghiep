@@ -36,7 +36,7 @@ class OrderStatusUpdated implements ShouldBroadcastNow
         ]);
 
         return [
-            'order' => $this->order->fresh()->toArray(),
+            'order' => $this->order->fresh(['table', 'details.product', 'details.variant', 'payment'])->toArray(),
         ];
     }
 }

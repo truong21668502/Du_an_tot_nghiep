@@ -394,6 +394,24 @@ onMounted(() => {
                     }
                 });
                 toast.info(`Đơn hàng #${e.id} đã bị hủy.`);
+            })
+            .listen('.barista.detail.updated', (e) => {
+                const updateStatus = (orderList) => {
+                    const oIndex = orderList.findIndex(o => o.id === e.order_id);
+                    if (oIndex !== -1 && orderList[oIndex].details) {
+                        const dIndex = orderList[oIndex].details.findIndex(d => d.id === e.id);
+                        if (dIndex !== -1) {
+                            orderList[oIndex].details[dIndex].barista_status = e.barista_status;
+                        }
+                    }
+                };
+                updateStatus(orders.value);
+                if (selectedOrder.value?.id === e.order_id && selectedOrder.value.details) {
+                    const dIndex = selectedOrder.value.details.findIndex(d => d.id === e.id);
+                    if (dIndex !== -1) {
+                        selectedOrder.value.details[dIndex].barista_status = e.barista_status;
+                    }
+                }
             });
     }
 });
@@ -596,7 +614,7 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Danh sách đơn hàng -->
-                <div v-else class="flex-1 overflow-y-auto hide-scrollbar space-y-3 pr-1">
+                <TransitionGroup v-else tag="div" name="list" class="flex-1 overflow-y-auto hide-scrollbar space-y-3 pr-1">
                     <div v-for="order in orders" :key="order.id" @click="openOrderDetails(order)"
                         class="order-card group cursor-pointer rounded-xl border p-4 transition-all hover:shadow-md hover:-translate-y-0.5"
                         :class="order.status === 'PENDING'
@@ -651,7 +669,7 @@ onUnmounted(() => {
                             </span>
                         </div>
                     </div>
-                </div>
+                </TransitionGroup>
 
                 <!-- View all button -->
                 <a href="/nhan-vien/don-hang"
@@ -1213,6 +1231,24 @@ onUnmounted(() => {
 .slide-up-leave-to {
     opacity: 0;
     transform: translateY(24px) scale(0.96);
+}
+
+/* Hiệu ứng danh sách trượt mượt mà */
+.list-move,
+.list-enter-active,
+.list-leave-active {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.list-enter-from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.98);
+}
+.list-leave-to {
+    opacity: 0;
+    transform: translateX(30px);
+}
+.list-leave-active {
+    position: absolute;
 }
 
 .hide-scrollbar {

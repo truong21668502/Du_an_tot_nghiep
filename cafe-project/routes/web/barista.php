@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+use App\Http\Controllers\Barista\BaristaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -10,19 +10,18 @@ use Inertia\Inertia;
 */
 
 Route::middleware(['auth', 'role:BARISTA,ADMIN'])->prefix('pha-che')->name('barista.')->group(function () {
-    
-    // Bảng điều khiển chung
+
+    // Hàng đợi pha chế (màn hình chính)
+    Route::get('/hang-doi', [BaristaController::class, 'queue'])->name('queue');
+
+    // Lịch sử pha chế hôm nay
+    Route::get('/lich-su', [BaristaController::class, 'history'])->name('history');
+
+    // Cập nhật trạng thái từng món (PENDING → PREPARING → COMPLETED)
+    Route::patch('/mon/{detail}/trang-thai', [BaristaController::class, 'updateStatus'])->name('detail.update-status');
+
+    // Dashboard tổng quan (redirect về queue)
     Route::get('/bang-dieu-khien', function () {
-        return Inertia::render('Barista/Dashboard');
+        return redirect()->route('barista.queue');
     })->name('dashboard');
-
-    // Hàng đợi pha chế (Màn hình chính của Barista)
-    Route::get('/hang-doi', function () {
-        return Inertia::render('Barista/Queue');
-    })->name('queue');
-
-    // Xem lịch sử đơn hàng
-    Route::get('/don-hang', function () {
-        return Inertia::render('Barista/Orders/Index');
-    })->name('orders.index');
 });

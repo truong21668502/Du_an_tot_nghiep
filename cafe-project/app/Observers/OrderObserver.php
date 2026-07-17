@@ -41,21 +41,6 @@ class OrderObserver
         } catch (\Throwable $e) {
             Log::error('Dispatch OrderStatusUpdated LỖI: ' . $e->getMessage());
         }
-
-        if ($order->table_id && in_array($order->status, ['COMPLETED', 'CANCELLED'])) {
-            $hasActiveOrder = Order::where('table_id', $order->table_id)
-                ->whereNotIn('status', ['COMPLETED', 'CANCELLED'])
-                ->where('id', '!=', $order->id)
-                ->exists();
-
-            if (!$hasActiveOrder) {
-                $table = $order->table()->first();
-                if ($table) {
-                    $table->update(['status' => 'EMPTY']);
-                    broadcast(new TableStatusUpdated($table));
-                }
-            }
-        }
     }
 
     public function deleted(Order $order): void

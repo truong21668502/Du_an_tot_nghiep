@@ -18,7 +18,7 @@ class DashboardController extends Controller
             ->get();
 
         $tables = Table::with(['orders' => function ($query) {
-            $query->whereIn('status', ['PENDING', 'PROCESSING'])
+            $query->whereIn('status', ['PENDING', 'PROCESSING', 'COMPLETED'])
             ->with(['details.product', 'details.variant', 'payment']); 
         }])->get();
 
