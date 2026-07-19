@@ -35,8 +35,20 @@ class OrderStatusUpdated implements ShouldBroadcastNow
             'status' => $this->order->status,
         ]);
 
+        // Chỉ gửi thông tin tối thiểu qua Pusher để tránh lỗi "Payload too large"
+        // Frontend sẽ tự reload dữ liệu đầy đủ từ server
+        $this->order->loadMissing('table');
+
         return [
-            'order' => $this->order->fresh(['table', 'details.product', 'details.variant', 'payment'])->toArray(),
+            'order' => [
+                'id' => $this->order->id,
+                'status' => $this->order->status,
+                'table_id' => $this->order->table_id,
+                'table' => $this->order->table ? [
+                    'id' => $this->order->table->id,
+                    'table_name' => $this->order->table->table_name,
+                ] : null,
+            ],
         ];
     }
 }

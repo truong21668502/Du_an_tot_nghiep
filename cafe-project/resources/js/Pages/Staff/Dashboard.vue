@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import StaffLayout from '../../Layouts/StaffLayout.vue';
@@ -19,6 +19,15 @@ const isOrderModalOpen = ref(false);
 const showCancelConfirm = ref(false);
 const showPaymentConfirm = ref(false);
 const vnpayQrUrl = ref(null);
+
+// Đồng bộ dữ liệu khi Inertia reload props (từ router.reload)
+watch(() => props.initialOrders, (newVal) => {
+    if (newVal) orders.value = newVal;
+}, { deep: true });
+
+watch(() => props.initialTables, (newVal) => {
+    if (newVal) tables.value = newVal;
+}, { deep: true });
 
 const openOrderDetails = async (order) => {
     selectedOrder.value = order;
@@ -321,48 +330,31 @@ onMounted(() => {
 
         window.Echo.channel('staff-orders')
             .listen('.order.created', (e) => {
-                if (e.order) {
-                    const exists = orders.value.some(o => o.id === e.order.id);
-                    if (!exists) {
-                        orders.value.push(e.order);
+                // Reload dữ liệu đầy đủ từ server (event chỉ gửi thông tin tối thiểu)
+                router.reload({
+                    only: ['initialOrders', 'initialTables'],
+                    preserveScroll: true,
+                    onSuccess: () => {
                         toast.success(`🔔 CÓ ĐƠN HÀNG MỚI! (#${e.order.id})`, {
                             position: "top-right",
                             autoClose: 4000,
                         });
                     }
-                    if (e.order.table_id) {
-                        const tableIndex = tables.value.findIndex(t => t.id === e.order.table_id);
-                        if (tableIndex !== -1) {
-                            tables.value[tableIndex].status = 'OCCUPIED';
-                            if (!tables.value[tableIndex].orders) tables.value[tableIndex].orders = [];
-                            const orderExistsInTable = tables.value[tableIndex].orders.some(o => o.id === e.order.id);
-                            if (!orderExistsInTable) tables.value[tableIndex].orders.push(e.order);
-                        }
-                    }
-                }
+                });
             });
 
         window.Echo.channel('staff-orders')
             .listen('.order.status-updated', (e) => {
-                const index = orders.value.findIndex(o => o.id === e.order.id);
-
-                if (['COMPLETED', 'CANCELLED'].includes(e.order.status)) {
-                    if (index !== -1) orders.value.splice(index, 1);
-                    if (selectedOrder.value?.id === e.order.id) closeOrderModal();
-
-                    // Cập nhật lại bàn liên quan
-                    if (e.order.table_id) {
-                        const tableIndex = tables.value.findIndex(t => t.id === e.order.table_id);
-                        if (tableIndex !== -1 && tables.value[tableIndex].orders) {
-                            tables.value[tableIndex].orders = tables.value[tableIndex].orders.filter(o => o.id !== e.order.id);
+                // Reload dữ liệu đầy đủ từ server
+                router.reload({
+                    only: ['initialOrders', 'initialTables'],
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        if (['COMPLETED', 'CANCELLED'].includes(e.order.status)) {
+                            if (selectedOrder.value?.id === e.order.id) closeOrderModal();
                         }
                     }
-                } else if (index !== -1) {
-                    orders.value[index] = e.order;
-                    if (selectedOrder.value?.id === e.order.id) {
-                        selectedOrder.value = e.order;
-                    }
-                }
+                });
             });
 
         window.Echo.channel('staff-orders')

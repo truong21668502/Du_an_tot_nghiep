@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import StaffLayout from '../../Layouts/StaffLayout.vue';
@@ -16,6 +16,11 @@ const selectedOrder = ref(null);
 const isOrderModalOpen = ref(false);
 const filterStatus = ref('ALL');
 const vnpayQrUrl = ref(null);
+
+// Đồng bộ dữ liệu khi Inertia reload props
+watch(() => props.initialOrders, (newVal) => {
+    if (newVal) orders.value = newVal;
+}, { deep: true });
 
 const openOrderDetails = async (order) => {
     selectedOrder.value = order;
@@ -104,24 +109,25 @@ onMounted(() => {
     if (window.Echo) {
         window.Echo.channel('staff-orders')
             .listen('.order.created', (e) => {
-                const exists = orders.value.some(order => order.id === e.order.id);
-                if (!exists) {
-                    orders.value.push(e.order);
-                }
+                // Reload dữ liệu đầy đủ từ server (event chỉ gửi thông tin tối thiểu)
+                router.reload({
+                    only: ['initialOrders'],
+                    preserveScroll: true,
+                });
             })
             .listen('.order.status-updated', (e) => {
-                const index = orders.value.findIndex(o => o.id === e.order.id);
-                if (['COMPLETED', 'CANCELLED'].includes(e.order.status)) {
-                    if (index !== -1) orders.value.splice(index, 1);
-                    if (selectedOrder.value && selectedOrder.value.id === e.order.id) {
-                        closeOrderModal();
+                // Reload dữ liệu đầy đủ từ server
+                router.reload({
+                    only: ['initialOrders'],
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        if (['COMPLETED', 'CANCELLED'].includes(e.order.status)) {
+                            if (selectedOrder.value && selectedOrder.value.id === e.order.id) {
+                                closeOrderModal();
+                            }
+                        }
                     }
-                } else if (index !== -1) {
-                    orders.value.splice(index, 1, e.order);
-                    if (selectedOrder.value && selectedOrder.value.id === e.order.id) {
-                        selectedOrder.value = e.order;
-                    }
-                }
+                });
             })
             .listen('.order.payment-confirmed', (e) => {
                 const index = orders.value.findIndex(o => o.id === e.id);
