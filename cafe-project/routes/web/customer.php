@@ -50,6 +50,10 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER,ADMIN'])->group(function (
         Route::delete('/{cartItem}', [CartController::class, 'remove'])->name('remove');
     });
 
+    Route::post('/reviews',           [ReviewController::class, 'store'])  ->name('reviews.store');
+    Route::patch('/reviews/{review}', [ReviewController::class, 'update']) ->name('reviews.update');
+    Route::delete('/reviews/{review}',[ReviewController::class, 'destroy'])->name('reviews.destroy');
+
     Route::get('/thanh-toan', [CheckoutController::class, 'index'])->name('customer.checkout.index');
 
     // Đơn hàng

@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 
 const props = defineProps({
   item: { type: Object, required: true },
+  totalItems: { type: Number, required: true },
   formatPrice: { type: Function, required: true },
   loading: { type: Boolean, default: false }
 })
@@ -59,7 +60,7 @@ watch(() => props.item.quantity, (val) => {
           <span class="w-10 text-center font-sans text-label-md text-on-surface">{{ quantity }}</span>
           <button
             @click="quantity < 99 && (quantity++, emit('update-quantity', item.id, quantity))"
-            :disabled="loading || quantity >= 99"
+            :disabled="loading || quantity >= item.variant?.available_quantity || totalItems >= 40"
             class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors disabled:opacity-40"
           >
             <span class="material-symbols-outlined text-sm">add</span>

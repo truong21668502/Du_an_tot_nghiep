@@ -123,34 +123,59 @@ const handleOpen = async () => {
                     </p>
                 </div>
 
+            <div
+                v-for="msg in messages"
+                :key="msg.id"
+            >
+                <!-- USER -->
                 <div
-                    v-for="msg in messages"
-                    :key="msg.id"
-                    :class="['flex gap-2', msg.role === 'user' ? 'justify-end' : 'justify-start']"
+                    v-if="msg.role === 'user'"
+                    class="flex justify-end gap-2"
                 >
-                <div v-if="msg.role === 'assistant'" class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                    <img src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1783821381/logo_chatbox_cf_yyythk.jpg" alt="Trợ lý" class="w-full h-full object-cover" />
+                    <div class="max-w-[80%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm bg-primary text-white">
+                        {{ msg.content }}
+                    </div>
+
+                    <div class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-sm text-secondary">
+                            person
+                        </span>
+                    </div>
                 </div>
 
-                    <div
-                        :class="[
-                            'max-w-[80%] rounded-2xl px-4 py-2.5 text-sm',
-                            msg.role === 'user'
-                                ? 'bg-primary text-white rounded-br-md'
-                                : 'bg-surface border border-outline-variant/20 rounded-bl-md'
+                <!-- ASSISTANT -->
+                <div
+                    v-else-if="msg.role === 'assistant' && msg.content"
+                    class="flex justify-start gap-2"
+                >
+                    <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                        <img
+                            src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1783821381/logo_chatbox_cf_yyythk.jpg"
+                            alt="Trợ lý"
+                            class="w-full h-full object-cover"
+                        />
+                    </div>
+
+                    <div class="max-w-[80%] rounded-2xl rounded-bl-md px-4 py-2.5 text-sm bg-surface border border-outline-variant/20">
+                        {{ msg.content }}
+                    </div>
+                </div>
+
+                <!-- TOOL -->
+                <div
+                    v-else-if="msg.role === 'tool' && msg.tool_result?.products?.length"
+                    class="ml-2 mt-2"
+                >
+                    <ChatProductList
+                        :tool-results="[
+                            {
+                                tool_name: msg.tool_name,
+                                data: msg.tool_result
+                            }
                         ]"
-                    >
-                        <p v-if="msg.content">{{ msg.content }}</p>
-                        <ChatProductList 
-    v-if="msg.role === 'tool' && msg.tool_result?.products?.length" 
-    :tool-results="[{ tool_name: msg.tool_name, data: msg.tool_result }]" 
-/>
-                    </div>
-
-                    <div v-if="msg.role === 'user'" class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-sm text-secondary">person</span>
-                    </div>
+                    />
                 </div>
+            </div>
 
                 <div v-if="isLoading" class="flex gap-2 justify-start">
                 <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">

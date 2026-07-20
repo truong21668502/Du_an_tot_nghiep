@@ -9,7 +9,7 @@ import ProductInfo from './Partials/ProductInfo.vue'
 import ProductReviews from './Partials/ProductReviews.vue'
 defineOptions({ layout: MainLayout })
 const page = usePage()
-const { product, selectedVariant, selectedQuantity, loading, variants, isOutOfStock, availableVariants, currentPrice, originalPrice, selectVariant, canAddToCart, addToCart, submitReview, formatPrice, formatDate } = useProduct(page.props.product || null)
+const { product, selectedVariant, selectedQuantity, loading, variants, isOutOfStock, availableVariants, currentPrice, originalPrice, selectVariant, canAddToCart, addToCart, submitReview, updateReview, deleteReview, formatPrice, formatDate } = useProduct(page.props.product || null)
 const activeImage = ref(null)
 const note = ref('')
 onMounted(() => {
@@ -29,6 +29,8 @@ const allImages = computed(() => {
   if (product.value?.image_url) return [product.value.image_url, ...imgs.map(i => i.url)]
   return imgs.map(i => i.url)
 })
+
+console.log('Product page props:', page.props);
 
 console.log(page.props);
 </script>
@@ -59,7 +61,14 @@ console.log(page.props);
         </div>
       </AnimateOnScroll>
       <AnimateOnScroll animation="fade-up" :duration="700" :delay="400">
-        <ProductReviews :reviews="product?.reviews || []" :product-id="product?.id" :format-date="formatDate" :submit-review="submitReview" />
+        <ProductReviews 
+          :reviews="page.props.reviews?.data || []" 
+          :product-id="product?.id" 
+          :format-date="formatDate" 
+          :submit-review="submitReview" 
+          :update-review="updateReview"
+          :delete-review="deleteReview"
+      />
       </AnimateOnScroll>
     </div>
   </div>

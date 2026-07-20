@@ -47,6 +47,7 @@ const {
             <CartItem
               :item="item"
               :format-price="formatPrice"
+              :total-items="totalItems"
               :loading="loading"
               @update-quantity="(id, qty) => updateItem(id, qty)"
               @remove="(id) => removeItem(id)"

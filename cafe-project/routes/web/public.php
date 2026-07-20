@@ -75,6 +75,7 @@ Route::middleware('auth')->group(function () {
         ->name('comments.destroy');
 });
 
+
 // !!!!!!!!!!!!!!! KHÔNG TỰ TIỆN RỜ VÀO QUAN TRỌNG !!!!!!!!!!!!!!!!!!!!!!!!!!
 Route::post('/chat', [ChatController::class, 'message'])->name('chat.message');
 Route::get('/chat-test', function () {

@@ -98,8 +98,8 @@ const addToCart = () => {
     })
     .catch(error => {
       addingToCart.value = false
-      if (error.response?.data?.errors?.product_id) {
-        toast.error(error.response.data.errors.product_id)
+      if (error.response?.data?.message) {
+        toast.error(error.response?.data?.message)
       } else {
         toast.error('Có lỗi xảy ra')
       }

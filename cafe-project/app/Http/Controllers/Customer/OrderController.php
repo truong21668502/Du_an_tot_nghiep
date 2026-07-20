@@ -70,6 +70,17 @@ class OrderController extends Controller
         return DB::transaction(function () use ($cart, $data, $request) {
             [$subtotal, $discountAmount, $couponId] = $this->calculateAmounts($cart);
 
+            $total = max(0, $subtotal - $discountAmount);
+
+            if (
+                $data['payment_method'] === 'CASH' &&
+                $total > 300000
+            ) {
+                throw new CartException(
+                    'Đơn hàng trên 300.000đ chỉ hỗ trợ thanh toán chuyển khoản.'
+                );
+            }
+
             $order = $this->createOrder($cart, $data, $subtotal, $discountAmount, $couponId, $request);
 
             $this->syncOrderDetails($order, $cart);
