@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { router, Link } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
 import { onMounted, onUnmounted } from 'vue'
+import axios from 'axios'
 
 
 const props = defineProps({
@@ -17,13 +18,31 @@ const localOrders = ref([...props.orders.data])
 onMounted(() => {
     if (window.Echo) {
         window.Echo.channel('staff-orders')
-            .listen('.order.created', (e) => {
+            .listen('.order.created', async (e) => {
                 const exists = localOrders.value.some((o) => o.id === e.order.id)
-                if (!exists) localOrders.value.unshift(e.order)
+                if (exists) return
+
+                try {
+                    // ⭐ Payload Echo chỉ có id/status/table — gọi API lấy đầy đủ dữ liệu thật
+                    const { data } = await axios.get(`/quan-tri/don-hang/${e.order.id}`, {
+                        headers: { Accept: 'application/json' },
+                    })
+                    localOrders.value.unshift(data)
+                } catch (error) {
+                    console.error('Không thể tải chi tiết đơn hàng mới:', error)
+                }
             })
             .listen('.order.status-updated', (e) => {
                 const index = localOrders.value.findIndex((o) => o.id === e.order.id)
-                if (index !== -1) localOrders.value[index] = e.order
+                if (index !== -1) {
+                    // ⭐ Merge thay vì ghi đè — payload cũng rút gọn giống order.created
+                    localOrders.value[index] = {
+                        ...localOrders.value[index],
+                        status: e.order.status,
+                        table_id: e.order.table_id,
+                        table: e.order.table,
+                    }
+                }
             })
     }
 })

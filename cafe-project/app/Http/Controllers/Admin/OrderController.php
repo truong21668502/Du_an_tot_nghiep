@@ -72,6 +72,7 @@ class OrderController extends Controller
             'details.product:id,product_name,image_url',
             'details.variant:id,size,price',
         ]);
+        $order->loadCount('details');
 
         if ($request->wantsJson()) {
             return response()->json($order);

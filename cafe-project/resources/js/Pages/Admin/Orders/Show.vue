@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, watch } from "vue";
 import { router } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
 
@@ -7,6 +7,13 @@ const props = defineProps({ order: Object });
 
 // State cục bộ để có thể cập nhật realtime, khác với prop gốc chỉ đọc
 const localOrder = ref(props.order);
+
+watch(
+    () => props.order,
+    (newOrder) => {
+        localOrder.value = newOrder;
+    }
+);
 
 const cancelReason = ref("");
 const showCancelModal = ref(false);
@@ -17,7 +24,13 @@ onMounted(() => {
         window.Echo.channel('staff-orders')
             .listen('.order.status-updated', (e) => {
                 if (e.order.id === localOrder.value.id) {
-                    localOrder.value = e.order;
+                    // Merge thay vì ghi đè — payload Echo chỉ có id/status/table
+                    localOrder.value = {
+                        ...localOrder.value,
+                        status: e.order.status,
+                        table_id: e.order.table_id,
+                        table: e.order.table,
+                    };
                 }
             });
     }
@@ -101,7 +114,7 @@ const formatDate = (value) => new Date(value).toLocaleString("vi-VN");
                 <div>
                     <h1 class="font-sans text-headline-md text-on-surface">Đơn hàng #{{ localOrder.id }}</h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">{{ formatDate(localOrder.created_at)
-                        }}</p>
+                    }}</p>
                 </div>
                 <div class="flex gap-2">
                     <button v-for="action in getNextActions(localOrder)" :key="action.value" :disabled="processing"
