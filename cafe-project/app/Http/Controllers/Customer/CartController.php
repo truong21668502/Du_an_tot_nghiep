@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Customer;
 
 use App\Exceptions\VoucherException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Customer\Cart\AddToCartRequest;
+use App\Http\Requests\Customer\Cart\ApplyVoucherRequest;
+use App\Http\Requests\Customer\Cart\UpdateCartItemRequest;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Coupon;
@@ -42,15 +45,10 @@ class CartController extends Controller
         ]);
     }
 
-    public function add(Request $request)
+    public function add(AddToCartRequest $request)
     {
         $cart = $this->getOrCreateCart($request);
-        $this->addItem($cart, $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'variant_id' => 'required|exists:product_variants,id',
-            'quantity' => 'integer|min:1',
-            'note' => 'nullable|string',
-        ]));
+        $this->addItem($cart, $request->validated());
         $cart->load([
             'items.product.category',
             'items.product.images',
@@ -65,15 +63,12 @@ class CartController extends Controller
         ]);
     }
 
-    public function update(Request $request, CartItem $cartItem)
+    public function update(UpdateCartItemRequest $request, CartItem $cartItem)
     {
         $cart = $this->getOrCreateCart($request);
         abort_if($cartItem->cart_id !== $cart->id, 403);
 
-        $cartItem->update($request->validate([
-            'quantity' => 'required|integer|min:1',
-            'note' => 'nullable|string',
-        ]));
+        $cartItem->update($request->validated());
 
         $cart->load([
             'items.product.category',
@@ -118,7 +113,7 @@ class CartController extends Controller
         return back()->with('success', 'Đã xóa toàn bộ giỏ hàng');
     }
 
-    public function applyVoucher(Request $request)
+    public function applyVoucher(ApplyVoucherRequest $request)
     {
         $cart = $this->getOrCreateCart($request);
         $subtotal = $this->calculateSubtotal($cart);
@@ -130,7 +125,7 @@ class CartController extends Controller
         }   
 
         try {
-            $coupon = $this->validateCoupon($request->validate(['code' => 'required|string'])['code'], $subtotal);
+            $coupon = $this->validateCoupon($request->validated()['code'], $subtotal);
         } catch (VoucherException $e) {
             return response()->json([
                 'success' => false,
@@ -330,6 +325,7 @@ class CartController extends Controller
                     'id' => $item->variant->id,
                     'size' => $item->variant->size ?? null,
                     'price' => (float) $item->variant->price,
+                    'available_quantity' => min(10 , $item->variant->getAvailableQuantity()),
                 ] : null,
                 'quantity' => $item->quantity,
                 'note' => $item->note,

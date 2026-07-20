@@ -88,4 +88,8 @@ class Order extends Model
     {
         return $this->hasOne(Payment::class);
     }
+        public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
 }

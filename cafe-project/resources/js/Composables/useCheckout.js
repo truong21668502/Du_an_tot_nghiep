@@ -11,12 +11,10 @@ export function useCheckout() {
   const paymentMethods = [
     { id: 'CASH', label: 'Thanh toán khi nhận hàng (COD)', icon: 'payments' },
     { id: 'BANK_TRANSFER', label: 'Chuyển khoản ngân hàng', icon: 'account_balance' },
-    { id: 'MOMO', label: 'Ví MoMo', icon: 'wallet' },
-    { id: 'VNPAY', label: 'VNPay', icon: 'credit_card' },
   ]
 
   const isOnlinePayment = computed(() => {
-    return ['BANK_TRANSFER', 'MOMO', 'VNPAY'].includes(selectedPaymentMethod.value)
+    return ['BANK_TRANSFER'].includes(selectedPaymentMethod.value)
   })
 
   const submitCheckout = () => {

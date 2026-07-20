@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Customer;
+namespace App\Http\Requests\Customer\Cart;
 
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -14,7 +14,7 @@ class ApplyVoucherRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'max:50'],
+            'code' => 'required|string',
         ];
     }
 
@@ -22,7 +22,7 @@ class ApplyVoucherRequest extends FormRequest
     {
         return [
             'code.required' => 'Vui lòng nhập mã giảm giá',
-            'code.max' => 'Mã giảm giá không hợp lệ',
+            'code.string' => 'Mã giảm giá không hợp lệ',
         ];
     }
 }

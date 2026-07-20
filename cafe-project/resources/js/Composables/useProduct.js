@@ -46,19 +46,52 @@ export function useProduct(initialProduct = null) {
         toast.success('Đã thêm sản phẩm vào giỏ hàng')
       })
       .catch(error => {
+        console.log(error.response.data)
         loading.value = false
-        errors.value = error.response?.data?.errors || {}
-        toast.error('Có lỗi xảy ra khi thêm vào giỏ hàng')
+        errors.value = error.response?.data?.message || {}
+        toast.error(errors.value)
       })
     }
   const submitReview = (productId, data) => {
-    loading.value = true
-    router.post(`/menu/${productId}/review`, data, {
-      preserveScroll: true,
-      onError: (err) => { errors.value = err },
-      onFinish: () => { loading.value = false }
-    })
+      loading.value = true
+
+      return axios.post(route('reviews.store'), {
+          product_id: productId,
+          rating:     data.rating,
+          comment:    data.comment,
+      })
+      .then(res => res.data)   // trả review object về cho component
+      .catch(err => {
+          errors.value = err.response?.data?.errors || {}
+          console.log(err.response);
+          const msg = Object.values(errors.value)[0]?.[0] || 'Có lỗi xảy ra, vui lòng thử lại'
+          toast.error(msg)
+          throw err            // để component biết mà không reset form
+      })
+      .finally(() => { loading.value = false })
   }
+  const updateReview = (reviewId, data) => {
+    loading.value = true
+    return axios.patch(route('reviews.update', reviewId), {
+        rating:  data.rating,
+        comment: data.comment,
+    })
+    .then(res => res.data)
+    .catch(err => {
+        errors.value = err.response?.data?.errors || {}
+        const msg = Object.values(errors.value)[0]?.[0] || 'Có lỗi xảy ra'
+        toast.error(msg)
+        throw err
+    })
+    .finally(() => { loading.value = false })
+}
+
+const deleteReview = (reviewId) => {
+    loading.value = true
+    return axios.delete(route('reviews.destroy', reviewId))
+    .catch(() => { toast.error('Không thể xóa đánh giá'); throw new Error() })
+    .finally(() => { loading.value = false })
+}
   const formatPrice = (price) => {
     if (!price) return ''
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
@@ -70,6 +103,7 @@ export function useProduct(initialProduct = null) {
     product, selectedVariant, selectedQuantity, loading, errors,
     variants, isOutOfStock, availableVariants, currentPrice, originalPrice,
     selectVariant, canAddToCart, addToCart, submitReview,
-    formatPrice, formatDate
+    formatPrice, formatDate, updateReview,
+    deleteReview,
   }
 }

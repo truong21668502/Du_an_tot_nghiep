@@ -54,4 +54,34 @@ class ProductVariant extends Model
     {
         return $this->hasMany(Recipe::class, 'variant_id', 'id');
     }
+
+    public function getAvailableQuantity(): int
+    {
+        $stockQuantity = PHP_INT_MAX;
+
+        if ($this->recipes->isNotEmpty()) {
+            foreach ($this->recipes as $recipe) {
+                if ($recipe->material && $recipe->quantity_needed > 0) {
+                    $possible = floor(
+                        $recipe->material->quantity_in_stock /
+                        $recipe->quantity_needed
+                    );
+
+                    $stockQuantity = min($stockQuantity, $possible);
+                }
+            }
+        } else {
+            $stockQuantity = $this->status === 'AVAILABLE'
+                ? PHP_INT_MAX
+                : 0;
+        }
+
+        if ($stockQuantity === PHP_INT_MAX) {
+            $stockQuantity = $this->status === 'AVAILABLE'
+                ? 99
+                : 0;
+        }
+
+        return $stockQuantity;
+    }
 }

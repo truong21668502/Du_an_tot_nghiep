@@ -6,8 +6,8 @@ return [
 
     'models' => [
         'primary'   => env('GEMINI_AI_MODEL'),
-        'secondary' => env('AI_SECONDARY_MODEL'),
-        'tertiary'  => env('AI_TERTIARY_MODEL'),
+        'secondary' => env('GEMINI_AI_MODEL_2'),
+        'tertiary'  => env('GEMINI_AI_MODEL_3'),
     ],
 
     'summary_threshold' => 6,   // Trigger summary sau mỗi N user messages

@@ -64,7 +64,7 @@ class ChatAiService
             'Authorization' => 'Bearer ' . config('ai.openrouter_key'),
             'Content-Type'  => 'application/json',
             'HTTP-Referer'  => config('app.url'),
-            'X-Title'       => config('app.name', 'CafeApp'),
+            'X-Title'       => config('app.name', 'Nắng coffee'),
         ])
             ->timeout(45)
             ->post(config('ai.openrouter_url'), $payload);

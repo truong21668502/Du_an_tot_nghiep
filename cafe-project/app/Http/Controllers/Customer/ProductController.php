@@ -191,29 +191,12 @@ class ProductController extends Controller
                 'logo' => $product->brand->logo_url ?? null,
             ],
             'variants' => $product->variants->map(function ($variant) {
-                $stockQuantity = PHP_INT_MAX;
-
-                if ($variant->recipes->isNotEmpty()) {
-                    foreach ($variant->recipes as $recipe) {
-                        if ($recipe->material && $recipe->quantity_needed > 0) {
-                            $possible = floor($recipe->material->quantity_in_stock / $recipe->quantity_needed);
-                            $stockQuantity = min($stockQuantity, $possible);
-                        }
-                    }
-                } else {
-                    $stockQuantity = $variant->status === 'AVAILABLE' ? PHP_INT_MAX : 0;
-                }
-
-                if ($stockQuantity === PHP_INT_MAX) {
-                    $stockQuantity = $variant->status === 'AVAILABLE' ? 99 : 0;
-                }
-
                 return [
                     'id' => $variant->id,
                     'size' => $variant->size,
                     'price' => (float) $variant->price,
                     'discount_price' => $variant->discount_price ? (float) $variant->discount_price : null,
-                    'quantity' => max(0, (int) $stockQuantity),
+                    'quantity' => $variant->getAvailableQuantity(),
                     'status' => $variant->status,
                 ];
             }),
@@ -254,6 +237,7 @@ class ProductController extends Controller
                     'comment' => $review->comment,
                     'user' => [
                         'name' => $review->user->full_name ?? 'Ẩn danh',
+                        'user_id' => $review->user->id ?? null,
                         'avatar' => $review->user->avatar ?? null,
                     ],
                     'created_at' => $review->created_at,
