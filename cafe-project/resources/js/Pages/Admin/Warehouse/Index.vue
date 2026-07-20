@@ -36,7 +36,7 @@ function formatQty(val) {
 
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="font-sans text-headline-md text-on-surface">Kho nguyên liệu</h1>
+                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl">Kho nguyên liệu</h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">{{ filteredMaterials.length }} / {{
                         materials.length }} nguyên liệu đang quản lý.</p>
                 </div>

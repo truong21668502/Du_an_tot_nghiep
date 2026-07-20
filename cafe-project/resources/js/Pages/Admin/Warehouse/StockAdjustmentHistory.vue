@@ -62,7 +62,7 @@ function userDisplayName(user) {
                         <span class="material-symbols-outlined text-md">arrow_back</span> Quay lại kho
                     </Link>
                     <span class="text-outline-variant">/</span>
-                    <h1 class="text-headline-md font-bold text-on-surface">Lịch Sử Điều Chỉnh Tồn Kho</h1>
+                    <h1 class="text-headline-md font-bold text-on-surface text-primary text-3xl">Lịch Sử Điều Chỉnh Tồn Kho</h1>
                 </div>
                 <Link :href="route('admin.kho.dieu-chinh.create')"
                     class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 rounded-full font-bold transition-colors shadow-sm cursor-pointer">

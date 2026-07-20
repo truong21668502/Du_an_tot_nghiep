@@ -149,7 +149,7 @@ async function submitNewMaterial() {
                     <span class="material-symbols-outlined text-md">arrow_back</span> Quay lại kho
                 </Link>
                 <span class="text-outline-variant">/</span>
-                <h1 class="text-headline-md font-bold text-on-surface">Tạo Phiếu Nhập Kho</h1>
+                <h1 class="text-headline-md font-bold text-on-surface text-primary text-3xl">Tạo Phiếu Nhập Kho</h1>
             </div>
 
             <div class="bg-surface w-full rounded-2xl border border-outline-variant/20 shadow-sm p-6 space-y-6">

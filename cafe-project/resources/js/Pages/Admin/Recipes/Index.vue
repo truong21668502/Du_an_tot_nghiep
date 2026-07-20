@@ -146,7 +146,7 @@ async function saveRecipe() {
         <div class="flex gap-4 h-[calc(100vh-8rem)]">
             <!-- Danh sách sản phẩm -->
             <aside class="w-72 shrink-0 rounded-2xl bg-surface overflow-y-auto">
-                <h2 class="text-headline-sm font-sans px-4 py-3 border-b border-outline-variant/20">
+                <h2 class="text-headline-sm font-sans px-4 py-3 border-b border-outline-variant/20 text-primary text-3xl">
                     Sản phẩm
                 </h2>
                 <ul>
@@ -164,7 +164,7 @@ async function saveRecipe() {
             <!-- Chi tiết công thức -->
             <section class="flex-1 rounded-2xl bg-surface p-4 overflow-y-auto">
                 <template v-if="selectedProduct">
-                    <h2 class="text-headline-md mb-3">
+                    <h2 class="text-headline-md mb-3 text-primary text-3xl">
                         {{ selectedProduct.product_name }}
                     </h2>
 

@@ -52,7 +52,7 @@ function submit() {
                 </Link>
             </div>
 
-            <h1 class="text-headline-md font-bold text-on-surface">Điều Chỉnh Tồn Kho (Kiểm Kê)</h1>
+            <h1 class="text-headline-md font-bold text-on-surface text-primary text-3xl">Điều Chỉnh Tồn Kho (Kiểm Kê)</h1>
 
             <div class="bg-surface w-full rounded-2xl border border-outline-variant/20 shadow-sm p-6 space-y-5">
 

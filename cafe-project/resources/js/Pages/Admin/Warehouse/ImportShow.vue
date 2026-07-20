@@ -38,7 +38,7 @@ const calculatedTotal = computed(() =>
                     ← Quay lại lịch sử
                 </Link>
                 <span class="text-gray-200">/</span>
-                <h1 class="text-xl font-bold text-gray-800">Phiếu nhập #{{ receipt.id }}</h1>
+                <h1 class="text-xl font-bold text-gray-800 text-primary text-3xl">Phiếu nhập #{{ receipt.id }}</h1>
             </div>
 
             <!-- Thông tin chung -->

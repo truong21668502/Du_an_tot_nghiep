@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\MaterialController;
 use App\Http\Controllers\Admin\StockAdjustmentController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\RecipeController;
+use App\Http\Controllers\Admin\DashboardController;
 
 
 /*
@@ -71,19 +72,21 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::get('/nguoi-dung', [UserController::class, 'index'])->name('users.index');
     Route::post('/nguoi-dung', [UserController::class, 'store'])->name('users.store');
     Route::put('/nguoi-dung/{user}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('/nguoi-dung/{id}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+    Route::delete('/nguoi-dung/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 
     //Route mới phục vụ riêng cho Thùng rác người dùng:
-    Route::post('/nguoi-dung/{id}/restore', [UserController::class, 'restore'])->name('admin.users.restore');
-    Route::delete('/nguoi-dung/{id}/force-delete', [UserController::class, 'forceDelete'])->name('admin.users.forceDelete');
+    Route::post('/nguoi-dung/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
+    Route::delete('/nguoi-dung/{id}/force-delete', [UserController::class, 'forceDelete'])->name('users.forceDelete');
 
     // Quản lý Ví Voucher khách hàng
     Route::get('/vi-voucher', [UserVoucherController::class, 'index'])->name('userVouchers.index');
     Route::delete('/vi-voucher/{id}', [UserVoucherController::class, 'destroy'])->name('userVouchers.destroy');
     Route::post('/vi-voucher', [UserVoucherController::class, 'store'])->name('userVouchers.store');
 
+    //quản lý trang chủ dashboard admin
+    Route::get('/trang-chu', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Quản lý đơn hàng
+
     // Quản lý đơn hàng
     Route::prefix('don-hang')->name('orders.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
