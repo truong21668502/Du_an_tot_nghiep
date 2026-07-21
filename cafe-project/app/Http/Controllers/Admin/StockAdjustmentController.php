@@ -19,6 +19,7 @@ class StockAdjustmentController extends Controller
             'material_name',
             'base_unit',
             'input_unit',
+            'exchange_rate',
             'quantity_in_stock'
         )->orderBy('material_name')->get();
 
@@ -70,7 +71,10 @@ class StockAdjustmentController extends Controller
     public function index(Request $request)
     {
         $query = StockAdjustment::query()
-            ->with(['material:id,material_name,base_unit', 'user']);
+            ->with([
+                'material:id,material_name,base_unit,input_unit,exchange_rate',
+                'user',
+            ]);
 
         if ($request->filled('material_id')) {
             $query->where('material_id', $request->material_id);
