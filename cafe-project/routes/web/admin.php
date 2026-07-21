@@ -85,6 +85,8 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
 
     //quản lý trang chủ dashboard admin
     Route::get('/trang-chu', [DashboardController::class, 'index'])->name('dashboard');
+    // API lấy doanh thu theo ngày
+    Route::get('/api/daily-revenue', [DashboardController::class, 'getDailyRevenue'])->name('admin.daily-revenue');
 
 
     // Quản lý đơn hàng

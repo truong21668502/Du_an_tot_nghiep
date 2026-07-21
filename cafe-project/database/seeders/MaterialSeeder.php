@@ -324,7 +324,7 @@ class MaterialSeeder extends Seeder
             ],
             [
                 'id'                => 36,
-                'material_name'     => 'Muối tinh Hồng Himalaya (Pha kem muối)',
+                'material_name'     => 'Muối tinh Hồng Himalaya',
                 'base_unit'         => 'g',
                 'quantity_in_stock' => 500.00,   // Dùng cho món Cà Phê Muối
                 'input_unit'        => 'Gói',

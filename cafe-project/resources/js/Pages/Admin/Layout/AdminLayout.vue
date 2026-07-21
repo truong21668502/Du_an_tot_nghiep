@@ -25,7 +25,7 @@ const menuGroups = [
         icon: "dashboard",
         children: [
             {
-                label: "Bảng điều khiển",
+                label: "Bảng tổng quan",
                 href: "/quan-tri/trang-chu",
                 icon: "space_dashboard",
             },
