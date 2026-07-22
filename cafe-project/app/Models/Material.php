@@ -53,8 +53,6 @@ class Material extends Model
         return $this->hasMany(ImportReceiptDetail::class, 'material_id');
     }
 
-    // app/Models/Material.php
-
     public function latestImportDetail()
     {
         return $this->hasOne(ImportReceiptDetail::class, 'material_id')
@@ -75,5 +73,10 @@ class Material extends Model
             ->where('import_receipt_details.expiry_date', '>=', now()->toDateString())
             ->orderBy('import_receipt_details.expiry_date')
             ->select('import_receipt_details.*');
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class, 'material_id', 'id');
     }
 }

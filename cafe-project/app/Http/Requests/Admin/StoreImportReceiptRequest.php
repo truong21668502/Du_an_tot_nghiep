@@ -14,7 +14,7 @@ class StoreImportReceiptRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'supplier_name' => 'nullable|string|max:255',
+            'supplier_name' => 'required|string|max:255',
             'note' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
             'items.*.material_id' => 'required|exists:materials,id|distinct',
@@ -27,6 +27,7 @@ class StoreImportReceiptRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'supplier_name.required' => 'Vui lòng nhập tên nhà cung cấp.',
             'supplier_name.string' => 'Tên nhà cung cấp không hợp lệ.',
             'supplier_name.max' => 'Tên nhà cung cấp không được vượt quá :max ký tự.',
             'note.string' => 'Ghi chú không hợp lệ.',

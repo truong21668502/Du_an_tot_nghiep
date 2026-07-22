@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\StockAdjustmentController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\RecipeController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\StockMovementController;
 
 
 /*
@@ -139,6 +140,7 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
         Route::get('/dieu-chinh-ton', [StockAdjustmentController::class, 'index'])->name('dieu-chinh.index');
         Route::get('/dieu-chinh-ton/tao', [StockAdjustmentController::class, 'create'])->name('dieu-chinh.create');
         Route::post('/dieu-chinh-ton', [StockAdjustmentController::class, 'store'])->name('dieu-chinh.store');
+        Route::get('/chuyen-dong', [StockMovementController::class, 'index'])->name('chuyen-dong.index');
     });
 
     Route::get('cong-thuc', [RecipeController::class, 'index'])->name('recipes.index');

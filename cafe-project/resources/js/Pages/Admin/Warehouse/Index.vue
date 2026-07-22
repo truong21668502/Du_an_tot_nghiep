@@ -97,7 +97,7 @@ function rowAccentClass(m) {
 function isExpiringSoon(m) {
     if (!m.expiry_date) return false
     const diff = (new Date(m.expiry_date) - new Date()) / (1000 * 60 * 60 * 24)
-    return diff >= 0 && diff <= 30
+    return diff >= 0 && diff <= 7
 }
 
 function isExpired(m) {
@@ -122,6 +122,11 @@ function goImport(materialId) {
                 <span class="material-symbols-outlined">check_circle</span>
                 {{ flash.success }}
             </div>
+            <Link :href="route('admin.kho.chuyen-dong.index')"
+                class="inline-flex items-center gap-2 px-4 py-2.5 border border-outline-variant text-on-surface-variant hover:bg-surface-container-high rounded-full font-bold transition-colors text-label-medium">
+                <span class="material-symbols-outlined text-[18px]">history</span>
+                Lịch sử kho
+            </Link>
 
             <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

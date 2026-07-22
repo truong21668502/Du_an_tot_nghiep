@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\Material;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Models\StockMovement;
 
 class RecipeStockService
 {
@@ -70,9 +72,20 @@ class RecipeStockService
             return;
         }
 
-        DB::transaction(function () use ($required) {
+        DB::transaction(function () use ($required, $order) {
             foreach ($required as $materialId => $qty) {
                 Material::where('id', $materialId)->decrement('quantity_in_stock', $qty);
+
+                StockMovement::create([
+                    'material_id' => $materialId,
+                    'movement_type' => 'export',
+                    'quantity_change' => -$qty,   // âm = xuất
+                    'reference_type' => 'order',
+                    'reference_id' => $order->id,
+                    'moved_by' => Auth::id(),
+                    'note' => "Trừ kho khi hoàn thành đơn #{$order->id}",
+                    'moved_at' => now(),
+                ]);
             }
         });
     }

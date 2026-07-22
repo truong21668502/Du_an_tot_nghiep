@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Models\StockMovement;
 
 class StockAdjustmentController extends Controller
 {
@@ -47,7 +48,7 @@ class StockAdjustmentController extends Controller
                 $after = $validated['actual_quantity'];
                 $change = $after - $before;
 
-                StockAdjustment::create([
+                $adjustment = StockAdjustment::create([
                     'material_id' => $material->id,
                     'user_id' => Auth::id(),
                     'reason' => $validated['reason'],
@@ -68,6 +69,19 @@ class StockAdjustmentController extends Controller
                 }
 
                 $material->update($updateData);
+
+                if ($change != 0) {
+                    StockMovement::create([
+                        'material_id' => $material->id,
+                        'movement_type' => 'adjust',
+                        'quantity_change' => $change,
+                        'reference_type' => 'stock_adjustment',
+                        'reference_id' => $adjustment->id,
+                        'moved_by' => Auth::id(),
+                        'note' => "Điều chỉnh kiểm kê ({$validated['reason']})" . (!empty($validated['note']) ? " — {$validated['note']}" : ''),
+                        'moved_at' => now(),
+                    ]);
+                }
             });
         } catch (\Throwable $e) {
             return back()->withInput()->with('toast-error', 'Lỗi khi điều chỉnh tồn kho: ' . $e->getMessage());

@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use App\Models\StockMovement;
 
 class ImportReceiptController extends Controller
 {
@@ -73,6 +74,17 @@ class ImportReceiptController extends Controller
                     ]);
 
                     $material->increment('quantity_in_stock', $stockChange);
+
+                    StockMovement::create([
+                        'material_id' => $material->id,
+                        'movement_type' => 'import',
+                        'quantity_change' => $stockChange,
+                        'reference_type' => 'import_receipt',
+                        'reference_id' => $receipt->id,
+                        'moved_by' => Auth::id(),
+                        'note' => "Nhập kho từ phiếu #{$receipt->id}" . (!empty($data['supplier_name']) ? " — NCC: {$data['supplier_name']}" : ''),
+                        'moved_at' => now(),
+                    ]);
                 }
             });
         } catch (\Throwable $e) {
@@ -179,6 +191,17 @@ class ImportReceiptController extends Controller
                     $material = Material::lockForUpdate()->find($old->material_id);
                     if ($material) {
                         $material->decrement('quantity_in_stock', $old->stock_change);
+
+                        StockMovement::create([
+                            'material_id' => $material->id,
+                            'movement_type' => 'import',
+                            'quantity_change' => -$old->stock_change,
+                            'reference_type' => 'import_receipt',
+                            'reference_id' => $importReceipt->id,
+                            'moved_by' => Auth::id(),
+                            'note' => "Huỷ định lượng cũ do sửa phiếu nhập #{$importReceipt->id}",
+                            'moved_at' => now(),
+                        ]);
                     }
                 }
 
@@ -211,6 +234,17 @@ class ImportReceiptController extends Controller
                     ]);
 
                     $material->increment('quantity_in_stock', $stockChange);
+
+                    StockMovement::create([
+                        'material_id' => $material->id,
+                        'movement_type' => 'import',
+                        'quantity_change' => $stockChange,
+                        'reference_type' => 'import_receipt',
+                        'reference_id' => $importReceipt->id,
+                        'moved_by' => Auth::id(),
+                        'note' => "Áp định lượng mới do sửa phiếu nhập #{$importReceipt->id}",
+                        'moved_at' => now(),
+                    ]);
                 }
 
                 $importReceipt->update([
@@ -248,6 +282,17 @@ class ImportReceiptController extends Controller
                     $material = Material::lockForUpdate()->find($detail->material_id);
                     if ($material) {
                         $material->decrement('quantity_in_stock', $detail->stock_change);
+
+                        StockMovement::create([
+                            'material_id' => $material->id,
+                            'movement_type' => 'import',
+                            'quantity_change' => -$detail->stock_change,
+                            'reference_type' => 'import_receipt',
+                            'reference_id' => $importReceipt->id,
+                            'moved_by' => Auth::id(),
+                            'note' => "Huỷ phiếu nhập #{$importReceipt->id}" . (!empty($data['cancel_reason']) ? " — Lý do: {$data['cancel_reason']}" : ''),
+                            'moved_at' => now(),
+                        ]);
                     }
                 }
 
