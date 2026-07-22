@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import { useForm, Link } from '@inertiajs/vue3'
+import { useForm, Link, usePage } from '@inertiajs/vue3'
 import axios from 'axios'
 import AdminLayout from "../Layout/AdminLayout.vue";
 
@@ -8,14 +8,26 @@ const props = defineProps({
     materials: { type: Array, default: () => [] },
 })
 
-// Bản copy có thể sửa được, để thêm nguyên liệu mới vào danh sách realtime
 const materialsList = ref([...props.materials])
+
+const page = usePage()
+const prefillId = Number(page.props.ziggy?.query?.prefill_material)
+
+
 
 const form = useForm({
     supplier_name: '',
     note: '',
     items: [],
 })
+
+if (prefillId) {
+    form.items.push({
+        material_id: prefillId,
+        quantity: '',
+        unit_price: '',
+    })
+}
 
 function getOtherSelectedIds(currentIndex) {
     return form.items
@@ -28,7 +40,14 @@ function addItem() {
         material_id: '',
         quantity: '',
         unit_price: '',
+        expiry_date: '',
     })
+}
+
+function stockInInputUnit(material) {
+    const rate = Number(material.exchange_rate)
+    if (!rate) return Number(material.quantity_in_stock)
+    return Number((Number(material.quantity_in_stock) / rate).toFixed(2))
 }
 
 function removeItem(index) {
@@ -50,8 +69,10 @@ const grandTotal = computed(() =>
 function stockAfter(item) {
     const mat = getMaterial(item.material_id)
     if (!mat || !item.quantity) return null
-    const added = parseFloat(item.quantity) * mat.exchange_rate
-    return Number(mat.quantity_in_stock) + added
+    const rate = Number(mat.exchange_rate) || 1
+    const addedInBaseUnit = parseFloat(item.quantity) * rate
+    const totalInBaseUnit = Number(mat.quantity_in_stock) + addedInBaseUnit
+    return Number((totalInBaseUnit / rate).toFixed(2))   // quy đổi lại về input_unit để hiển thị
 }
 
 function formatNum(val) {
@@ -212,7 +233,7 @@ async function submitNewMaterial() {
                                     <option v-for="m in materialsList" :key="m.id" :value="m.id"
                                         :disabled="getOtherSelectedIds(index).includes(m.id)">
                                         {{ m.material_name }}{{ getOtherSelectedIds(index).includes(m.id) ? ' (đã chọn)'
-                                        : '' }}
+                                            : '' }}
                                     </option>
                                     <option value="__new__" class="text-primary font-bold">
                                         + Thêm nguyên liệu mới...
@@ -226,13 +247,13 @@ async function submitNewMaterial() {
                                             getMaterial(item.material_id).input_unit }}</strong>
                                         <span class="mx-1">•</span>
                                         Tồn hiện tại: <span class="font-mono">{{
-                                            formatNum(getMaterial(item.material_id).quantity_in_stock) }} {{
-                                            getMaterial(item.material_id).base_unit }}</span>
+                                            formatNum(stockInInputUnit(getMaterial(item.material_id))) }} {{
+                                                getMaterial(item.material_id).input_unit }}</span>
                                     </p>
                                     <p v-if="stockAfter(item)" class="text-primary flex items-center gap-1">
                                         <span class="material-symbols-outlined text-[14px]">arrow_right_alt</span>
                                         Sau nhập: <span class="font-mono font-bold">{{ formatNum(stockAfter(item)) }} {{
-                                            getMaterial(item.material_id).base_unit }}</span>
+                                            getMaterial(item.material_id).input_unit }}</span>
                                     </p>
                                 </div>
 
@@ -243,7 +264,7 @@ async function submitNewMaterial() {
                                 </span>
                             </div>
 
-                            <div class="col-span-5 md:col-span-3 flex flex-col gap-1.5">
+                            <div class="col-span-4 md:col-span-2 flex flex-col gap-1.5">
                                 <label
                                     class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1">
                                     Số lượng
@@ -256,19 +277,32 @@ async function submitNewMaterial() {
                                     class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium font-mono" />
                                 <span v-if="form.errors[`items.${index}.quantity`]"
                                     class="text-body-small text-error flex items-center gap-0.5 mt-1">
-                                    <span class="material-symbols-outlined text-sm">error</span>{{
-                                        form.errors[`items.${index}.quantity`] }}
+                                    <span class="material-symbols-outlined text-sm">error</span>
+                                    {{ form.errors[`items.${index}.quantity`] }}
                                 </span>
                             </div>
 
-                            <div class="col-span-5 md:col-span-3 flex flex-col gap-1.5">
+                            <!-- Đơn giá — đổi md:col-span-3 → md:col-span-2 -->
+                            <div class="col-span-4 md:col-span-2 flex flex-col gap-1.5">
                                 <label class="text-label-medium text-on-surface-variant font-bold">Đơn giá (₫)</label>
                                 <input v-model="item.unit_price" type="number" min="0" step="1000" placeholder="0"
                                     class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium font-mono" />
                                 <span v-if="form.errors[`items.${index}.unit_price`]"
                                     class="text-body-small text-error flex items-center gap-0.5 mt-1">
-                                    <span class="material-symbols-outlined text-sm">error</span>{{
-                                        form.errors[`items.${index}.unit_price`] }}
+                                    <span class="material-symbols-outlined text-sm">error</span>
+                                    {{ form.errors[`items.${index}.unit_price`] }}
+                                </span>
+                            </div>
+
+                            <!-- Hạn sử dụng — MỚI -->
+                            <div class="col-span-4 md:col-span-2 flex flex-col gap-1.5">
+                                <label class="text-label-medium text-on-surface-variant font-bold">Hạn SD</label>
+                                <input v-model="item.expiry_date" type="date"
+                                    class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium" />
+                                <span v-if="form.errors[`items.${index}.expiry_date`]"
+                                    class="text-body-small text-error flex items-center gap-0.5 mt-1">
+                                    <span class="material-symbols-outlined text-sm">error</span>
+                                    {{ form.errors[`items.${index}.expiry_date`] }}
                                 </span>
                             </div>
 
@@ -332,7 +366,7 @@ async function submitNewMaterial() {
                             <p v-if="materialErrors.material_name"
                                 class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                 <span class="material-symbols-outlined text-sm">error</span>{{
-                                materialErrors.material_name[0] }}
+                                    materialErrors.material_name[0] }}
                             </p>
                         </div>
 
@@ -344,7 +378,7 @@ async function submitNewMaterial() {
                                 <p v-if="materialErrors.input_unit"
                                     class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                     <span class="material-symbols-outlined text-sm">error</span>{{
-                                    materialErrors.input_unit[0] }}
+                                        materialErrors.input_unit[0] }}
                                 </p>
                             </div>
                             <div class="flex flex-col gap-1.5">
@@ -355,7 +389,7 @@ async function submitNewMaterial() {
                                 <p v-if="materialErrors.base_unit"
                                     class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                     <span class="material-symbols-outlined text-sm">error</span>{{
-                                    materialErrors.base_unit[0] }}
+                                        materialErrors.base_unit[0] }}
                                 </p>
                             </div>
                         </div>
@@ -365,7 +399,7 @@ async function submitNewMaterial() {
                                 Tỷ lệ quy đổi
                                 <span class="text-body-small text-on-surface-variant/70 font-normal mt-0.5">
                                     (1 {{ newMaterialForm.input_unit || 'đơn vị nhập' }} = ? {{
-                                    newMaterialForm.base_unit || 'đơn vị gốc' }})
+                                        newMaterialForm.base_unit || 'đơn vị gốc' }})
                                 </span>
                             </label>
                             <input v-model="newMaterialForm.exchange_rate" type="number" min="0.000001" step="0.01"
@@ -374,7 +408,7 @@ async function submitNewMaterial() {
                             <p v-if="materialErrors.exchange_rate"
                                 class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                 <span class="material-symbols-outlined text-sm">error</span>{{
-                                materialErrors.exchange_rate[0] }}
+                                    materialErrors.exchange_rate[0] }}
                             </p>
                         </div>
 

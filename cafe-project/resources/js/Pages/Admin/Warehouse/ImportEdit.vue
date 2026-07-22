@@ -33,6 +33,9 @@ const form = useForm({
         material_id: d.material_id,
         quantity: d.quantity,
         unit_price: d.unit_price,
+        expiry_date: d.expiry_date
+            ? new Date(d.expiry_date).toISOString().split('T')[0]
+            : '',
     })),
 })
 
@@ -43,7 +46,7 @@ function getOtherSelectedIds(currentIndex) {
 }
 
 function addItem() {
-    form.items.push({ material_id: '', quantity: '', unit_price: '' })
+    form.items.push({ material_id: '', quantity: '', unit_price: '', expiry_date: '', })
 }
 
 function removeItem(index) {
@@ -145,7 +148,8 @@ async function submitNewMaterial() {
                     <span class="material-symbols-outlined text-md">arrow_back</span> Quay lại lịch sử
                 </Link>
                 <span class="text-outline-variant">/</span>
-                <h1 class="text-headline-md font-bold text-on-surface text-primary text-3xl">Sửa Phiếu Nhập #{{ receipt.id }}</h1>
+                <h1 class="text-headline-md font-bold text-on-surface text-primary text-3xl">Sửa Phiếu Nhập #{{
+                    receipt.id }}</h1>
             </div>
 
             <div
@@ -214,7 +218,7 @@ async function submitNewMaterial() {
                                     <option v-for="m in materialsList" :key="m.id" :value="m.id"
                                         :disabled="getOtherSelectedIds(index).includes(m.id)">
                                         {{ m.material_name }}{{ getOtherSelectedIds(index).includes(m.id) ? ' (đã chọn)'
-                                        : '' }}
+                                            : '' }}
                                     </option>
                                     <option value="__new__" class="text-primary font-bold">
                                         + Thêm nguyên liệu mới...
@@ -229,7 +233,7 @@ async function submitNewMaterial() {
                                         <span class="mx-1">•</span>
                                         Tồn (sau khi hoàn lại phiếu cũ): <span class="font-mono">{{
                                             formatNum(getBaseline(item.material_id)) }} {{
-                                            getMaterial(item.material_id).base_unit }}</span>
+                                                getMaterial(item.material_id).base_unit }}</span>
                                     </p>
                                     <p v-if="stockAfter(item)" class="text-primary flex items-center gap-1">
                                         <span class="material-symbols-outlined text-[14px]">arrow_right_alt</span>
@@ -336,7 +340,7 @@ async function submitNewMaterial() {
                             <p v-if="materialErrors.material_name"
                                 class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                 <span class="material-symbols-outlined text-sm">error</span>{{
-                                materialErrors.material_name[0] }}
+                                    materialErrors.material_name[0] }}
                             </p>
                         </div>
 
@@ -348,7 +352,7 @@ async function submitNewMaterial() {
                                 <p v-if="materialErrors.input_unit"
                                     class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                     <span class="material-symbols-outlined text-sm">error</span>{{
-                                    materialErrors.input_unit[0] }}
+                                        materialErrors.input_unit[0] }}
                                 </p>
                             </div>
                             <div class="flex flex-col gap-1.5">
@@ -359,7 +363,7 @@ async function submitNewMaterial() {
                                 <p v-if="materialErrors.base_unit"
                                     class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                     <span class="material-symbols-outlined text-sm">error</span>{{
-                                    materialErrors.base_unit[0] }}
+                                        materialErrors.base_unit[0] }}
                                 </p>
                             </div>
                         </div>
@@ -369,7 +373,7 @@ async function submitNewMaterial() {
                                 Tỷ lệ quy đổi
                                 <span class="text-body-small text-on-surface-variant/70 font-normal mt-0.5">
                                     (1 {{ newMaterialForm.input_unit || 'đơn vị nhập' }} = ? {{
-                                    newMaterialForm.base_unit || 'đơn vị gốc' }})
+                                        newMaterialForm.base_unit || 'đơn vị gốc' }})
                                 </span>
                             </label>
                             <input v-model="newMaterialForm.exchange_rate" type="number" min="0.000001" step="0.01"
@@ -378,7 +382,7 @@ async function submitNewMaterial() {
                             <p v-if="materialErrors.exchange_rate"
                                 class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                 <span class="material-symbols-outlined text-sm">error</span>{{
-                                materialErrors.exchange_rate[0] }}
+                                    materialErrors.exchange_rate[0] }}
                             </p>
                         </div>
 

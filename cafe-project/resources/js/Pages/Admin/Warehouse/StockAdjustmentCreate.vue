@@ -13,6 +13,7 @@ const form = useForm({
     reason: 'kiem_ke',
     note: '',
     min_stock: '',
+    max_stock: '',
 })
 
 const reasons = [
@@ -43,6 +44,13 @@ const currentMinStockDisplay = computed(() => {
     return Number((Number(selectedMaterial.value.min_stock ?? 0) / rate).toFixed(2))
 })
 
+const currentMaxStockDisplay = computed(() => {
+    if (!selectedMaterial.value) return ''
+    const rate = Number(selectedMaterial.value.exchange_rate)
+    if (!rate) return Number(selectedMaterial.value.max_stock ?? 0)
+    return Number((Number(selectedMaterial.value.max_stock ?? 0) / rate).toFixed(2))
+})
+
 // Chênh lệch tính theo input_unit để hiển thị cho dễ hiểu
 const diff = computed(() => {
     if (!selectedMaterial.value || form.actual_quantity === '') return null
@@ -53,8 +61,10 @@ const diff = computed(() => {
 function onMaterialChange() {
     if (selectedMaterial.value) {
         form.min_stock = currentMinStockDisplay.value || ''
+        form.max_stock = currentMaxStockDisplay.value || ''   // thêm
     } else {
         form.min_stock = ''
+        form.max_stock = ''   // thêm
     }
     form.actual_quantity = ''
 }
@@ -68,15 +78,15 @@ function submit() {
 
     const rate = Number(selectedMaterial.value.exchange_rate) || 1
 
-    // Chuyển đổi từ input_unit → base_unit trước khi gửi lên backend
     const actualInBaseUnit = Number(form.actual_quantity) * rate
     const minStockInBaseUnit = form.min_stock !== '' ? Number(form.min_stock) * rate : null
+    const maxStockInBaseUnit = form.max_stock !== '' ? Number(form.max_stock) * rate : null   // thêm
 
-    // Dùng transform để override giá trị trước khi submit
     form.transform(data => ({
         ...data,
         actual_quantity: actualInBaseUnit,
         min_stock: minStockInBaseUnit,
+        max_stock: maxStockInBaseUnit,   // thêm
     })).post(route('admin.kho.dieu-chinh.store'))
 }
 </script>
@@ -163,7 +173,7 @@ function submit() {
                         Chênh lệch:
                         <span class="font-mono font-bold">
                             {{ diff > 0 ? '+' : '' }}{{ formatNum(Number(diff.toFixed(2))) }} {{
-                            selectedMaterial?.input_unit }}
+                                selectedMaterial?.input_unit }}
                         </span>
                         <span v-if="diff > 0"> (thực tế nhiều hơn hệ thống)</span>
                         <span v-else-if="diff < 0"> (hao hụt so với hệ thống)</span>
@@ -187,6 +197,28 @@ function submit() {
                     <p class="text-label-small text-on-surface-variant/60">
                         Để trống = giữ nguyên ngưỡng cũ. Hệ thống cảnh báo khi tồn kho ≤ ngưỡng này.
                     </p>
+                </div>
+
+                <!-- Ngưỡng tồn kho tối đa -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1">
+                        Ngưỡng tồn kho tối đa
+                        <span v-if="selectedMaterial"
+                            class="text-primary bg-primary/10 px-1.5 py-0.5 rounded text-[10px]">
+                            {{ selectedMaterial.input_unit }}
+                        </span>
+                        <span class="text-label-small text-on-surface-variant font-normal ml-1">(tuỳ chọn)</span>
+                    </label>
+                    <input v-model="form.max_stock" type="number" min="0" step="0.01"
+                        :placeholder="selectedMaterial ? `Hiện tại: ${currentMaxStockDisplay || 0} ${selectedMaterial.input_unit}` : '0'"
+                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium font-mono" />
+                    <p class="text-label-small text-on-surface-variant/60">
+                        Để trống = giữ nguyên ngưỡng cũ. Dùng để cảnh báo nhập kho vượt mức tồn trữ hợp lý.
+                    </p>
+                    <span v-if="form.errors.max_stock"
+                        class="text-body-small text-error flex items-center gap-0.5 mt-1">
+                        <span class="material-symbols-outlined text-sm">error</span>{{ form.errors.max_stock }}
+                    </span>
                 </div>
 
                 <!-- Lý do -->

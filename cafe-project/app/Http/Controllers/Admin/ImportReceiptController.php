@@ -38,6 +38,7 @@ class ImportReceiptController extends Controller
             'items.*.material_id' => 'required|exists:materials,id|distinct',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.expiry_date' => 'nullable|date',
         ]);
 
         try {
@@ -69,6 +70,7 @@ class ImportReceiptController extends Controller
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'stock_change' => $stockChange,
+                        'expiry_date' => $item['expiry_date'] ?? null,
                     ]);
 
                     $material->increment('quantity_in_stock', $stockChange);
@@ -172,6 +174,7 @@ class ImportReceiptController extends Controller
             'items.*.material_id' => 'required|exists:materials,id|distinct',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.expiry_date' => 'nullable|date',
         ]);
 
         try {
@@ -210,6 +213,7 @@ class ImportReceiptController extends Controller
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'stock_change' => $stockChange,
+                        'expiry_date' => $item['expiry_date'] ?? null,
                     ]);
 
                     $material->increment('quantity_in_stock', $stockChange);

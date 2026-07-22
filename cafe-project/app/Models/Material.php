@@ -19,9 +19,13 @@ class Material extends Model
     protected $fillable = [
         'material_name',
         'base_unit',
-        'quantity_in_stock',
         'input_unit',
         'exchange_rate',
+        'quantity_in_stock',
+        'min_stock',
+        'max_stock',
+        'supplier',
+        'price',
     ];
 
     /**
@@ -29,9 +33,10 @@ class Material extends Model
      */
     protected $casts = [
         'quantity_in_stock' => 'decimal:2',
-        'exchange_rate'     => 'decimal:2',
-        'created_at'        => 'datetime',
-        'updated_at'        => 'datetime',
+        'min_stock' => 'decimal:2',
+        'max_stock' => 'decimal:2',
+        'exchange_rate' => 'decimal:2',
+        'price' => 'decimal:2',
     ];
 
     /**
@@ -41,5 +46,34 @@ class Material extends Model
     public function recipes(): HasMany
     {
         return $this->hasMany(Recipe::class, 'material_id', 'id');
+    }
+
+    public function importReceiptDetails()
+    {
+        return $this->hasMany(ImportReceiptDetail::class, 'material_id');
+    }
+
+    // app/Models/Material.php
+
+    public function latestImportDetail()
+    {
+        return $this->hasOne(ImportReceiptDetail::class, 'material_id')
+            ->join('import_receipts', 'import_receipts.id', '=', 'import_receipt_details.receipt_id')
+            ->where('import_receipts.status', 'active')   // bỏ qua phiếu đã huỷ
+            ->orderByDesc('import_receipt_details.created_at')
+            ->select([
+                'import_receipt_details.*',
+                'import_receipts.supplier_name',
+            ]);
+    }
+    public function nearestExpiryDetail()
+    {
+        return $this->hasOne(ImportReceiptDetail::class, 'material_id')
+            ->join('import_receipts', 'import_receipts.id', '=', 'import_receipt_details.receipt_id')
+            ->where('import_receipts.status', 'active')
+            ->whereNotNull('import_receipt_details.expiry_date')
+            ->where('import_receipt_details.expiry_date', '>=', now()->toDateString())
+            ->orderBy('import_receipt_details.expiry_date')
+            ->select('import_receipt_details.*');
     }
 }
