@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CopyRecipeRequest;
+use App\Http\Requests\Admin\SyncRecipeRequest;
 use App\Models\Material;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -52,13 +54,9 @@ class RecipeController extends Controller
         return back();
     }
 
-    public function sync(Request $request, ProductVariant $variant)
+    public function sync(SyncRecipeRequest $request, ProductVariant $variant)
     {
-        $validated = $request->validate([
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.material_id' => ['required', 'integer', 'exists:materials,id'],
-            'items.*.quantity_needed' => ['required', 'numeric', 'min:0.01'],
-        ]);
+        $validated = $request->validated();
 
         try {
             DB::transaction(function () use ($variant, $validated) {
@@ -115,11 +113,9 @@ class RecipeController extends Controller
         return back()->with('toast-success', 'Đã xóa nguyên liệu khỏi công thức.');
     }
 
-    public function copy(Request $request, ProductVariant $fromVariant, ProductVariant $toVariant)
+    public function copy(CopyRecipeRequest $request, ProductVariant $fromVariant, ProductVariant $toVariant)
     {
-        $validated = $request->validate([
-            'scale' => ['nullable', 'numeric', 'min:0.1', 'max:10'], // hệ số nhân, ví dụ 1.2 cho size L
-        ]);
+        $validated = $request->validated();
 
         $scale = $validated['scale'] ?? 1;
 

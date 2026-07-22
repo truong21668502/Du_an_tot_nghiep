@@ -11,7 +11,6 @@ const props = defineProps({
 const flash = computed(() => usePage().props.flash ?? {})
 const searchQuery = ref('')
 
-// Luôn sắp xếp theo ID tăng dần
 const sortedMaterials = computed(() =>
     [...props.materials].sort((a, b) => a.id - b.id)
 )
@@ -22,7 +21,6 @@ const filteredMaterials = computed(() => {
     return sortedMaterials.value.filter(m => m.material_name?.toLowerCase().includes(q))
 })
 
-// Thống kê nhanh cho dải tóm tắt đầu trang
 const expiredCount = computed(() => props.materials.filter(m => isExpired(m)).length)
 const expiringSoonCount = computed(() => props.materials.filter(m => !isExpired(m) && isExpiringSoon(m)).length)
 const outOfStockCount = computed(() => props.materials.filter(m => Number(m.quantity_in_stock) <= 0).length)
@@ -46,7 +44,6 @@ function displayMaxStock(m) {
     return Number((Number(m.max_stock) / rate).toFixed(2)).toLocaleString('vi-VN')
 }
 
-// Chuỗi ngưỡng gộp: "50 – 200" hoặc "Min 50" nếu không có max
 function displayThreshold(m) {
     const hasMin = Number(m.min_stock) > 0
     const max = displayMaxStock(m)
@@ -73,16 +70,19 @@ function stockStatus(m) {
         label: 'Hết hàng',
         icon: 'cancel',
         classes: 'bg-error text-white',
+        bar: 'bg-error',
     }
     if (min > 0 && qty <= min) return {
         label: 'Sắp hết',
         icon: 'warning',
         classes: 'bg-amber-400 text-amber-950',
+        bar: 'bg-amber-400',
     }
     return {
         label: 'Còn hàng',
         icon: 'check_circle',
         classes: 'bg-emerald-500 text-white',
+        bar: 'bg-emerald-500',
     }
 }
 
@@ -105,7 +105,6 @@ function isExpired(m) {
     return new Date(m.expiry_date) < new Date()
 }
 
-// Tạo nhanh phiếu nhập cho nguyên liệu cụ thể
 function goImport(materialId) {
     router.visit(route('admin.kho.nhap.create'), {
         data: { prefill_material: materialId },
@@ -115,11 +114,11 @@ function goImport(materialId) {
 
 <template>
     <AdminLayout title="Kho Nguyên Liệu">
-        <div class="space-y-5 font-sans">
+        <div class="space-y-6 font-sans">
 
             <!-- Flash -->
             <div v-if="flash.success"
-                class="flex items-center gap-3 bg-primary-container text-on-primary-container border border-primary/20 rounded-2xl px-5 py-3 text-body-medium shadow-sm">
+                class="flex items-center gap-3 bg-primary-container text-on-primary-container border border-primary/20 rounded-2xl px-5 py-3.5 text-body-medium shadow-sm">
                 <span class="material-symbols-outlined">check_circle</span>
                 {{ flash.success }}
             </div>
@@ -128,8 +127,8 @@ function goImport(materialId) {
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-bold text-on-surface">Kho Nguyên Liệu</h1>
-                    <p class="text-body-medium text-on-surface-variant mt-0.5">
-                        {{ filteredMaterials.length }}/{{ materials.length }} nguyên liệu · sắp xếp theo ID
+                    <p class="text-body-medium text-on-surface-variant mt-1">
+                        Đang hiển thị {{ filteredMaterials.length }}/{{ materials.length }} nguyên liệu
                     </p>
                 </div>
                 <div class="flex items-center gap-2">
@@ -148,56 +147,68 @@ function goImport(materialId) {
 
             <!-- Dải thống kê nhanh -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="bg-surface rounded-2xl border border-outline-variant/20 px-4 py-3.5">
-                    <p class="text-label-small text-on-surface-variant font-bold uppercase tracking-wide">Tổng nguyên
-                        liệu</p>
-                    <p class="text-2xl font-bold text-on-surface font-mono mt-0.5">{{ materials.length }}</p>
+                <div class="bg-surface rounded-2xl border border-outline-variant/20 px-5 py-4 flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary text-[26px]">inventory_2</span>
+                    <div>
+                        <p class="text-label-small text-on-surface-variant font-bold uppercase tracking-wide">Tổng
+                            nguyên liệu</p>
+                        <p class="text-2xl font-bold text-on-surface font-mono">{{ materials.length }}</p>
+                    </div>
                 </div>
-                <div class="bg-surface rounded-2xl border border-outline-variant/20 px-4 py-3.5"
-                    :class="outOfStockCount > 0 ? 'border-error/30' : ''">
-                    <p class="text-label-small font-bold uppercase tracking-wide"
-                        :class="outOfStockCount > 0 ? 'text-error' : 'text-on-surface-variant'">Hết hàng</p>
-                    <p class="text-2xl font-bold font-mono mt-0.5"
-                        :class="outOfStockCount > 0 ? 'text-error' : 'text-on-surface'">
-                        {{ outOfStockCount }}
-                    </p>
+                <div class="bg-surface rounded-2xl border px-5 py-4 flex items-center gap-3"
+                    :class="outOfStockCount > 0 ? 'border-error/30' : 'border-outline-variant/20'">
+                    <span class="material-symbols-outlined text-[26px]"
+                        :class="outOfStockCount > 0 ? 'text-error' : 'text-on-surface-variant/40'">cancel</span>
+                    <div>
+                        <p class="text-label-small font-bold uppercase tracking-wide"
+                            :class="outOfStockCount > 0 ? 'text-error' : 'text-on-surface-variant'">Hết hàng</p>
+                        <p class="text-2xl font-bold font-mono"
+                            :class="outOfStockCount > 0 ? 'text-error' : 'text-on-surface'">{{ outOfStockCount }}</p>
+                    </div>
                 </div>
-                <div class="bg-surface rounded-2xl border border-outline-variant/20 px-4 py-3.5"
-                    :class="lowStockAlerts.length > 0 ? 'border-amber-300' : ''">
-                    <p class="text-label-small font-bold uppercase tracking-wide"
-                        :class="lowStockAlerts.length > 0 ? 'text-amber-600' : 'text-on-surface-variant'">Sắp/dưới
-                        ngưỡng min</p>
-                    <p class="text-2xl font-bold font-mono mt-0.5"
-                        :class="lowStockAlerts.length > 0 ? 'text-amber-600' : 'text-on-surface'">
-                        {{ lowStockAlerts.length }}
-                    </p>
+                <div class="bg-surface rounded-2xl border px-5 py-4 flex items-center gap-3"
+                    :class="lowStockAlerts.length > 0 ? 'border-amber-300' : 'border-outline-variant/20'">
+                    <span class="material-symbols-outlined text-[26px]"
+                        :class="lowStockAlerts.length > 0 ? 'text-amber-500' : 'text-on-surface-variant/40'">warning</span>
+                    <div>
+                        <p class="text-label-small font-bold uppercase tracking-wide"
+                            :class="lowStockAlerts.length > 0 ? 'text-amber-600' : 'text-on-surface-variant'">Sắp/dưới
+                            ngưỡng min</p>
+                        <p class="text-2xl font-bold font-mono"
+                            :class="lowStockAlerts.length > 0 ? 'text-amber-600' : 'text-on-surface'">{{
+                                lowStockAlerts.length }}</p>
+                    </div>
                 </div>
-                <div class="bg-surface rounded-2xl border border-outline-variant/20 px-4 py-3.5"
-                    :class="(expiredCount + expiringSoonCount) > 0 ? 'border-amber-300' : ''">
-                    <p class="text-label-small font-bold uppercase tracking-wide"
-                        :class="expiredCount > 0 ? 'text-error' : (expiringSoonCount > 0 ? 'text-amber-600' : 'text-on-surface-variant')">
-                        Hết hạn / sắp hết
-                    </p>
-                    <p class="text-2xl font-bold font-mono mt-0.5"
-                        :class="expiredCount > 0 ? 'text-error' : (expiringSoonCount > 0 ? 'text-amber-600' : 'text-on-surface')">
-                        {{ expiredCount }} / {{ expiringSoonCount }}
-                    </p>
+                <div class="bg-surface rounded-2xl border px-5 py-4 flex items-center gap-3"
+                    :class="(expiredCount + expiringSoonCount) > 0 ? 'border-amber-300' : 'border-outline-variant/20'">
+                    <span class="material-symbols-outlined text-[26px]"
+                        :class="expiredCount > 0 ? 'text-error' : (expiringSoonCount > 0 ? 'text-amber-500' : 'text-on-surface-variant/40')">schedule</span>
+                    <div>
+                        <p class="text-label-small font-bold uppercase tracking-wide"
+                            :class="expiredCount > 0 ? 'text-error' : (expiringSoonCount > 0 ? 'text-amber-600' : 'text-on-surface-variant')">
+                            Hết hạn / sắp hết
+                        </p>
+                        <p class="text-2xl font-bold font-mono"
+                            :class="expiredCount > 0 ? 'text-error' : (expiringSoonCount > 0 ? 'text-amber-600' : 'text-on-surface')">
+                            {{ expiredCount }} / {{ expiringSoonCount }}
+                        </p>
+                    </div>
                 </div>
             </div>
 
             <!-- Banner cảnh báo -->
-            <div v-if="lowStockAlerts.length > 0" class="border border-amber-200 bg-amber-50 rounded-2xl p-5 space-y-3">
+            <div v-if="lowStockAlerts.length > 0" class="border border-amber-200 bg-amber-50 rounded-2xl p-5 space-y-4">
                 <p class="font-bold text-amber-700 flex items-center gap-2">
                     <span class="material-symbols-outlined">warning</span>
-                    {{ lowStockAlerts.length }} nguyên liệu cần chú ý
+                    {{ lowStockAlerts.length }} nguyên liệu cần nhập thêm sớm
                 </p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                     <div v-for="m in lowStockAlerts" :key="m.id"
-                        class="bg-white border rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 shadow-sm"
+                        class="bg-white border rounded-xl px-4 py-3 flex items-center justify-between gap-3 shadow-sm"
                         :class="Number(m.quantity_in_stock) <= 0 ? 'border-red-200' : 'border-amber-200'">
                         <div>
                             <p class="font-bold text-label-large text-on-surface">{{ m.material_name }}</p>
-                            <p class="text-label-small text-on-surface-variant font-mono">
+                            <p class="text-label-small text-on-surface-variant font-mono mt-0.5">
                                 Tồn:
                                 <span class="font-bold"
                                     :class="Number(m.quantity_in_stock) <= 0 ? 'text-error' : 'text-amber-600'">
@@ -207,7 +218,7 @@ function goImport(materialId) {
                             </p>
                         </div>
                         <button @click="goImport(m.id)"
-                            class="text-label-small font-bold text-primary hover:text-primary/70 whitespace-nowrap flex items-center gap-0.5 transition-colors">
+                            class="text-label-small font-bold text-primary hover:text-primary/70 whitespace-nowrap flex items-center gap-0.5 transition-colors shrink-0">
                             <span class="material-symbols-outlined text-[14px]">add</span>
                             Nhập
                         </button>
@@ -234,59 +245,62 @@ function goImport(materialId) {
                         <thead class="sticky top-0 z-10">
                             <tr
                                 class="bg-surface-container border-b-2 border-outline-variant/20 text-label-large text-on-surface-variant">
-                                <th class="px-4 py-3 w-14 text-center font-bold">ID</th>
-                                <th class="px-4 py-3 font-bold">Nguyên liệu</th>
-                                <th class="px-4 py-3 font-bold text-right w-28">Tồn kho</th>
-                                <th class="px-4 py-3 font-bold text-right w-32 hidden lg:table-cell">Ngưỡng (Min–Max)
+                                <th class="px-4 py-3.5 w-14 text-center font-bold">ID</th>
+                                <th class="px-4 py-3.5 font-bold">Nguyên liệu</th>
+                                <th class="px-4 py-3.5 font-bold text-right w-28">Tồn kho</th>
+                                <th class="px-4 py-3.5 font-bold text-right w-32 hidden lg:table-cell">Ngưỡng (Min–Max)
                                 </th>
-                                <th class="px-4 py-3 font-bold text-center w-28">Trạng thái</th>
-                                <th class="px-4 py-3 font-bold text-center w-28 hidden md:table-cell">Hạn SD</th>
-                                <th class="px-4 py-3 font-bold hidden xl:table-cell">Nhà cung cấp</th>
-                                <th class="px-4 py-3 font-bold text-right w-24 hidden md:table-cell">Giá nhập</th>
-                                <th class="px-4 py-3 font-bold text-center w-32">Hành động</th>
+                                <th class="px-4 py-3.5 font-bold text-center w-28">Trạng thái</th>
+                                <th class="px-4 py-3.5 font-bold text-center w-28 hidden md:table-cell">Hạn SD</th>
+                                <th class="px-4 py-3.5 font-bold hidden xl:table-cell">Nhà cung cấp</th>
+                                <th class="px-4 py-3.5 font-bold text-right w-24 hidden md:table-cell">Giá nhập</th>
+                                <th class="px-4 py-3.5 font-bold text-center w-32">Hành động</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-outline-variant/10 text-body-medium text-on-surface">
                             <tr v-if="filteredMaterials.length === 0">
-                                <td colspan="9" class="py-16 text-center text-on-surface-variant">
+                                <td colspan="8" class="py-16 text-center text-on-surface-variant">
                                     <span
                                         class="material-symbols-outlined text-[40px] block mb-2 text-outline">inventory_2</span>
-                                    {{ searchQuery ? 'Không tìm thấy nguyên liệu phù hợp.' : 'Chưa có nguyên liệu nào.'
-                                    }}
+                                    <p class="mb-1">{{ searchQuery ? `Không tìm thấy nguyên liệu nào khớp với
+                                        "${searchQuery}".` : 'Chưa có nguyên liệu nào.' }}</p>
+                                    <button v-if="searchQuery" @click="searchQuery = ''"
+                                        class="text-primary font-bold hover:underline">Xoá bộ lọc tìm kiếm</button>
                                 </td>
                             </tr>
                             <tr v-for="m in filteredMaterials" :key="m.id"
                                 class="hover:bg-surface-container-low/50 transition-colors" :class="rowAccentClass(m)">
 
-                                <td class="px-4 py-3 text-center text-on-surface-variant text-label-small font-mono">{{
-                                    m.id }}
+                                <td class="px-4 py-4 text-center text-on-surface-variant text-label-small font-mono">
+                                    {{ m.id }}
                                 </td>
 
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-4">
                                     <p class="font-bold text-on-surface leading-snug">{{ m.material_name }}</p>
                                     <p class="text-label-small text-on-surface-variant/60 font-mono mt-0.5">
-                                        {{ m.input_unit }} · 1 {{ m.input_unit }} = {{
-                                            Number(m.exchange_rate).toLocaleString('vi-VN') }} {{ m.base_unit }}
+                                        1 {{ m.input_unit }} = {{ Number(m.exchange_rate).toLocaleString('vi-VN') }}
+                                        {{ m.base_unit }}
                                     </p>
                                 </td>
 
-                                <td class="px-4 py-3 text-right">
+                                <!-- Mức tồn kho: số + thanh trực quan -->
+                                <td class="px-4 py-4 text-right">
                                     <span class="font-mono font-bold text-label-large"
                                         :class="Number(m.quantity_in_stock) <= 0 ? 'text-error' :
                                             (Number(m.min_stock) > 0 && Number(m.quantity_in_stock) <= Number(m.min_stock) ? 'text-amber-600' : 'text-on-surface')">
                                         {{ displayStock(m) }}
                                     </span>
                                     <span class="block text-label-small text-on-surface-variant/50">{{ m.input_unit
-                                        }}</span>
+                                    }}</span>
                                 </td>
 
                                 <td
-                                    class="px-4 py-3 text-right hidden lg:table-cell text-on-surface-variant font-mono text-label-small">
+                                    class="px-4 py-4 text-right hidden lg:table-cell text-on-surface-variant font-mono text-label-small">
                                     {{ displayThreshold(m) }}
                                 </td>
 
                                 <!-- Trạng thái -->
-                                <td class="px-4 py-3 text-center">
+                                <td class="px-4 py-4 text-center">
                                     <span
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-label-small font-bold shadow-sm whitespace-nowrap"
                                         :class="stockStatus(m).classes">
@@ -298,7 +312,7 @@ function goImport(materialId) {
                                 </td>
 
                                 <!-- Hạn SD -->
-                                <td class="px-4 py-3 text-center hidden md:table-cell">
+                                <td class="px-4 py-4 text-center hidden md:table-cell">
                                     <span v-if="m.expiry_date" class="text-label-small font-mono"
                                         :class="isExpired(m) ? 'text-error font-bold' : (isExpiringSoon(m) ? 'text-amber-600 font-bold' : 'text-on-surface-variant')">
                                         {{ formatDate(m.expiry_date) }}
@@ -309,18 +323,18 @@ function goImport(materialId) {
                                 </td>
 
                                 <!-- Nhà cung cấp -->
-                                <td class="px-4 py-3 hidden xl:table-cell text-on-surface-variant text-label-medium">
+                                <td class="px-4 py-4 hidden xl:table-cell text-on-surface-variant text-label-medium">
                                     {{ m.supplier || '—' }}
                                 </td>
 
                                 <!-- Giá -->
                                 <td
-                                    class="px-4 py-3 text-right hidden md:table-cell font-mono text-label-medium text-on-surface-variant">
+                                    class="px-4 py-4 text-right hidden md:table-cell font-mono text-label-medium text-on-surface-variant">
                                     {{ formatPrice(m.price) }}
                                 </td>
 
                                 <!-- Hành động -->
-                                <td class="px-4 py-3 text-center">
+                                <td class="px-4 py-4 text-center">
                                     <div class="flex items-center justify-center gap-1.5">
                                         <button @click="goImport(m.id)"
                                             class="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary hover:bg-primary/20 rounded-full text-label-small font-bold transition-colors">
@@ -341,7 +355,7 @@ function goImport(materialId) {
 
                 <!-- Chú thích -->
                 <div
-                    class="px-5 py-3 border-t border-outline-variant/20 bg-surface-container-low/50 flex items-center gap-5 flex-wrap">
+                    class="px-5 py-3.5 border-t border-outline-variant/20 bg-surface-container-low/50 flex items-center gap-5 flex-wrap">
                     <p class="text-label-small text-on-surface-variant font-bold">Ghi chú:</p>
                     <span class="inline-flex items-center gap-1.5 text-label-small text-amber-700">
                         <span class="w-2.5 h-2.5 rounded-sm bg-amber-400"></span>
@@ -354,6 +368,10 @@ function goImport(materialId) {
                     <span class="inline-flex items-center gap-1 text-label-small text-tertiary">
                         <span class="material-symbols-outlined text-[14px]">check_circle</span>
                         Xanh = Đủ hàng
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 text-label-small text-on-surface-variant">
+                        <span class="w-3 h-1.5 rounded-full bg-on-surface/30"></span>
+                        Vạch xám trên thanh = ngưỡng Min
                     </span>
                 </div>
             </div>

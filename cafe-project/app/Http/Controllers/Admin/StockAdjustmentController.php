@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreStockAdjustmentRequest;
 use App\Models\Material;
 use App\Models\StockAdjustment;
 use Illuminate\Http\Request;
@@ -30,16 +31,9 @@ class StockAdjustmentController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreStockAdjustmentRequest $request)
     {
-        $validated = $request->validate([
-            'material_id' => 'required|exists:materials,id',
-            'actual_quantity' => 'required|numeric|min:0',
-            'reason' => 'required|in:kiem_ke,that_thoat,het_han,hu_hong,khac',
-            'note' => 'nullable|string|max:500',
-            'min_stock' => 'nullable|numeric|min:0',   // thêm dòng này
-            'max_stock' => 'nullable|numeric|min:0',   // thêm dòng này
-        ]);
+        $validated = $request->validated();
 
         try {
             DB::transaction(function () use ($validated) {
@@ -65,19 +59,18 @@ class StockAdjustmentController extends Controller
 
                 $updateData = ['quantity_in_stock' => $after];
 
-                // Chỉ cập nhật min_stock nếu người dùng có nhập (không phải null)
-                if ($validated['min_stock'] !== null) {
+                if (($validated['min_stock'] ?? null) !== null) {
                     $updateData['min_stock'] = $validated['min_stock'];
                 }
 
-                if ($validated['max_stock'] !== null) {
+                if (($validated['max_stock'] ?? null) !== null) {
                     $updateData['max_stock'] = $validated['max_stock'];
                 }
 
                 $material->update($updateData);
             });
         } catch (\Throwable $e) {
-            return back()->withInput()->with('error', 'Lỗi khi điều chỉnh tồn kho: ' . $e->getMessage());
+            return back()->withInput()->with('toast-error', 'Lỗi khi điều chỉnh tồn kho: ' . $e->getMessage());
         }
 
         return redirect()->route('admin.kho.dieu-chinh.index')->with('toast-success', 'Điều chỉnh tồn kho thành công!');

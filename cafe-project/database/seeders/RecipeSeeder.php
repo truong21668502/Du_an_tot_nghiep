@@ -18,55 +18,54 @@ class RecipeSeeder extends Seeder
         $recipesTemplate = [
             // --- Nhóm Cà Phê ---
             'black_coffee' => [
-                ['material_id' => 1, 'quantity' => 50],   // 50ml Cà phê phin
-                ['material_id' => 11, 'quantity' => 25],  // 25ml Syrup đường
-                ['material_id' => 27, 'quantity' => 150], // 150g Đá viên
+                ['material_id' => 1, 'quantity' => 25],   // 25g Cà phê phin xay
+                ['material_id' => 11, 'quantity' => 25],
+                ['material_id' => 27, 'quantity' => 150],
             ],
             'milk_coffee' => [
-                ['material_id' => 1, 'quantity' => 40],   // 40ml Cà phê phin
-                ['material_id' => 3, 'quantity' => 30],   // 30ml Sữa đặc
-                ['material_id' => 27, 'quantity' => 150], // 150g Đá viên
+                ['material_id' => 1, 'quantity' => 20],   // 20g Cà phê phin xay
+                ['material_id' => 3, 'quantity' => 30],
+                ['material_id' => 27, 'quantity' => 150],
             ],
             'bac_xiu' => [
-                ['material_id' => 1, 'quantity' => 15],   // 15ml Cà phê phin (nhấp môi tạo màu)
-                ['material_id' => 3, 'quantity' => 40],   // 40ml Sữa đặc
-                ['material_id' => 4, 'quantity' => 100],  // 100ml Sữa tươi
-                ['material_id' => 27, 'quantity' => 150], // 150g Đá viên
+                ['material_id' => 1, 'quantity' => 8],    // 8g Cà phê phin xay (nhấp môi tạo màu)
+                ['material_id' => 3, 'quantity' => 40],
+                ['material_id' => 4, 'quantity' => 100],
+                ['material_id' => 27, 'quantity' => 150],
             ],
             'salt_coffee' => [
-                ['material_id' => 1, 'quantity' => 40],   // 40ml Cà phê phin
-                ['material_id' => 3, 'quantity' => 25],   // 25ml Sữa đặc
-                ['material_id' => 5, 'quantity' => 40],   // 40ml Whipping cream tạo bọt kem mặn
-                ['material_id' => 36, 'quantity' => 2],   // 2g Muối tinh hồng Himalaya
-                ['material_id' => 27, 'quantity' => 150], // 150g Đá viên
+                ['material_id' => 1, 'quantity' => 20],   // 20g Cà phê phin xay
+                ['material_id' => 3, 'quantity' => 25],
+                ['material_id' => 5, 'quantity' => 40],
+                ['material_id' => 36, 'quantity' => 2],
+                ['material_id' => 27, 'quantity' => 150],
             ],
             'coconut_coffee' => [
-                ['material_id' => 1, 'quantity' => 30],   // 30ml Cà phê phin
-                ['material_id' => 3, 'quantity' => 30],   // 30ml Sữa đặc
-                ['material_id' => 6, 'quantity' => 60],   // 60ml Nước cốt dừa tươi
-                ['material_id' => 27, 'quantity' => 180], // 180g Đá viên để xay
+                ['material_id' => 1, 'quantity' => 15],   // 15g Cà phê phin xay
+                ['material_id' => 3, 'quantity' => 30],
+                ['material_id' => 6, 'quantity' => 60],
+                ['material_id' => 27, 'quantity' => 180],
             ],
             'milk_fresh_coffee' => [
-                ['material_id' => 1, 'quantity' => 30],   // 30ml Cà phê phin
-                ['material_id' => 4, 'quantity' => 100],  // 100ml Sữa tươi
-                ['material_id' => 3, 'quantity' => 20],   // 20ml Sữa đặc
-                ['material_id' => 27, 'quantity' => 150], // 150g Đá viên
+                ['material_id' => 1, 'quantity' => 15],   // 15g Cà phê phin xay
+                ['material_id' => 4, 'quantity' => 100],
+                ['material_id' => 3, 'quantity' => 20],
+                ['material_id' => 27, 'quantity' => 150],
             ],
             'americano' => [
-                ['material_id' => 2, 'quantity' => 40],   // 40ml Cốt Espresso (2 shot)
-                ['material_id' => 27, 'quantity' => 150], // 150g Đá viên
-                // Nước lọc tinh khiết không cần trừ kho nguyên liệu chính
+                ['material_id' => 2, 'quantity' => 20],   // 20g Bột Espresso (2 shot)
+                ['material_id' => 27, 'quantity' => 150],
             ],
             'latte_cappuccino' => [
-                ['material_id' => 2, 'quantity' => 30],   // 30ml Cốt Espresso
-                ['material_id' => 4, 'quantity' => 150],  // 150ml Sữa tươi đánh bọt
-                ['material_id' => 11, 'quantity' => 10],  // 10ml Syrup đường kích vị
+                ['material_id' => 2, 'quantity' => 15],   // 15g Bột Espresso
+                ['material_id' => 4, 'quantity' => 150],
+                ['material_id' => 11, 'quantity' => 10],
             ],
             'egg_coffee' => [
-                ['material_id' => 1, 'quantity' => 50],   // 50ml Cà phê phin bốc khói
-                ['material_id' => 3, 'quantity' => 20],   // 20ml Sữa đặc
-                ['material_id' => 35, 'quantity' => 2],   // 2 Cái Lòng đỏ trứng gà tươi
-                ['material_id' => 5, 'quantity' => 15],   // 15ml Whipping cream đánh bông kem trứng
+                ['material_id' => 1, 'quantity' => 25],   // 25g Cà phê phin xay bốc khói
+                ['material_id' => 3, 'quantity' => 20],
+                ['material_id' => 35, 'quantity' => 2],
+                ['material_id' => 5, 'quantity' => 15],
             ],
 
             // --- Nhóm Trà & Trà Trái Cây ---
@@ -201,16 +200,36 @@ class RecipeSeeder extends Seeder
 
         // Ma trận ánh xạ chính xác từ product_id thực tế (1 - 30) sang khóa mảng công thức mẫu
         $productMapping = [
-            1  => 'black_coffee',      2  => 'milk_coffee',       3  => 'bac_xiu', 
-            4  => 'salt_coffee',       5  => 'coconut_coffee',    6  => 'milk_fresh_coffee', 
-            7  => 'americano',         8  => 'latte_cappuccino',  9  => 'latte_cappuccino', 
-            10 => 'egg_coffee',        11 => 'peach_tea',         12 => 'lychee_tea', 
-            13 => 'lemon_tea',         14 => 'kumquat_tea',       15 => 'milk_tea_plain', 
-            16 => 'milk_tea_boba',     17 => 'matcha_latte',      18 => 'strawberry_tea', 
-            19 => 'lychee_chia_tea',   20 => 'kumquat_muoi_tea',  21 => 'orange_juice', 
-            22 => 'watermelon_juice',  23 => 'pineapple_juice',   24 => 'guava_juice', 
-            25 => 'avocado_smoothie',  26 => 'mango_smoothie',    27 => 'yogurt_ice', 
-            28 => 'cacao_ice',         29 => 'passion_fruit',     30 => 'soda_lemon'
+            1 => 'black_coffee',
+            2 => 'milk_coffee',
+            3 => 'bac_xiu',
+            4 => 'salt_coffee',
+            5 => 'coconut_coffee',
+            6 => 'milk_fresh_coffee',
+            7 => 'americano',
+            8 => 'latte_cappuccino',
+            9 => 'latte_cappuccino',
+            10 => 'egg_coffee',
+            11 => 'peach_tea',
+            12 => 'lychee_tea',
+            13 => 'lemon_tea',
+            14 => 'kumquat_tea',
+            15 => 'milk_tea_plain',
+            16 => 'milk_tea_boba',
+            17 => 'matcha_latte',
+            18 => 'strawberry_tea',
+            19 => 'lychee_chia_tea',
+            20 => 'kumquat_muoi_tea',
+            21 => 'orange_juice',
+            22 => 'watermelon_juice',
+            23 => 'pineapple_juice',
+            24 => 'guava_juice',
+            25 => 'avocado_smoothie',
+            26 => 'mango_smoothie',
+            27 => 'yogurt_ice',
+            28 => 'cacao_ice',
+            29 => 'passion_fruit',
+            30 => 'soda_lemon'
         ];
 
         $variantIdCounter = 1;
@@ -225,8 +244,8 @@ class RecipeSeeder extends Seeder
             $variantIdM = $variantIdCounter;
             foreach ($currentTemplate as $item) {
                 DB::table('recipes')->insert([
-                    'variant_id'      => $variantIdM,
-                    'material_id'     => $item['material_id'],
+                    'variant_id' => $variantIdM,
+                    'material_id' => $item['material_id'],
                     'quantity_needed' => $item['quantity'],
                 ]);
             }
@@ -239,13 +258,13 @@ class RecipeSeeder extends Seeder
             foreach ($currentTemplate as $item) {
                 // Topping/Nguyên liệu đếm chiếc (Hũ, cái, lát, quả) thuộc ID: 8(Sữa chua), 21(Lát cam), 22(Miếng đào), 23(Quả vải), 24(Xí muội), 35(Trứng)
                 // Các nguyên liệu đặc thù này khi làm size L lớn hơn bắt buộc phải làm tròn lên bằng ceil()
-                $quantityL = in_array($item['material_id'], [8, 21, 22, 23, 24, 35]) 
-                    ? ceil($item['quantity'] * 1.2) 
+                $quantityL = in_array($item['material_id'], [8, 21, 22, 23, 24, 35])
+                    ? ceil($item['quantity'] * 1.2)
                     : $item['quantity'] * 1.2;
 
                 DB::table('recipes')->insert([
-                    'variant_id'      => $variantIdL,
-                    'material_id'     => $item['material_id'],
+                    'variant_id' => $variantIdL,
+                    'material_id' => $item['material_id'],
                     'quantity_needed' => $quantityL,
                 ]);
             }

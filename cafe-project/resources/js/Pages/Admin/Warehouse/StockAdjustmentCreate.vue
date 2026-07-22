@@ -197,6 +197,10 @@ function submit() {
                     <p class="text-label-small text-on-surface-variant/60">
                         Để trống = giữ nguyên ngưỡng cũ. Hệ thống cảnh báo khi tồn kho ≤ ngưỡng này.
                     </p>
+                    <span v-if="form.errors.min_stock"
+                        class="text-body-small text-error flex items-center gap-0.5 mt-1">
+                        <span class="material-symbols-outlined text-sm">error</span>{{ form.errors.min_stock }}
+                    </span>
                 </div>
 
                 <!-- Ngưỡng tồn kho tối đa -->

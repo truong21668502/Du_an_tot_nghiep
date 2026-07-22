@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CancelImportReceiptRequest;
+use App\Http\Requests\Admin\QuickStoreMaterialRequest;
+use App\Http\Requests\Admin\StoreImportReceiptRequest;
+use App\Http\Requests\Admin\UpdateImportReceiptRequest;
 use App\Models\ImportReceipt;
 use App\Models\ImportReceiptDetail;
 use App\Models\Material;
@@ -21,7 +25,8 @@ class ImportReceiptController extends Controller
             'base_unit',
             'input_unit',
             'exchange_rate',
-            'quantity_in_stock'
+            'quantity_in_stock',
+            'max_stock'
         )->orderBy('material_name')->get();
 
         return Inertia::render('Admin/Warehouse/ImportCreate', [
@@ -29,33 +34,25 @@ class ImportReceiptController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreImportReceiptRequest $request)
     {
-        $request->validate([
-            'supplier_name' => 'nullable|string|max:255',
-            'note' => 'nullable|string|max:1000',
-            'items' => 'required|array|min:1',
-            'items.*.material_id' => 'required|exists:materials,id|distinct',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.expiry_date' => 'nullable|date',
-        ]);
+        $data = $request->validated();
 
         try {
-            DB::transaction(function () use ($request) {
-                $totalCost = collect($request->items)->sum(
+            DB::transaction(function () use ($data) {
+                $totalCost = collect($data['items'])->sum(
                     fn($item) => $item['quantity'] * $item['unit_price']
                 );
 
                 $receipt = ImportReceipt::create([
                     'user_id' => Auth::id(),
-                    'supplier_name' => $request->supplier_name,
+                    'supplier_name' => $data['supplier_name'] ?? null,
                     'total_cost' => $totalCost,
-                    'note' => $request->note,
+                    'note' => $data['note'] ?? null,
                     'status' => 'active',
                 ]);
 
-                foreach ($request->items as $item) {
+                foreach ($data['items'] as $item) {
                     $material = Material::lockForUpdate()->find($item['material_id']);
 
                     if (!$material) {
@@ -63,6 +60,8 @@ class ImportReceiptController extends Controller
                     }
 
                     $stockChange = $item['quantity'] * $material->exchange_rate;
+
+                    $this->assertWithinMaxStock($material, $stockChange);
 
                     ImportReceiptDetail::create([
                         'receipt_id' => $receipt->id,
@@ -149,7 +148,8 @@ class ImportReceiptController extends Controller
             'base_unit',
             'input_unit',
             'exchange_rate',
-            'quantity_in_stock'
+            'quantity_in_stock',
+            'max_stock'
         )->orderBy('material_name')->get();
 
         return Inertia::render('Admin/Warehouse/ImportEdit', [
@@ -161,26 +161,18 @@ class ImportReceiptController extends Controller
     /**
      *  Cập nhật phiếu nhập — revert tồn kho cũ, áp tồn kho mới
      */
-    public function update(Request $request, ImportReceipt $importReceipt)
+    public function update(UpdateImportReceiptRequest $request, ImportReceipt $importReceipt)
     {
         if (!$importReceipt->isActive()) {
             return back()->with('toast-error', 'Phiếu này đã bị huỷ, không thể sửa.');
         }
 
-        $request->validate([
-            'supplier_name' => 'nullable|string|max:255',
-            'note' => 'nullable|string|max:1000',
-            'items' => 'required|array|min:1',
-            'items.*.material_id' => 'required|exists:materials,id|distinct',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.expiry_date' => 'nullable|date',
-        ]);
+        $data = $request->validated();
 
         try {
-            DB::transaction(function () use ($request, $importReceipt) {
+            DB::transaction(function () use ($data, $importReceipt) {
 
-                // 1. Revert tồn kho theo các dòng CŨ (dùng stock_change đã lưu, không phụ thuộc exchange_rate hiện tại)
+                // 1. Revert tồn kho theo các dòng CŨ
                 $oldDetails = $importReceipt->details()->lockForUpdate()->get();
 
                 foreach ($oldDetails as $old) {
@@ -193,12 +185,12 @@ class ImportReceiptController extends Controller
                 // 2. Xoá toàn bộ dòng cũ
                 $importReceipt->details()->delete();
 
-                // 3. Tạo lại dòng mới + cộng tồn kho mới
-                $totalCost = collect($request->items)->sum(
+                // 3. Tạo lại dòng mới + cộng tồn kho mới (đã check max_stock)
+                $totalCost = collect($data['items'])->sum(
                     fn($item) => $item['quantity'] * $item['unit_price']
                 );
 
-                foreach ($request->items as $item) {
+                foreach ($data['items'] as $item) {
                     $material = Material::lockForUpdate()->find($item['material_id']);
 
                     if (!$material) {
@@ -206,6 +198,8 @@ class ImportReceiptController extends Controller
                     }
 
                     $stockChange = $item['quantity'] * $material->exchange_rate;
+
+                    $this->assertWithinMaxStock($material, $stockChange);
 
                     ImportReceiptDetail::create([
                         'receipt_id' => $importReceipt->id,
@@ -220,8 +214,8 @@ class ImportReceiptController extends Controller
                 }
 
                 $importReceipt->update([
-                    'supplier_name' => $request->supplier_name,
-                    'note' => $request->note,
+                    'supplier_name' => $data['supplier_name'] ?? null,
+                    'note' => $data['note'] ?? null,
                     'total_cost' => $totalCost,
                 ]);
             });
@@ -235,7 +229,7 @@ class ImportReceiptController extends Controller
     /**
      *  Huỷ phiếu nhập (KHÔNG xoá record, chỉ đổi status + revert tồn kho)
      */
-    public function destroy(Request $request, ImportReceipt $importReceipt)
+    public function destroy(CancelImportReceiptRequest $request, ImportReceipt $importReceipt)
     {
         if (!$importReceipt->isActive()) {
             if ($request->wantsJson()) {
@@ -244,12 +238,10 @@ class ImportReceiptController extends Controller
             return back()->with('toast-error', 'Phiếu này đã bị huỷ trước đó.');
         }
 
-        $request->validate([
-            'cancel_reason' => 'nullable|string|max:255',
-        ]);
+        $data = $request->validated();
 
         try {
-            DB::transaction(function () use ($request, $importReceipt) {
+            DB::transaction(function () use ($data, $importReceipt) {
                 $details = $importReceipt->details()->lockForUpdate()->get();
 
                 foreach ($details as $detail) {
@@ -263,7 +255,7 @@ class ImportReceiptController extends Controller
                     'status' => 'cancelled',
                     'cancelled_at' => now(),
                     'cancelled_by' => Auth::id(),
-                    'cancel_reason' => $request->cancel_reason,
+                    'cancel_reason' => $data['cancel_reason'] ?? null,
                 ]);
             });
         } catch (\Throwable $e) {
@@ -281,15 +273,9 @@ class ImportReceiptController extends Controller
         return redirect()->route('admin.kho.nhap.index')->with('toast-success', 'Đã huỷ phiếu nhập và hoàn lại tồn kho.');
     }
 
-    public function quickStoreMaterial(Request $request)
+    public function quickStoreMaterial(QuickStoreMaterialRequest $request)
     {
-        $validated = $request->validate([
-            'material_name' => 'required|string|max:255|unique:materials,material_name',
-            'base_unit' => 'required|string|max:50',
-            'input_unit' => 'required|string|max:50',
-            'exchange_rate' => 'required|numeric|min:0.000001',
-            'quantity_in_stock' => 'nullable|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
         $material = Material::create([
             'material_name' => $validated['material_name'],
@@ -309,5 +295,26 @@ class ImportReceiptController extends Controller
                 'quantity_in_stock',
             ]),
         ]);
+    }
+
+    private function assertWithinMaxStock(Material $material, float $stockChange): void
+    {
+        if ($material->max_stock === null || (float) $material->max_stock <= 0) {
+            return; // Không giới hạn nếu chưa cấu hình max_stock
+        }
+
+        $projected = (float) $material->quantity_in_stock + $stockChange;
+
+        if ($projected > (float) $material->max_stock) {
+            $maxQtyInInputUnit = floor(
+                (((float) $material->max_stock - (float) $material->quantity_in_stock) / $material->exchange_rate) * 100
+            ) / 100;
+            $maxQtyInInputUnit = max(0, $maxQtyInInputUnit);
+
+            throw new \Exception(
+                "Nguyên liệu \"{$material->material_name}\" vượt quá sức chứa kho tối đa ({$material->max_stock} {$material->base_unit}). "
+                . "Chỉ có thể nhập thêm tối đa {$maxQtyInInputUnit} {$material->input_unit}."
+            );
+        }
     }
 }
