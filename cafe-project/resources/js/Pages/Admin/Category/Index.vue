@@ -60,7 +60,7 @@ const formatDateTime = (dateStr) => {
         <div class="space-y-6 relative">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl">Danh mục sản phẩm</h1>
+                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl"><span class="material-symbols-outlined text-primary">category</span> DANH MỤC SẢN PHẨM</h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">Quản lý và giám sát các nhóm thực đơn của Nắng Coffee.</p>
                 </div>
                 

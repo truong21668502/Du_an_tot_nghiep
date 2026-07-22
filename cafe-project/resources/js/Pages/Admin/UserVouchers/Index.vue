@@ -75,7 +75,7 @@ const isGiftModalOpen = ref(false);
         <div class="space-y-6 relative font-sans">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-headline-md text-on-surface font-sans text-primary text-3xl">Quản lý Ví Voucher</h1>
+                    <h1 class="text-headline-md text-on-surface font-sans text-primary text-3xl mt-2 mb-2"><span class="material-symbols-outlined text-primary">wallet</span> QUẢN LÝ VÍ VOUCHER</h1>
                     <p class="text-body-medium text-on-surface-variant">Giám sát danh sách phân phối mã giảm giá và lịch sử áp dụng voucher của từng khách hàng.</p>
                 </div>
 

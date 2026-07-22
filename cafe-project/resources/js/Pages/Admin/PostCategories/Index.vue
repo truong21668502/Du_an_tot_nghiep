@@ -67,7 +67,7 @@ const generateSlug = () => {
         <div class="space-y-6 relative">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl">Danh mục bài viết</h1>
+                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl"><span class="material-symbols-outlined text-primary">folder</span> DANH MỤC BÀI VIẾT</h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">Phân loại nội dung tin tức, blog.</p>
                 </div>
                 <button @click="openCreateModal"

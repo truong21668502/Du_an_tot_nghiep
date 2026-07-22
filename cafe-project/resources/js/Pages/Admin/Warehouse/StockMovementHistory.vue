@@ -70,7 +70,7 @@ const hasActiveFilters = computed(() =>
             </div>
 
             <div>
-                <h1 class="text-2xl font-bold text-on-surface">Lịch Sử Chuyển Động Kho</h1>
+                <h1 class="text-2xl font-bold text-on-surface text-primary"><span class="material-symbols-outlined text-primary">inventory_2</span> LỊCH SỬ CHUYỂN ĐỘNG KHO</h1>
                 <p class="text-body-medium text-on-surface-variant mt-1">
                     Toàn bộ nhập / xuất / điều chỉnh tồn kho, có thể lọc theo nguyên liệu và thời gian
                 </p>

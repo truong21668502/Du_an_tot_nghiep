@@ -78,7 +78,7 @@ const isExpired = (date) => {
         <div class="space-y-6 relative font-sans">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl">Mã giảm giá (Coupons)</h1>
+                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl mt-2 mb-2"><span class="material-symbols-outlined text-primary">confirmation_number</span> MÃ GIẢM GIÁ</h1>
                     <p class="text-body-medium text-on-surface-variant">Phát hành, quản lý và giám sát hiệu suất các chiến dịch thúc đẩy doanh số của quán.</p>
                 </div>
                 <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer">

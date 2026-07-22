@@ -101,7 +101,7 @@ const hasActiveFilters = computed(() =>
                         <span class="text-outline-variant text-label-small">/</span>
                         <span class="text-label-medium text-on-surface-variant">Điều chỉnh tồn kho</span>
                     </div>
-                    <h1 class="text-2xl font-bold text-on-surface">Lịch Sử Điều Chỉnh</h1>
+                    <h1 class="text-2xl font-bold text-on-surface text-primary mt-2"><span class="material-symbols-outlined text-primary">inventory_2</span> LỊCH SỬ ĐIỀU CHỈNH TỒN KHO</h1>
                 </div>
                 <Link :href="route('admin.kho.dieu-chinh.create')"
                     class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 rounded-full font-bold transition-colors shadow-sm self-start sm:self-auto">

@@ -143,10 +143,17 @@ async function saveRecipe() {
 
 <template>
     <AdminLayout>
+        <!--TIÊU ĐỀ CÔNG THỨC -->
+        <div>
+            <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl"><span class="material-symbols-outlined text-primary">coffee</span> QUẢN LÝ CÔNG THỨC</h1>
+            <p class="font-sans text-body-medium text-on-surface-variant mb-4 mt-2">Danh sách công thức đồ uống tại Nắng Coffee.</p>
+        </div>
+
         <div class="flex gap-4 h-[calc(100vh-8rem)]">
             <!-- Danh sách sản phẩm -->
             <aside class="w-72 shrink-0 rounded-2xl bg-surface overflow-y-auto">
                 <h2 class="text-headline-sm font-sans px-4 py-3 border-b border-outline-variant/20 text-primary text-3xl">
+                    <span class="material-symbols-outlined text-primary">coffee</span>
                     Sản phẩm
                 </h2>
                 <ul>

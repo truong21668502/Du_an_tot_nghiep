@@ -26,7 +26,7 @@ const getStatusBadge = (status) => {
         <div class="space-y-6 relative">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl">Kiểm duyệt bình luận</h1>
+                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl"><span class="material-symbols-outlined text-primary">comment</span> KIỂM DUYỆT BÌNH LUẬN BÀI VIẾT</h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">Quản lý phản hồi của khách hàng trên
                         bài viết.</p>
                 </div>

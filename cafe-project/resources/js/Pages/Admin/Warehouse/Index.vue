@@ -131,7 +131,7 @@ function goImport(materialId) {
             <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-on-surface">Kho Nguyên Liệu</h1>
+                    <h1 class="text-2xl font-bold text-on-surface text-primary"><span class="material-symbols-outlined text-primary">inventory</span> KHO NGUYÊN LIỆU</h1>
                     <p class="text-body-medium text-on-surface-variant mt-1">
                         Đang hiển thị {{ filteredMaterials.length }}/{{ materials.length }} nguyên liệu
                     </p>

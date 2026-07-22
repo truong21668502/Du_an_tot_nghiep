@@ -19,7 +19,7 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\RecipeController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StockMovementController;
-
+use App\Http\Controllers\Admin\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -86,8 +86,13 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
 
     //quản lý trang chủ dashboard admin
     Route::get('/trang-chu', [DashboardController::class, 'index'])->name('dashboard');
+
     // API lấy doanh thu theo ngày
-    Route::get('/api/daily-revenue', [DashboardController::class, 'getDailyRevenue'])->name('admin.daily-revenue');
+    Route::get('/api/daily-revenue', [DashboardController::class, 'getDailyRevenue'])->name('daily-revenue');
+
+    // API lấy thông báo
+    Route::get('/api/notifications', [NotificationController::class, 'getNotifications'])->name('notifications');
+
 
 
     // Quản lý đơn hàng
