@@ -15,7 +15,7 @@ class CreateReviewRequest extends FormRequest
         return [
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'rating'     => ['required', 'integer', 'between:1,5'],
-            'comment'    => ['nullable', 'string', 'max:1000'],
+            'comment' => ['required', 'string', 'min:10', 'max:500'],
         ];
     }
 
@@ -44,7 +44,9 @@ class CreateReviewRequest extends FormRequest
     {
         return [
             'rating.between' => 'Điểm đánh giá phải từ 1 đến 5.',
-            'comment.max'    => 'Nội dung không vượt quá 1000 ký tự.',
+            'comment.max'    => 'Nội dung không vượt quá 500 ký tự.',
+            'comment.min'    => 'Nội dung phải có ít nhất 10 ký tự.',
+            'comment.required' => 'Nội dung đánh giá là bắt buộc.',
         ];
     }
 }

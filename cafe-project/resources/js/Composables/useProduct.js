@@ -46,44 +46,64 @@ export function useProduct(initialProduct = null) {
         toast.success('Đã thêm sản phẩm vào giỏ hàng')
       })
       .catch(error => {
-        console.log(error.response.data)
         loading.value = false
         errors.value = error.response?.data?.message || {}
         toast.error(errors.value)
       })
     }
-  const submitReview = (productId, data) => {
-      loading.value = true
+    const submitReview = (productId, data) => {
+        loading.value = true
 
-      return axios.post(route('reviews.store'), {
-          product_id: productId,
-          rating:     data.rating,
-          comment:    data.comment,
-      })
-      .then(res => res.data)   // trả review object về cho component
-      .catch(err => {
-          errors.value = err.response?.data?.errors || {}
-          console.log(err.response);
-          const msg = Object.values(errors.value)[0]?.[0] || 'Có lỗi xảy ra, vui lòng thử lại'
-          toast.error(msg)
-          throw err            // để component biết mà không reset form
-      })
-      .finally(() => { loading.value = false })
-  }
-  const updateReview = (reviewId, data) => {
+        return axios.post(route('reviews.store'), {
+            product_id: productId,
+            rating: data.rating,
+            comment: data.comment,
+        })
+        .then(res => {
+            errors.value = {}
+            return res.data
+        })
+        .catch(err => {
+          if(err.response.data.errors.product_id){
+            toast.error(err.response.data.errors.product_id[0])
+          }
+
+            if (err.response?.status === 422) {
+                errors.value = err.response.data.errors || {}
+            } else {
+                // Chỉ toast lỗi hệ thống
+                toast.error('Có lỗi xảy ra, vui lòng thử lại')
+            }
+
+            throw err
+        })
+        .finally(() => {
+            loading.value = false
+        })
+    }
+const updateReview = (reviewId, data) => {
     loading.value = true
+
     return axios.patch(route('reviews.update', reviewId), {
-        rating:  data.rating,
+        rating: data.rating,
         comment: data.comment,
     })
-    .then(res => res.data)
+    .then(res => {
+        errors.value = {}
+        return res.data
+    })
     .catch(err => {
-        errors.value = err.response?.data?.errors || {}
-        const msg = Object.values(errors.value)[0]?.[0] || 'Có lỗi xảy ra'
-        toast.error(msg)
+        if (err.response?.status === 422) {
+            errors.value = err.response.data.errors || {}
+        } else {
+            toast.error('Có lỗi xảy ra')
+        }
+
         throw err
     })
-    .finally(() => { loading.value = false })
+    .finally(() => {
+        loading.value = false
+    })
 }
 
 const deleteReview = (reviewId) => {
