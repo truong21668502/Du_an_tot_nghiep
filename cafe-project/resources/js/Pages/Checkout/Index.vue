@@ -29,15 +29,6 @@ const canSubmit = computed(() => {
   return !!selectedAddressId.value
 })
 
-const MAX_CASH_PAYMENT = 300000
-const cashDisabled = computed(() => finalAmount.value > MAX_CASH_PAYMENT)
-
-// tự động chuyển sang chuyển khoản nếu tổng tiền > 300k và đang chọn thanh toán tiền mặt
-watch(cashDisabled, (disabled) => {
-  if (disabled && selectedPaymentMethod.value === 'CASH') {
-    selectedPaymentMethod.value = 'BANK_TRANSFER'
-  }
-}, { immediate: true })
 
 const submitOrder = () => {
   if (!canSubmit.value) return
@@ -110,22 +101,22 @@ const submitOrder = () => {
             <div class="bg-surface rounded-2xl border border-outline-variant/20 p-6 md:p-8">
               <h2 class="font-serif text-headline-sm text-primary mb-4">Phương thức thanh toán</h2>
               <div class="space-y-3">
-                <label :class="[
-                    'flex items-center gap-3 p-4 rounded-xl border-2 transition-all',
-                    cashDisabled
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'cursor-pointer',
-                    selectedPaymentMethod === 'CASH'
-                      ? 'border-primary bg-primary-container/10'
-                      : 'border-outline-variant/20 hover:border-outline-variant'
-                  ]">
-                  <input v-model="selectedPaymentMethod" :disabled="cashDisabled" value="CASH" type="radio" name="payment" class="accent-primary" />
+<label :class="[
+    'flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all',
+    selectedPaymentMethod === 'CASH'
+      ? 'border-primary bg-primary-container/10'
+      : 'border-outline-variant/20 hover:border-outline-variant'
+  ]">
+                                    <input
+                    v-model="selectedPaymentMethod"
+                    value="CASH"
+                    type="radio"
+                    name="payment"
+                    class="accent-primary"
+                  />
                   <span class="material-symbols-outlined text-2xl text-on-surface-variant">payments</span>
-                  <span class="font-sans text-label-md text-on-surface">Tiền mặt</span>
+                  <span class="font-sans text-label-md text-on-surface">Tiền mặt - COD</span>
                 </label>
-                <p v-if="cashDisabled || errors.payment_method" class="text-error text-label-sm mt-2">
-                {{ errors.payment_method || 'Đơn hàng trên 300.000đ chỉ hỗ trợ thanh toán chuyển khoản.' }}
-              </p>
                 <label :class="['flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all',
                   selectedPaymentMethod === 'BANK_TRANSFER' ? 'border-primary bg-primary-container/10' : 'border-outline-variant/20 hover:border-outline-variant']">
                   <input v-model="selectedPaymentMethod" value="BANK_TRANSFER" type="radio" name="payment" class="accent-primary" />
