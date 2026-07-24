@@ -60,16 +60,14 @@ class ChatAiService
             $payload['tool_choice'] = 'auto';
         }
 
-        dd($payload);
-
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . config('ai.openrouter_key'),
+            'Authorization' => 'Bearer ' . config('ai.ai_key'),
             'Content-Type'  => 'application/json',
             'HTTP-Referer'  => config('app.url'),
             'X-Title'       => config('app.name', 'Nắng coffee'),
         ])
             ->timeout(45)
-            ->post(config('ai.openrouter_url'), $payload);
+            ->post(config('ai.ai_url'), $payload);
 
         if (!$response->successful()) {
             throw new \RuntimeException("HTTP {$response->status()}: " . $response->body());

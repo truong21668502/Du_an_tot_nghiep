@@ -3,6 +3,12 @@ import { ref, watch, nextTick, onMounted } from 'vue'
 import { useChatAi } from '@/Composables/useChatAi'
 import ChatProductList from './ChatProductList.vue'
 import ChatHistoryPanel from './ChatHistoryPanel.vue'
+import { marked } from 'marked'
+
+marked.setOptions({
+    breaks: true,
+    gfm: true
+})
 
 const {
     isOpen,
@@ -156,9 +162,12 @@ const handleOpen = async () => {
                         />
                     </div>
 
-                    <div class="max-w-[80%] rounded-2xl rounded-bl-md px-4 py-2.5 text-sm bg-surface border border-outline-variant/20">
-                        {{ msg.content }}
-                    </div>
+                <div 
+                    class="ai-response-content max-w-[80%] rounded-2xl rounded-bl-md px-4 py-2.5 text-sm bg-surface border border-outline-variant/20"
+                    v-html="marked.parse(msg.content)"
+                >
+                </div>
+
                 </div>
 
                 <!-- TOOL -->

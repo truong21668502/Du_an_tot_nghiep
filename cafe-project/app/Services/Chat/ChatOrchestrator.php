@@ -31,7 +31,6 @@ class ChatOrchestrator
             'role'            => 'user',
             'content'         => $message,
         ]);
-        $conversation->increment('message_count');
 
         // 3. Build messages cho AI (bao gồm system prompt + summary + history)
         $aiMessages = $this->messageBuilder->build($conversation, $context, $userId);

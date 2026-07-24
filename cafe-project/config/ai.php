@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'openrouter_key' => env('GEMINI_API_KEY'),
-    'openrouter_url' => env('GEMINI_API_URL'),
+    'ai_key' => env('GEMINI_API_KEY'),
+    'ai_url' => env('GEMINI_API_URL'),
 
     'models' => [
         'primary'   => env('GEMINI_AI_MODEL'),

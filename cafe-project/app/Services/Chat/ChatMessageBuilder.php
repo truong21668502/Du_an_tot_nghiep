@@ -15,30 +15,39 @@ class ChatMessageBuilder
     {
         $messages = [];
 
-        // 1. System prompt chính
+        // System prompt
         $messages[] = [
-            'role'    => 'system',
+            'role' => 'system',
             'content' => $this->buildSystemPrompt($userId, $context),
         ];
 
-        // 2. Rolling summary (nếu có) — thay thế lịch sử cũ để giảm token
+        // Summary
         if ($conversation->summary) {
             $messages[] = [
-                'role'    => 'system',
+                'role' => 'system',
                 'content' => "Tóm tắt cuộc trò chuyện trước:\n{$conversation->summary}",
             ];
         }
 
-        // 3. Lịch sử gần nhất từ DB (last N, giữ nguyên thứ tự chronological)
-        // Dùng DESC + limit để lấy N gần nhất, rồi sortBy để đảo lại thứ tự đúng
         $history = ChatMessage::where('conversation_id', $conversation->id)
-            ->orderBy('id', 'desc')
+            ->orderByDesc('id')
             ->limit(config('ai.history_limit', 20))
             ->get()
             ->sortBy('id')
             ->values();
 
         foreach ($history as $msg) {
+
+            // BỎ toàn bộ tool cũ
+            if ($msg->role === 'tool') {
+                continue;
+            }
+
+            // BỎ assistant chỉ dùng để gọi tool
+            if ($msg->role === 'assistant' && !empty($msg->tool_calls)) {
+                continue;
+            }
+
             $messages[] = $this->formatForAi($msg);
         }
 
@@ -56,28 +65,23 @@ private function buildSystemPrompt(?int $userId, array $context): string
         : '';
 
     return <<<PROMPT
-Bạn là trợ lý AI của quán cà phê (Nắng coffee), hỗ trợ khách hàng tư vấn menu và đơn hàng.
+    Bạn là trợ lý AI thân thiện của Nắng Coffee, hỗ trợ khách hàng tư vấn menu, chương trình khuyến mãi và đơn hàng.
 
-[KHẢ NĂNG]
-- Tư vấn sản phẩm, giá cả, danh mục (dùng tool search_products, get_product_detail)
-- Giới thiệu chương trình khuyến mãi (dùng tool get_active_coupons)  
-- Xem lịch sử đơn hàng (chỉ khi đã đăng nhập — dùng tool get_my_orders, get_order_detail)
+    [TÍNH NĂNG & CÔNG CỤ]
+    - Menu & Sản phẩm: Dùng search_products, get_product_detail.
+    - Khuyến mãi: Dùng get_active_coupons.
+    - Đơn hàng (Cần đăng nhập): Dùng get_my_orders, get_order_detail.
+    - Trạng thái hiện tại: {$authStatus}{$contextBlock}
 
-[QUY TẮC BẮT BUỘC - VI PHẠM SẼ BỊ PHẠT]
-1. NGÔN NGỮ: Luôn trả lời bằng tiếng Việt, ngắn gọn, lịch sự và thân thiện.
-2. ĐỊNH DẠNG: Chỉ trả về VĂN BẢN THUẦN TÚY (Plain text). TUYỆT ĐỐI KHÔNG dùng Markdown (không viết hoa đậm **, không gạch đầu dòng -, không gắn link).
-3. NGUỒN THÔNG TIN: Chỉ sử dụng dữ liệu từ tool, không tự bịa thông tin.
-
-[QUY TẮC HIỂN THỊ DỮ LIỆU TỪ TOOL - QUAN TRỌNG NHẤT]
-- TUYỆT ĐỐI KHÔNG LIỆT KÊ, KHÔNG NHẮC LẠI, KHÔNG TÓM TẮT tên sản phẩm, tên coupon, danh mục hoặc mã đơn hàng mà tool đã trả về. Hệ thống giao diện (UI) đã tự động render các dữ liệu này cho khách nhìn thấy. Việc bạn liệt kê lại sẽ làm trùng lặp thông tin.
-- Nếu tool trả về NHIỀU kết quả (>= 2): Bạn CHỈ ĐƯỢC PHÉP thông báo số lượng tìm thấy và mời khách xem hoặc chọn ở danh sách phía dưới.
-- Nếu tool trả về MỘT kết quả duy nhất: Bạn có thể tư vấn, mô tả ngắn gọn về sản phẩm đó nhưng không dùng định dạng Markdown.
-
-[VÍ DỤ ĐỂ LÀM THEO]
-- Đúng khi tool trả về nhiều sản phẩm: "Nắng coffee có 3 loại trà sữa ngon lắm ạ, bạn xem danh sách phía dưới và chọn món mình thích nhé!"
-- Sai (TUYỆT ĐỐI CẤM): "Nắng coffee có các loại trà sữa sau: **Trà sữa truyền thống**, **Trà sữa thái**..."
-
-Trạng thái hệ thống hiện tại: {$authStatus}{$contextBlock}
+    [QUY TẮC HIỂN THỊ - QUAN TRỌNG]
+    1. Ngôn ngữ: Tiếng Việt, ngắn gọn, lịch sự. Định dạng Markdown rõ ràng, dễ đọc.
+    2. Không trùng lặp: Tuyệt đối không liệt kê lại tên sản phẩm, mã đơn hàng hay coupon mà tool đã trả về (giao diện UI sẽ tự động hiển thị danh sách này).
+    3. Phản hồi theo số lượng kết quả từ Tool:
+    - Nếu >= 2 kết quả: Chỉ thông báo số lượng tìm thấy và mời khách tự xem/chọn ở danh sách phía dưới.
+    - Nếu có 1 kết quả duy nhất: Mô tả ngắn gọn về sản phẩm/thông tin đó.
+    [VÍ DỤ]
+    - Đúng: "Nắng Coffee tìm thấy 3 loại trà trái cây thanh mát, bạn xem danh sách phía dưới và chọn món mình thích nhé!"
+    - Sai (Cấm): "Nắng Coffee có các món: Trà đào, Trà vải, Trà dâu...
 PROMPT;
 }
 
@@ -85,31 +89,11 @@ PROMPT;
     /**
      * Convert ChatMessage model → định dạng OpenAI API message
      */
-    private function formatForAi(ChatMessage $msg): array
-    {
-        // Tool result message
-        if ($msg->role === 'tool') {
-            return [
-                'role'         => 'tool',
-                'tool_call_id' => $msg->tool_call_id,
-                'name'         => $msg->tool_name,
-                'content'      => json_encode($msg->tool_result, JSON_UNESCAPED_UNICODE),
-            ];
-        }
-
-        // Assistant message có tool_calls (chưa có content text)
-        if ($msg->role === 'assistant' && !empty($msg->tool_calls)) {
-            return [
-                'role'       => 'assistant',
-                'content'    => $msg->content,     // thường là null
-                'tool_calls' => $msg->tool_calls,  // cast array từ JSON
-            ];
-        }
-
-        // User hoặc assistant text thuần
-        return [
-            'role'    => $msg->role,
-            'content' => $msg->content ?? '',
-        ];
-    }
+private function formatForAi(ChatMessage $msg): array
+{
+    return [
+        'role'    => $msg->role,
+        'content' => $msg->content ?? '',
+    ];
+}
 }
