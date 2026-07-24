@@ -6,11 +6,23 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Material;
+use Illuminate\Support\Facades\DB;
 
 class MaterialController extends Controller
 {
     public function index()
     {
+        $avgPrices = DB::table('import_receipt_details')
+            ->join('import_receipts', 'import_receipts.id', '=', 'import_receipt_details.receipt_id')
+            ->where('import_receipts.status', 'active')
+            ->where('import_receipt_details.remaining_quantity', '>', 0)
+            ->groupBy('import_receipt_details.material_id')
+            ->select(
+                'import_receipt_details.material_id',
+                DB::raw('SUM(import_receipt_details.remaining_quantity * import_receipt_details.unit_price) / SUM(import_receipt_details.remaining_quantity) as avg_unit_price')
+            )
+            ->pluck('avg_unit_price', 'material_id');
+
         $materials = Material::select(
             'id',
             'material_name',
@@ -20,7 +32,6 @@ class MaterialController extends Controller
             'quantity_in_stock',
             'min_stock',
             'max_stock'
-            // Không select materials.price / materials.supplier nữa — lấy từ phiếu nhập
         )
             ->with([
                 'nearestExpiryDetail' => function ($query) {
@@ -31,16 +42,22 @@ class MaterialController extends Controller
                         'import_receipt_details.receipt_id',
                     ]);
                 },
-                'latestImportDetail', // đã tự select đủ cột + supplier_name ở trong quan hệ
+                'oldestActiveDetail', // <-- thay latestImportDetail cho mục đích hiển thị supplier
+                'latestImportDetail',  // giữ lại CHỈ để fallback khi hết hàng hoàn toàn
             ])
             ->orderBy('material_name')
             ->get()
-            ->each(function ($m) {
-                $m->expiry_date = $m->nearestExpiryDetail?->expiry_date;
-                $m->price = $m->latestImportDetail?->unit_price;
-                $m->supplier = $m->latestImportDetail?->supplier_name;
+            ->each(function ($m) use ($avgPrices) {
+                $m->expiry_date = $m->nearestExpiryDetail?->expiry_date?->format('Y-m-d');
+                $m->nearest_expiry_detail_id = $m->nearestExpiryDetail?->id;
 
-                unset($m->nearestExpiryDetail, $m->latestImportDetail);
+                $m->price = $avgPrices[$m->id] ?? $m->latestImportDetail?->unit_price;
+
+                // Ưu tiên NCC của lô cũ nhất còn tồn (đúng hàng đang dùng);
+                // fallback về phiếu gần nhất nếu không còn lô nào tồn (vd. vừa hết hàng).
+                $m->supplier = $m->oldestActiveDetail?->supplier_name ?? $m->latestImportDetail?->supplier_name;
+
+                unset($m->nearestExpiryDetail, $m->oldestActiveDetail, $m->latestImportDetail);
             });
 
         $lowStockAlerts = $materials->filter(

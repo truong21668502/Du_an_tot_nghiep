@@ -5,15 +5,9 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\Material;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use App\Models\StockMovement;
 
 class RecipeStockService
 {
-    /**
-     * Gộp nhu cầu nguyên liệu của toàn bộ đơn hàng theo material_id
-     * (1 đơn có thể có nhiều dòng cùng dùng chung 1 nguyên liệu)
-     */
     protected function calculateRequiredMaterials(Order $order): array
     {
         $order->loadMissing('details.variant.recipes');
@@ -32,10 +26,6 @@ class RecipeStockService
         return $required;
     }
 
-    /**
-     * Kiểm tra tồn kho có đủ để hoàn thành đơn hay không.
-     * Trả về mảng nguyên liệu thiếu (rỗng = đủ hàng).
-     */
     public function checkAvailability(Order $order): array
     {
         $required = $this->calculateRequiredMaterials($order);
@@ -64,6 +54,7 @@ class RecipeStockService
 
     /**
      * Trừ kho thực tế sau khi đơn được xác nhận hoàn thành.
+     * Trừ theo FIFO (lô nhập cũ nhất còn hàng bị trừ trước) qua StockService.
      */
     public function deductStock(Order $order): void
     {
@@ -73,26 +64,20 @@ class RecipeStockService
         }
 
         DB::transaction(function () use ($required, $order) {
-            foreach ($required as $materialId => $qty) {
-                Material::where('id', $materialId)->decrement('quantity_in_stock', $qty);
+            $stockService = app(StockService::class);
 
-                StockMovement::create([
-                    'material_id' => $materialId,
-                    'movement_type' => 'export',
-                    'quantity_change' => -$qty,   // âm = xuất
-                    'reference_type' => 'order',
-                    'reference_id' => $order->id,
-                    'moved_by' => Auth::id(),
-                    'note' => "Trừ kho khi hoàn thành đơn #{$order->id}",
-                    'moved_at' => now(),
-                ]);
+            foreach ($required as $materialId => $qty) {
+                $stockService->consume(
+                    materialId: $materialId,
+                    qtyBase: $qty,
+                    referenceType: 'order',
+                    referenceId: $order->id,
+                    note: "Trừ kho khi hoàn thành đơn #{$order->id}"
+                );
             }
         });
     }
 
-    /**
-     * Danh sách variant trong đơn chưa có công thức nào (không trừ được kho, cần cảnh báo).
-     */
     public function findVariantsWithoutRecipe(Order $order): array
     {
         $order->loadMissing('details.variant.recipes', 'details.product:id,product_name');

@@ -14,6 +14,8 @@ const form = useForm({
     note: '',
     min_stock: '',
     max_stock: '',
+    expiry_date: '',
+    import_receipt_detail_id: '',
 })
 
 const reasons = [
@@ -61,10 +63,14 @@ const diff = computed(() => {
 function onMaterialChange() {
     if (selectedMaterial.value) {
         form.min_stock = currentMinStockDisplay.value || ''
-        form.max_stock = currentMaxStockDisplay.value || ''   // thêm
+        form.max_stock = currentMaxStockDisplay.value || ''
+        form.expiry_date = selectedMaterial.value.expiry_date ?? ''
+        form.import_receipt_detail_id = selectedMaterial.value.nearest_expiry_detail_id ?? ''
     } else {
         form.min_stock = ''
-        form.max_stock = ''   // thêm
+        form.max_stock = ''
+        form.expiry_date = ''
+        form.import_receipt_detail_id = ''
     }
     form.actual_quantity = ''
 }
@@ -77,16 +83,16 @@ function submit() {
     if (!selectedMaterial.value) return
 
     const rate = Number(selectedMaterial.value.exchange_rate) || 1
-
     const actualInBaseUnit = Number(form.actual_quantity) * rate
     const minStockInBaseUnit = form.min_stock !== '' ? Number(form.min_stock) * rate : null
-    const maxStockInBaseUnit = form.max_stock !== '' ? Number(form.max_stock) * rate : null   // thêm
+    const maxStockInBaseUnit = form.max_stock !== '' ? Number(form.max_stock) * rate : null
 
     form.transform(data => ({
         ...data,
         actual_quantity: actualInBaseUnit,
         min_stock: minStockInBaseUnit,
-        max_stock: maxStockInBaseUnit,   // thêm
+        max_stock: maxStockInBaseUnit,
+        expiry_date: data.expiry_date || null,
     })).post(route('admin.kho.dieu-chinh.store'))
 }
 </script>
@@ -223,6 +229,22 @@ function submit() {
                         class="text-body-small text-error flex items-center gap-0.5 mt-1">
                         <span class="material-symbols-outlined text-sm">error</span>{{ form.errors.max_stock }}
                     </span>
+                </div>
+                <div v-if="selectedMaterial" class="flex flex-col gap-1.5">
+                    <label class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1">
+                        Hạn sử dụng
+                        <span class="text-label-small text-on-surface-variant font-normal ml-1">(lô gần hạn nhất, tuỳ
+                            chọn)</span>
+                    </label>
+                    <input v-model="form.expiry_date" type="date" :disabled="!form.import_receipt_detail_id"
+                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium disabled:opacity-50" />
+
+                    <p v-if="selectedMaterial.expiry_is_past" class="text-label-small text-error font-bold">
+                        ⚠ Lô này đã hết hạn ({{ selectedMaterial.expiry_date }}).
+                    </p>
+                    <p v-else-if="!form.import_receipt_detail_id" class="text-label-small text-on-surface-variant/60">
+                        Nguyên liệu này chưa có lô nhập kho nào để gắn hạn sử dụng.
+                    </p>
                 </div>
 
                 <!-- Lý do -->

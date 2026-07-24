@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { router, Link } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
 import { onMounted, onUnmounted } from 'vue'
@@ -14,6 +14,13 @@ const props = defineProps({
 
 // Chuyển orders.data thành local reactive state để cập nhật realtime
 const localOrders = ref([...props.orders.data])
+
+watch(
+    () => props.orders.data,
+    (newData) => {
+        localOrders.value = [...newData]
+    }
+)
 
 onMounted(() => {
     if (window.Echo) {
@@ -176,7 +183,7 @@ const formatDate = (value) => new Date(value).toLocaleString("vi-VN");
                                     </span>
                                 </td>
                                 <td class="p-4 text-on-surface-variant text-body-small">{{ formatDate(order.created_at)
-                                    }}</td>
+                                }}</td>
                             </tr>
                         </tbody>
                     </table>

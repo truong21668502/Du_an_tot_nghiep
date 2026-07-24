@@ -65,6 +65,8 @@ class ImportReceiptDetailSeeder extends Seeder
         $now = Carbon::now();
         $insertData = collect($rows)->map(function ($row) use ($exchangeRates, $now) {
             $exchangeRate = $exchangeRates[$row['material_id']] ?? 1;
+            $stockChange = round($row['quantity'] * $exchangeRate, 2);
+
 
             return [
                 'receipt_id' => $row['receipt_id'],
@@ -73,6 +75,7 @@ class ImportReceiptDetailSeeder extends Seeder
                 'unit_price' => $row['unit_price'],
                 // ⭐ Quy đổi tự động sang base_unit dựa vào exchange_rate thật của material
                 'stock_change' => round($row['quantity'] * $exchangeRate, 2),
+                'remaining_quantity' => $stockChange,
                 'created_at' => $row['created_at'],
                 'updated_at' => $row['created_at'],
             ];

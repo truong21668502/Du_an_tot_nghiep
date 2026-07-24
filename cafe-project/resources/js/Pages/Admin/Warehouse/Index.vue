@@ -60,7 +60,8 @@ function formatPrice(val) {
 
 function formatDate(val) {
     if (!val) return '—'
-    return new Date(val).toLocaleDateString('vi-VN')
+    const [year, month, day] = val.split('-')
+    return `${day}/${month}/${year}`
 }
 
 function stockStatus(m) {
@@ -94,21 +95,24 @@ function rowAccentClass(m) {
     return 'border-l-4 border-l-transparent'
 }
 
+function parseDateLocal(val) {
+    const [year, month, day] = val.split('-').map(Number)
+    return new Date(year, month - 1, day) // tạo theo giờ local, không qua UTC
+}
+
 function isExpiringSoon(m) {
     if (!m.expiry_date) return false
-    const diff = (new Date(m.expiry_date) - new Date()) / (1000 * 60 * 60 * 24)
+    const diff = (parseDateLocal(m.expiry_date) - new Date()) / (1000 * 60 * 60 * 24)
     return diff >= 0 && diff <= 7
 }
 
 function isExpired(m) {
     if (!m.expiry_date) return false
-    return new Date(m.expiry_date) < new Date()
+    return parseDateLocal(m.expiry_date) < new Date()
 }
 
-function goImport(materialId) {
-    router.visit(route('admin.kho.nhap.create'), {
-        data: { prefill_material: materialId },
-    })
+function goImport() {
+    router.visit(route('admin.kho.nhap.create'))
 }
 </script>
 
@@ -296,7 +300,7 @@ function goImport(materialId) {
                                         {{ displayStock(m) }}
                                     </span>
                                     <span class="block text-label-small text-on-surface-variant/50">{{ m.input_unit
-                                    }}</span>
+                                        }}</span>
                                 </td>
 
                                 <td
@@ -373,10 +377,6 @@ function goImport(materialId) {
                     <span class="inline-flex items-center gap-1 text-label-small text-tertiary">
                         <span class="material-symbols-outlined text-[14px]">check_circle</span>
                         Xanh = Đủ hàng
-                    </span>
-                    <span class="inline-flex items-center gap-1.5 text-label-small text-on-surface-variant">
-                        <span class="w-3 h-1.5 rounded-full bg-on-surface/30"></span>
-                        Vạch xám trên thanh = ngưỡng Min
                     </span>
                 </div>
             </div>

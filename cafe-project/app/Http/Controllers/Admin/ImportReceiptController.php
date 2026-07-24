@@ -70,6 +70,7 @@ class ImportReceiptController extends Controller
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'stock_change' => $stockChange,
+                        'remaining_quantity' => $stockChange, // <-- MỚI: lô này ban đầu còn nguyên
                         'expiry_date' => $item['expiry_date'] ?? null,
                     ]);
 
@@ -184,9 +185,21 @@ class ImportReceiptController extends Controller
         try {
             DB::transaction(function () use ($data, $importReceipt) {
 
-                // 1. Revert tồn kho theo các dòng CŨ
+                // 1. Kiểm tra: không cho sửa nếu bất kỳ dòng nào đã bị tiêu thụ một phần
                 $oldDetails = $importReceipt->details()->lockForUpdate()->get();
 
+                foreach ($oldDetails as $old) {
+                    if (bccomp((string) $old->remaining_quantity, (string) $old->stock_change, 2) !== 0) {
+                        $material = Material::find($old->material_id);
+                        throw new \Exception(
+                            "Không thể sửa phiếu: nguyên liệu \"" . ($material->material_name ?? '#' . $old->material_id) . "\" "
+                            . "đã bị sử dụng một phần (còn {$old->remaining_quantity}/{$old->stock_change}). "
+                            . "Vui lòng tạo phiếu điều chỉnh (kiểm kê) riêng thay vì sửa phiếu này."
+                        );
+                    }
+                }
+
+                // 2. Revert tồn kho theo các dòng CŨ (an toàn vì bước 1 đã đảm bảo chưa tiêu thụ gì)
                 foreach ($oldDetails as $old) {
                     $material = Material::lockForUpdate()->find($old->material_id);
                     if ($material) {
@@ -205,10 +218,10 @@ class ImportReceiptController extends Controller
                     }
                 }
 
-                // 2. Xoá toàn bộ dòng cũ
+                // 3. Xoá toàn bộ dòng cũ
                 $importReceipt->details()->delete();
 
-                // 3. Tạo lại dòng mới + cộng tồn kho mới (đã check max_stock)
+                // 4. Tạo lại dòng mới + cộng tồn kho mới (đã check max_stock)
                 $totalCost = collect($data['items'])->sum(
                     fn($item) => $item['quantity'] * $item['unit_price']
                 );
@@ -230,6 +243,7 @@ class ImportReceiptController extends Controller
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'stock_change' => $stockChange,
+                        'remaining_quantity' => $stockChange, // <-- MỚI
                         'expiry_date' => $item['expiry_date'] ?? null,
                     ]);
 
@@ -278,10 +292,23 @@ class ImportReceiptController extends Controller
             DB::transaction(function () use ($data, $importReceipt) {
                 $details = $importReceipt->details()->lockForUpdate()->get();
 
+                // Kiểm tra: không cho huỷ nếu bất kỳ dòng nào đã bị tiêu thụ một phần
+                foreach ($details as $detail) {
+                    if (bccomp((string) $detail->remaining_quantity, (string) $detail->stock_change, 2) !== 0) {
+                        $material = Material::find($detail->material_id);
+                        throw new \Exception(
+                            "Không thể huỷ phiếu: nguyên liệu \"" . ($material->material_name ?? '#' . $detail->material_id) . "\" "
+                            . "đã bị sử dụng một phần (còn {$detail->remaining_quantity}/{$detail->stock_change}). "
+                            . "Vui lòng tạo phiếu điều chỉnh (kiểm kê) riêng thay vì huỷ phiếu này."
+                        );
+                    }
+                }
+
                 foreach ($details as $detail) {
                     $material = Material::lockForUpdate()->find($detail->material_id);
                     if ($material) {
                         $material->decrement('quantity_in_stock', $detail->stock_change);
+                        $detail->update(['remaining_quantity' => 0]);
 
                         StockMovement::create([
                             'material_id' => $material->id,
@@ -310,7 +337,6 @@ class ImportReceiptController extends Controller
             return back()->with('toast-error', 'Lỗi khi huỷ phiếu nhập: ' . $e->getMessage());
         }
 
-        // QUAN TRỌNG: trả JSON thay vì redirect khi gọi qua axios/AJAX
         if ($request->wantsJson()) {
             return response()->json(['message' => 'Đã huỷ phiếu nhập và hoàn lại tồn kho.']);
         }
@@ -321,24 +347,54 @@ class ImportReceiptController extends Controller
     public function quickStoreMaterial(QuickStoreMaterialRequest $request)
     {
         $validated = $request->validated();
+        $initialQty = (float) ($validated['quantity_in_stock'] ?? 0);
 
-        $material = Material::create([
-            'material_name' => $validated['material_name'],
-            'base_unit' => $validated['base_unit'],
-            'input_unit' => $validated['input_unit'],
-            'exchange_rate' => $validated['exchange_rate'],
-            'quantity_in_stock' => $validated['quantity_in_stock'] ?? 0,
-        ]);
+        $material = DB::transaction(function () use ($validated, $initialQty) {
+            $material = Material::create([
+                'material_name' => $validated['material_name'],
+                'base_unit' => $validated['base_unit'],
+                'input_unit' => $validated['input_unit'],
+                'exchange_rate' => $validated['exchange_rate'],
+                'quantity_in_stock' => 0, // sẽ được cộng qua batch bên dưới
+            ]);
+
+            if ($initialQty > 0) {
+                $receipt = ImportReceipt::create([
+                    'user_id' => Auth::id(),
+                    'supplier_name' => null,
+                    'total_cost' => 0,
+                    'note' => 'Tồn kho ban đầu khi tạo nhanh nguyên liệu',
+                    'status' => 'active',
+                ]);
+
+                ImportReceiptDetail::create([
+                    'receipt_id' => $receipt->id,
+                    'material_id' => $material->id,
+                    'quantity' => $initialQty / $material->exchange_rate,
+                    'unit_price' => 0,
+                    'stock_change' => $initialQty,
+                    'remaining_quantity' => $initialQty,
+                ]);
+
+                $material->increment('quantity_in_stock', $initialQty);
+
+                StockMovement::create([
+                    'material_id' => $material->id,
+                    'movement_type' => 'import',
+                    'quantity_change' => $initialQty,
+                    'reference_type' => 'import_receipt',
+                    'reference_id' => $receipt->id,
+                    'moved_by' => Auth::id(),
+                    'note' => 'Tồn kho ban đầu (tạo nhanh nguyên liệu)',
+                    'moved_at' => now(),
+                ]);
+            }
+
+            return $material;
+        });
 
         return response()->json([
-            'material' => $material->only([
-                'id',
-                'material_name',
-                'base_unit',
-                'input_unit',
-                'exchange_rate',
-                'quantity_in_stock',
-            ]),
+            'material' => $material->only(['id', 'material_name', 'base_unit', 'input_unit', 'exchange_rate', 'quantity_in_stock']),
         ]);
     }
 

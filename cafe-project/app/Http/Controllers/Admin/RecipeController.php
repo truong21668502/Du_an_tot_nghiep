@@ -12,7 +12,6 @@ use App\Models\Recipe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use App\Services\MaterialCostService;
 
 class RecipeController extends Controller
 {
@@ -149,12 +148,5 @@ class RecipeController extends Controller
             'message' => 'Đã sao chép công thức thành công.',
             'recipes' => $recipes,
         ]);
-    }
-
-    public function cost(ProductVariant $variant, MaterialCostService $materialCostService)
-    {
-        return response()->json(
-            $materialCostService->calculateVariantCost($variant)
-        );
     }
 }

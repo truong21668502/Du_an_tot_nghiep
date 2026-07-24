@@ -149,5 +149,4 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::delete('cong-thuc/nguyen-lieu/{recipe}', [RecipeController::class, 'destroy'])->name('recipes.destroy');
     Route::post('cong-thuc/{fromVariant}/sao-chep/{toVariant}', [RecipeController::class, 'copy'])
         ->name('recipes.copy');
-    Route::get('cong-thuc/{variant}/gia-von', [RecipeController::class, 'cost'])->name('recipes.cost');
 });

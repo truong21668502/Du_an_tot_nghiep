@@ -77,6 +77,7 @@ const calculatedTotal = computed(() =>
                             <th class="px-4 py-3 font-medium">Nguyên liệu</th>
                             <th class="px-4 py-3 font-medium text-right">Số lượng</th>
                             <th class="px-4 py-3 font-medium">Đơn vị</th>
+                            <th class="px-4 py-3 font-medium text-right">Hạn SD</th>
                             <th class="px-4 py-3 font-medium text-right">Đơn giá</th>
                             <th class="px-4 py-3 font-medium text-right">Thành tiền</th>
                         </tr>
@@ -92,6 +93,10 @@ const calculatedTotal = computed(() =>
                             <td class="px-4 py-3 text-gray-500">
                                 {{ item.material?.input_unit || '—' }}
                             </td>
+                            <td class="px-4 py-3 text-right text-gray-500">
+                                {{ item.expiry_date ? item.expiry_date.slice(0, 10).split('-').reverse().join('/') : '—'
+                                }}
+                            </td>
                             <td class="px-4 py-3 text-right font-mono text-gray-600">
                                 {{ formatNum(item.unit_price) }}₫
                             </td>
@@ -102,7 +107,7 @@ const calculatedTotal = computed(() =>
                     </tbody>
                     <tfoot>
                         <tr class="border-t border-gray-200 bg-gray-50">
-                            <td colspan="4" class="px-4 py-3 text-right font-semibold text-gray-600">
+                            <td colspan="5" class="px-4 py-3 text-right font-semibold text-gray-600">
                                 Tổng cộng
                             </td>
                             <td class="px-4 py-3 text-right font-bold text-indigo-600 font-mono">

@@ -434,6 +434,8 @@ async function confirmCancel() {
                                                 <th class="px-4 py-3 font-bold">Nguyên liệu</th>
                                                 <th class="px-4 py-3 font-bold text-right">SL</th>
                                                 <th class="px-4 py-3 font-bold text-center">ĐV</th>
+                                                <th class="px-4 py-3 font-medium text-right">Hạn SD</th>
+
                                                 <th class="px-4 py-3 font-bold text-right">Đơn giá</th>
                                                 <th class="px-4 py-3 font-bold text-right">Thành tiền</th>
                                             </tr>
@@ -453,6 +455,11 @@ async function confirmCancel() {
                                                         class="px-2 py-0.5 bg-surface-container-high rounded-full text-label-small text-on-surface-variant">
                                                         {{ item.material?.input_unit || '—' }}
                                                     </span>
+                                                </td>
+                                                <td class="px-4 py-3 text-right text-gray-500">
+                                                    {{ item.expiry_date ? item.expiry_date.slice(0,
+                                                        10).split('-').reverse().join('/') : '—'
+                                                    }}
                                                 </td>
                                                 <td
                                                     class="px-4 py-3 text-right font-mono text-body-medium text-on-surface-variant">

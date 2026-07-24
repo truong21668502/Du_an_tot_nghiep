@@ -19,7 +19,9 @@ class ImportReceiptDetail extends Model
         'quantity',
         'unit_price',
         'stock_change',
+        'remaining_quantity',
         'expiry_date',
+
     ];
 
     protected $casts = [
@@ -28,7 +30,8 @@ class ImportReceiptDetail extends Model
         'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
         'stock_change' => 'decimal:2',
-        'expiry_date' => 'date',
+        'remaining_quantity' => 'decimal:2',
+        'expiry_date' => 'date:Y-m-d',
     ];
 
     /**

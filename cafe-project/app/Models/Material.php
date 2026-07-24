@@ -69,6 +69,7 @@ class Material extends Model
         return $this->hasOne(ImportReceiptDetail::class, 'material_id')
             ->join('import_receipts', 'import_receipts.id', '=', 'import_receipt_details.receipt_id')
             ->where('import_receipts.status', 'active')
+            ->where('import_receipt_details.remaining_quantity', '>', 0)
             ->whereNotNull('import_receipt_details.expiry_date')
             ->where('import_receipt_details.expiry_date', '>=', now()->toDateString())
             ->orderBy('import_receipt_details.expiry_date')
@@ -78,5 +79,37 @@ class Material extends Model
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class, 'material_id', 'id');
+    }
+
+    /**
+     * Lô có hạn sử dụng gần "hôm nay" nhất — dùng cho màn điều chỉnh kiểm kê.
+     * Khác với nearestExpiryDetail: KHÔNG loại trừ lô đã hết hạn,
+     * vì lý do "Hết hạn" chính là để sửa lại lô đã quá hạn.
+     */
+    public function adjustableExpiryDetail()
+    {
+        return $this->hasOne(ImportReceiptDetail::class, 'material_id')
+            ->join('import_receipts', 'import_receipts.id', '=', 'import_receipt_details.receipt_id')
+            ->where('import_receipts.status', 'active')
+            ->orderByDesc('import_receipt_details.created_at')
+            ->select('import_receipt_details.*');
+    }
+
+    /**
+     * Lô cũ nhất còn tồn thực tế — đại diện cho "hàng đang được dùng hiện tại" theo FIFO.
+     * Dùng để hiển thị nhà cung cấp đúng với lô đang tiêu thụ, khác latestImportDetail
+     * (vốn chỉ cho biết lần nhập gần nhất, bất kể còn hàng hay không).
+     */
+    public function oldestActiveDetail()
+    {
+        return $this->hasOne(ImportReceiptDetail::class, 'material_id')
+            ->join('import_receipts', 'import_receipts.id', '=', 'import_receipt_details.receipt_id')
+            ->where('import_receipts.status', 'active')
+            ->where('import_receipt_details.remaining_quantity', '>', 0)
+            ->orderBy('import_receipt_details.created_at') // cũ nhất trước — đúng thứ tự FIFO
+            ->select([
+                'import_receipt_details.*',
+                'import_receipts.supplier_name',
+            ]);
     }
 }

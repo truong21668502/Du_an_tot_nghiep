@@ -26,6 +26,13 @@ function getBaseline(materialId) {
     return baselineStock[materialId] ?? getMaterial(materialId)?.quantity_in_stock ?? 0
 }
 
+// Lấy đúng phần "YYYY-MM-DD" từ chuỗi ngày trả về từ backend,
+// KHÔNG dùng new Date(...).toISOString() vì sẽ bị lệch theo timezone của trình duyệt/server.
+function toDateInputValue(val) {
+    if (!val) return ''
+    return val.slice(0, 10)
+}
+
 const form = useForm({
     supplier_name: props.receipt.supplier_name || '',
     note: props.receipt.note || '',
@@ -33,9 +40,7 @@ const form = useForm({
         material_id: d.material_id,
         quantity: d.quantity,
         unit_price: d.unit_price,
-        expiry_date: d.expiry_date
-            ? new Date(d.expiry_date).toISOString().split('T')[0]
-            : '',
+        expiry_date: toDateInputValue(d.expiry_date),
     })),
 })
 
@@ -276,6 +281,18 @@ async function submitNewMaterial() {
                                     class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                     <span class="material-symbols-outlined text-sm">error</span>{{
                                         form.errors[`items.${index}.unit_price`] }}
+                                </span>
+                            </div>
+
+                            <!-- Hạn sử dụng -->
+                            <div class="col-span-4 md:col-span-2 flex flex-col gap-1.5">
+                                <label class="text-label-medium text-on-surface-variant font-bold">Hạn SD</label>
+                                <input v-model="item.expiry_date" type="date"
+                                    class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium" />
+                                <span v-if="form.errors[`items.${index}.expiry_date`]"
+                                    class="text-body-small text-error flex items-center gap-0.5 mt-1">
+                                    <span class="material-symbols-outlined text-sm">error</span>
+                                    {{ form.errors[`items.${index}.expiry_date`] }}
                                 </span>
                             </div>
 

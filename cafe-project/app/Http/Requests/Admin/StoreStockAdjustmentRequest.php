@@ -20,6 +20,9 @@ class StoreStockAdjustmentRequest extends FormRequest
             'note' => 'nullable|string|max:500',
             'min_stock' => 'nullable|numeric|min:0',
             'max_stock' => 'nullable|numeric|min:0',
+            'expiry_date' => 'nullable|date',
+            'import_receipt_detail_id' => 'nullable|integer|exists:import_receipt_details,id',
+
         ];
     }
 
@@ -39,6 +42,8 @@ class StoreStockAdjustmentRequest extends FormRequest
             'min_stock.min' => 'Tồn kho tối thiểu không được nhỏ hơn 0.',
             'max_stock.numeric' => 'Tồn kho tối đa phải là số.',
             'max_stock.min' => 'Tồn kho tối đa không được nhỏ hơn 0.',
+            'expiry_date.date' => 'Ngày hết hạn không hợp lệ.',
+            'import_receipt_detail_id.exists' => 'Chi tiết phiếu nhập được chọn không tồn tại.',
         ];
     }
 
@@ -51,6 +56,8 @@ class StoreStockAdjustmentRequest extends FormRequest
             'note' => 'ghi chú',
             'min_stock' => 'tồn kho tối thiểu',
             'max_stock' => 'tồn kho tối đa',
+            'expiry_date' => 'ngày hết hạn',
+            'import_receipt_detail_id' => 'chi tiết phiếu nhập',
         ];
     }
 }

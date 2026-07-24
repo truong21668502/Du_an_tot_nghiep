@@ -34,23 +34,6 @@ const availableMaterials = computed(() => {
 const copyFromVariantId = ref('')
 const copyScale = ref(1)
 
-const costData = ref(null)
-const loadingCost = ref(false)
-
-async function loadCost() {
-    if (!selectedVariant.value) return
-    loadingCost.value = true
-    try {
-        const { data } = await axios.get(route('admin.recipes.cost', selectedVariant.value.id))
-        costData.value = data
-    } catch (error) {
-        costData.value = null
-        console.error('Không thể tải giá vốn:', error)
-    } finally {
-        loadingCost.value = false
-    }
-}
-
 // Gọi lại loadCost() mỗi khi selectVariant() hoặc saveRecipe() thành công
 
 async function copyRecipe() {
@@ -64,7 +47,6 @@ async function copyRecipe() {
         recipes.value = data.recipes
         toast.success(data.message)
         copyFromVariantId.value = ''
-        await loadCost() // ⭐ công thức vừa đổi hoàn toàn, cần tính lại giá vốn
     } catch (error) {
         toast.error(error.response?.data?.message ?? 'Sao chép thất bại.')
     }
@@ -79,11 +61,9 @@ function selectProduct(product) {
 async function selectVariant(variant) {
     selectedVariantId.value = variant.id
     loading.value = true
-    costData.value = null // reset để không hiện giá vốn của variant cũ trong lúc tải
     try {
         const { data } = await axios.get(route('admin.recipes.show', variant.id))
         recipes.value = data.recipes
-        await loadCost()
     } finally {
         loading.value = false
     }
@@ -132,7 +112,6 @@ async function saveRecipe() {
         if (variant) variant.recipes_count = recipes.value.length
 
         toast.success(data.message ?? 'Đã lưu công thức thành công.')
-        await loadCost() // ⭐ cập nhật lại giá vốn sau khi lưu vì định lượng có thể đã đổi
     } catch (error) {
         toast.error(error.response?.data?.message ?? 'Có lỗi xảy ra, vui lòng thử lại.')
     } finally {
@@ -146,7 +125,8 @@ async function saveRecipe() {
         <div class="flex gap-4 h-[calc(100vh-8rem)]">
             <!-- Danh sách sản phẩm -->
             <aside class="w-72 shrink-0 rounded-2xl bg-surface overflow-y-auto">
-                <h2 class="text-headline-sm font-sans px-4 py-3 border-b border-outline-variant/20 text-primary text-3xl">
+                <h2
+                    class="text-headline-sm font-sans px-4 py-3 border-b border-outline-variant/20 text-primary text-3xl">
                     Sản phẩm
                 </h2>
                 <ul>
@@ -258,36 +238,6 @@ async function saveRecipe() {
                                 </tr>
                             </tbody>
                         </table>
-                        <div v-if="costData" class="mt-4 rounded-xl bg-surface-container-low p-4">
-                            <div v-if="costData.has_missing_cost_data"
-                                class="mb-3 rounded-lg bg-error-container/30 px-3 py-2">
-                                <p class="text-body-sm text-on-error-container">
-                                    ⚠️ Một số nguyên liệu chưa có đủ dữ liệu nhập kho — giá vốn hiển thị bên dưới có thể
-                                    chưa chính xác.
-                                </p>
-                            </div>
-
-                            <p class="text-label-lg text-on-surface mb-2">
-                                Giá vốn ước tính: <strong>{{ costData.total_cost.toLocaleString('vi-VN') }} đ</strong>
-                                <span v-if="selectedVariant.price" class="text-on-surface-variant">
-                                    (Bán {{ Number(selectedVariant.price).toLocaleString('vi-VN') }} đ ·
-                                    Lãi gộp {{ (((Number(selectedVariant.price) - costData.total_cost) /
-                                        Number(selectedVariant.price)) * 100).toFixed(1) }}%)
-                                </span>
-                            </p>
-
-                            <ul class="text-body-sm text-on-surface-variant space-y-0.5">
-                                <li v-for="item in costData.breakdown" :key="item.material_id"
-                                    :class="{ 'text-error': !item.has_cost_data }">
-                                    {{ item.material_name }}: {{ item.quantity_needed }}{{ item.unit }}
-                                    × {{ item.cost_per_unit.toLocaleString('vi-VN') }}đ/{{ item.unit }}
-                                    = {{ item.line_cost.toLocaleString('vi-VN') }}đ
-                                    <span v-if="!item.has_cost_data" class="italic">(chưa có dữ liệu nhập kho)</span>
-                                    <span v-else-if="item.is_partial_data" class="italic">(dữ liệu nhập kho chưa đầy
-                                        đủ)</span>
-                                </li>
-                            </ul>
-                        </div>
 
                         <button @click="saveRecipe" :disabled="saving || recipes.length === 0"
                             class="px-6 py-2 rounded-full bg-primary text-on-primary text-label-lg disabled:opacity-50">

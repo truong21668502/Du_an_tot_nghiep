@@ -21,14 +21,6 @@ const form = useForm({
     items: [],
 })
 
-if (prefillId) {
-    form.items.push({
-        material_id: prefillId,
-        quantity: '',
-        unit_price: '',
-    })
-}
-
 function getOtherSelectedIds(currentIndex) {
     return form.items
         .filter((item, idx) => idx !== currentIndex && item.material_id !== '')
