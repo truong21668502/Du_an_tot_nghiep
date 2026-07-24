@@ -132,105 +132,115 @@ async function confirmCancel() {
 
 <template>
     <AdminLayout title="Lịch Sử Nhập Hàng">
-        <div class="space-y-5 font-sans">
+        <div class="space-y-6 font-sans">
 
             <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div class="space-y-1">
-                    <div class="flex items-center gap-2">
+                <div class="space-y-2.5">
+                    <div class="flex items-center gap-1.5">
                         <Link :href="route('admin.kho.index')"
-                            class="inline-flex items-center gap-1 text-label-medium text-on-surface-variant hover:text-primary transition-colors">
+                            class="inline-flex items-center gap-1 text-label-medium text-on-surface-variant hover:text-primary transition-colors duration-200">
                             <span class="material-symbols-outlined text-sm">arrow_back</span>
                             Kho
                         </Link>
                         <span class="text-outline-variant text-label-small">/</span>
-                        <span class="text-label-medium text-on-surface-variant">Nhập hàng</span>
+                        <span class="text-label-medium text-on-surface font-medium">Nhập hàng</span>
                     </div>
-                    <h1 class="text-2xl font-bold text-on-surface text-primary mt-4"><span class="material-symbols-outlined text-primary">history</span> LỊCH SỬ NHẬP HÀNG</h1>
+                    <div class="flex items-center gap-3.5">
+                        <div
+                            class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
+                            <span class="material-symbols-outlined text-on-primary text-[24px]">history</span>
+                        </div>
+                        <div>
+                            <h1
+                                class="text-headline-md font-bold text-on-surface text-2xl leading-tight tracking-tight">
+                                Lịch sử nhập hàng
+                            </h1>
+                            <p class="text-body-small text-on-surface-variant mt-0.5">
+                                Toàn bộ phiếu nhập kho theo thời gian
+                            </p>
+                        </div>
+                    </div>
                 </div>
                 <Link :href="route('admin.kho.nhap.create')"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 rounded-full font-bold transition-colors shadow-sm self-start sm:self-auto">
+                    class="inline-flex items-center gap-2 px-5 py-3 bg-primary text-on-primary hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0 rounded-full font-bold transition-all duration-200 shadow-sm shadow-primary/20 self-start sm:self-auto shrink-0">
                     <span class="material-symbols-outlined text-[18px]">add</span>
                     Tạo phiếu nhập
                 </Link>
             </div>
 
             <!-- Summary cards -->
-            <div class="grid grid-cols-3 gap-3">
-                <!-- <div class="bg-surface border border-outline-variant/20 rounded-2xl p-4 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
+            <div class="grid grid-cols-2 gap-3.5">
+                <div
+                    class="bg-surface border border-outline-variant/15 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div class="w-11 h-11 rounded-2xl bg-tertiary/10 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-tertiary text-[22px]">check_circle</span>
                     </div>
                     <div>
-                        <p class="text-label-small text-on-surface-variant">Trang này</p>
-                        <p class="text-title-large font-bold text-on-surface font-mono">{{ receipts.data.length }}</p>
-                    </div>
-                </div> -->
-                <div class="bg-surface border border-outline-variant/20 rounded-2xl p-4 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-tertiary/10 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-tertiary text-[20px]">check_circle</span>
-                    </div>
-                    <div>
-                        <p class="text-label-small text-on-surface-variant">Hiệu lực</p>
-                        <p class="text-title-large font-bold text-tertiary font-mono">{{ summary.active }}</p>
+                        <p class="text-label-small text-on-surface-variant font-semibold uppercase tracking-wide">Phiếu
+                            hiệu lực</p>
+                        <p class="text-title-large font-bold text-tertiary font-mono leading-tight">{{ summary.active }}
+                        </p>
                     </div>
                 </div>
-                <div class="bg-surface border border-outline-variant/20 rounded-2xl p-4 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-primary text-[20px]">payments</span>
+                <div
+                    class="bg-surface border border-outline-variant/15 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div class="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-primary text-[22px]">payments</span>
                     </div>
                     <div class="min-w-0">
-                        <p class="text-label-small text-on-surface-variant">Tổng chi (hiệu lực)</p>
-                        <p class="text-label-large font-bold text-primary font-mono truncate">{{
+                        <p class="text-label-small text-on-surface-variant font-semibold uppercase tracking-wide">Tổng
+                            chi (hiệu lực)</p>
+                        <p class="text-title-large font-bold text-primary font-mono truncate leading-tight">{{
                             formatNum(summary.totalCost) }}₫</p>
                     </div>
                 </div>
             </div>
 
             <!-- Bộ lọc -->
-            <div class="bg-surface rounded-2xl border border-outline-variant/20 shadow-sm p-5">
+            <div class="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm p-5">
                 <div class="flex items-center justify-between mb-4">
                     <p class="text-label-medium font-bold text-on-surface-variant flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-[16px]">filter_list</span>
+                        <span class="material-symbols-outlined text-[18px] text-primary">filter_list</span>
                         Lọc kết quả
                     </p>
                     <button v-if="hasActiveFilters" @click="resetFilters"
-                        class="text-label-small text-primary hover:text-primary/70 transition-colors flex items-center gap-1">
+                        class="text-label-small text-primary hover:text-primary/70 transition-colors duration-200 flex items-center gap-1 font-semibold">
                         <span class="material-symbols-outlined text-[14px]">close</span>
                         Xoá bộ lọc
                     </button>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
                     <div class="flex flex-col gap-1.5">
-                        <label class="text-label-small text-on-surface-variant font-bold">Nhà cung cấp</label>
+                        <label class="text-label-small text-on-surface-variant font-semibold">Nhà cung cấp</label>
                         <div class="relative">
                             <span
                                 class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
                             <input v-model="filters.supplier_name" @input="onSupplierInput" type="text"
                                 placeholder="Tìm theo NCC..."
-                                class="w-full border border-outline-variant bg-surface-container-low rounded-xl pl-10 pr-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
+                                class="w-full border border-outline-variant/60 bg-surface-container-low rounded-xl pl-10 pr-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200" />
                         </div>
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <label class="text-label-small text-on-surface-variant font-bold">Từ ngày</label>
+                        <label class="text-label-small text-on-surface-variant font-semibold">Từ ngày</label>
                         <input v-model="filters.from_date" @change="applyFilters" type="date"
-                            class="w-full border border-outline-variant bg-surface-container-low rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
+                            class="w-full border border-outline-variant/60 bg-surface-container-low rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200" />
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <label class="text-label-small text-on-surface-variant font-bold">Đến ngày</label>
+                        <label class="text-label-small text-on-surface-variant font-semibold">Đến ngày</label>
                         <input v-model="filters.to_date" @change="applyFilters" type="date"
-                            class="w-full border border-outline-variant bg-surface-container-low rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
+                            class="w-full border border-outline-variant/60 bg-surface-container-low rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200" />
                     </div>
                 </div>
             </div>
 
             <!-- Danh sách phiếu nhập dạng card -->
-            <div class="space-y-2">
+            <div class="space-y-3">
 
                 <div v-if="receipts.data.length === 0"
-                    class="bg-surface border border-outline-variant/20 rounded-2xl p-16 text-center text-on-surface-variant">
+                    class="bg-surface-container-low/60 border-2 border-dashed border-outline-variant/30 rounded-2xl p-16 text-center text-on-surface-variant">
                     <span class="material-symbols-outlined text-[48px] mb-3 block text-outline">inbox</span>
-                    <p class="text-body-large font-medium">Không có phiếu nhập nào.</p>
+                    <p class="text-body-large font-semibold text-on-surface">Không có phiếu nhập nào</p>
                     <p class="text-body-medium mt-1">
                         {{ hasActiveFilters ? 'Thử thay đổi bộ lọc để xem kết quả khác.' :
                             'Bắt đầu bằng cách tạo phiếu nhập đầu tiên.'
@@ -239,10 +249,10 @@ async function confirmCancel() {
                 </div>
 
                 <div v-for="r in receipts.data" :key="r.id"
-                    class="bg-surface border border-outline-variant/20 rounded-2xl p-5 transition-all cursor-pointer"
+                    class="group bg-surface border border-outline-variant/15 rounded-2xl p-5 transition-all duration-200 cursor-pointer"
                     :class="r.status === 'cancelled'
                         ? 'opacity-60 hover:opacity-80'
-                        : 'hover:border-outline-variant/40 hover:shadow-sm'" @click="openDetail(r.id)">
+                        : 'hover:border-primary/25 hover:shadow-md'" @click="openDetail(r.id)">
 
                     <div class="flex items-start justify-between gap-4">
 
@@ -250,7 +260,7 @@ async function confirmCancel() {
                         <div class="flex items-start gap-4 min-w-0">
 
                             <!-- Icon trạng thái -->
-                            <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                            <div class="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
                                 :class="r.status === 'cancelled' ? 'bg-surface-container-high' : 'bg-primary/10'">
                                 <span class="material-symbols-outlined text-[22px]"
                                     :class="r.status === 'cancelled' ? 'text-on-surface-variant' : 'text-primary'">
@@ -267,7 +277,7 @@ async function confirmCancel() {
                                     <span class="font-bold text-on-surface">
                                         {{ r.supplier_name || 'Không có NCC' }}
                                     </span>
-                                    <span class="px-2 py-0.5 rounded-full text-label-small font-bold" :class="r.status === 'cancelled'
+                                    <span class="px-2.5 py-0.5 rounded-full text-label-small font-bold" :class="r.status === 'cancelled'
                                         ? 'bg-surface-container-high text-on-surface-variant'
                                         : 'bg-tertiary-container/50 text-on-tertiary-container'">
                                         {{ r.status === 'cancelled' ? 'Đã huỷ' : 'Hiệu lực' }}
@@ -275,13 +285,12 @@ async function confirmCancel() {
                                 </div>
 
                                 <!-- Meta -->
-                                <div class="flex items-center gap-3 flex-wrap">
+                                <div class="flex items-center gap-2.5 flex-wrap">
                                     <span
-                                        class="inline-flex items-center gap-1 text-label-small text-on-surface-variant">
+                                        class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface-container-low text-label-small text-on-surface-variant font-medium">
                                         <span class="material-symbols-outlined text-[14px]">schedule</span>
                                         {{ formatDate(r.created_at) }}
                                     </span>
-                                    <span class="w-1 h-1 rounded-full bg-outline-variant flex-shrink-0"></span>
                                     <span
                                         class="inline-flex items-center gap-1 text-label-small text-on-surface-variant">
                                         <span class="material-symbols-outlined text-[14px]">person</span>
@@ -302,7 +311,8 @@ async function confirmCancel() {
                             <p class="font-mono font-bold text-primary text-label-large">
                                 {{ formatNum(r.total_cost) }}₫
                             </p>
-                            <span class="inline-flex items-center gap-1 text-label-small text-primary/70">
+                            <span
+                                class="inline-flex items-center gap-1 text-label-small text-primary/70 group-hover:text-primary transition-colors duration-200">
                                 <span class="material-symbols-outlined text-[14px]">open_in_new</span>
                                 Xem chi tiết
                             </span>
@@ -315,7 +325,7 @@ async function confirmCancel() {
             <div v-if="receipts.links?.length > 3" class="flex items-center justify-center gap-1 pb-2">
                 <template v-for="(link, idx) in receipts.links" :key="idx">
                     <Link v-if="link.url" :href="link.url" v-html="link.label" preserve-scroll
-                        class="px-3 py-1.5 text-label-medium rounded-lg transition-all"
+                        class="px-3 py-1.5 text-label-medium rounded-lg transition-all duration-200"
                         :class="link.active
                             ? 'bg-primary text-on-primary font-bold shadow-sm'
                             : 'bg-surface border border-outline-variant/50 text-on-surface-variant hover:bg-surface-container-high'" />
@@ -332,13 +342,14 @@ async function confirmCancel() {
                 class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
 
                 <div
-                    class="bg-surface rounded-2xl shadow-xl border border-outline-variant/20 w-full max-w-3xl max-h-[90vh] flex flex-col font-sans overflow-hidden">
+                    class="bg-surface rounded-3xl shadow-xl border border-outline-variant/20 w-full max-w-3xl max-h-[90vh] flex flex-col font-sans overflow-hidden">
 
                     <!-- Header modal -->
                     <div
-                        class="flex items-center justify-between px-6 py-5 border-b border-outline-variant/20 flex-shrink-0">
+                        class="flex items-center justify-between px-6 py-5 border-b border-outline-variant/20 bg-surface-container-low flex-shrink-0">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <div
+                                class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center shrink-0">
                                 <span class="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
                             </div>
                             <div>
@@ -349,7 +360,7 @@ async function confirmCancel() {
                             </div>
                         </div>
                         <button @click="closeModal"
-                            class="p-2 text-on-surface-variant hover:bg-surface-container-high hover:text-error rounded-full transition-colors">
+                            class="p-2 text-on-surface-variant hover:bg-surface-container-high hover:text-error rounded-full transition-colors duration-200">
                             <span class="material-symbols-outlined">close</span>
                         </button>
                     </div>
@@ -375,9 +386,12 @@ async function confirmCancel() {
 
                             <!-- Banner đã huỷ -->
                             <div v-if="selectedReceipt.status === 'cancelled'"
-                                class="bg-error/5 border border-error/20 rounded-xl p-4 flex items-start gap-3">
-                                <span class="material-symbols-outlined text-error mt-0.5">cancel</span>
-                                <div class="space-y-0.5">
+                                class="bg-error/5 border border-error/20 rounded-2xl p-4 flex items-start gap-3">
+                                <span
+                                    class="w-8 h-8 rounded-full bg-error/10 flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-error text-[18px]">cancel</span>
+                                </span>
+                                <div class="space-y-0.5 pt-1">
                                     <p class="text-body-medium font-bold text-on-surface">Phiếu nhập này đã bị huỷ</p>
                                     <p class="text-body-small text-on-surface-variant">Lý do: {{
                                         selectedReceipt.cancel_reason
@@ -391,31 +405,41 @@ async function confirmCancel() {
                             </div>
 
                             <!-- Thông tin chung -->
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5">
                                 <div class="bg-surface-container-low rounded-xl p-4 space-y-1">
-                                    <p class="text-label-small text-on-surface-variant font-bold">Ngày nhập</p>
+                                    <p
+                                        class="text-label-small text-on-surface-variant font-semibold uppercase tracking-wide">
+                                        Ngày nhập</p>
                                     <p class="text-body-medium text-on-surface">{{
                                         formatDate(selectedReceipt.created_at) }}</p>
                                 </div>
                                 <div class="bg-surface-container-low rounded-xl p-4 space-y-1">
-                                    <p class="text-label-small text-on-surface-variant font-bold">Nhà cung cấp</p>
+                                    <p
+                                        class="text-label-small text-on-surface-variant font-semibold uppercase tracking-wide">
+                                        Nhà cung cấp</p>
                                     <p class="text-body-medium text-on-surface font-bold">{{
                                         selectedReceipt.supplier_name ||
                                         '—' }}</p>
                                 </div>
                                 <div class="bg-surface-container-low rounded-xl p-4 space-y-1">
-                                    <p class="text-label-small text-on-surface-variant font-bold">Người tạo</p>
+                                    <p
+                                        class="text-label-small text-on-surface-variant font-semibold uppercase tracking-wide">
+                                        Người tạo</p>
                                     <p class="text-body-medium text-on-surface">{{ userDisplayName(selectedReceipt.user)
                                     }}</p>
                                 </div>
-                                <div class="bg-primary/10 rounded-xl p-4 space-y-1">
-                                    <p class="text-label-small text-primary font-bold">Tổng chi phí</p>
+                                <div class="bg-primary/5 border border-primary/15 rounded-xl p-4 space-y-1">
+                                    <p class="text-label-small text-primary font-semibold uppercase tracking-wide">Tổng
+                                        chi phí
+                                    </p>
                                     <p class="text-title-medium font-bold text-primary font-mono">{{
                                         formatNum(selectedReceipt.total_cost) }}₫</p>
                                 </div>
                                 <div v-if="selectedReceipt.note"
                                     class="col-span-2 md:col-span-4 bg-surface-container-low rounded-xl p-4 space-y-1">
-                                    <p class="text-label-small text-on-surface-variant font-bold">Ghi chú</p>
+                                    <p
+                                        class="text-label-small text-on-surface-variant font-semibold uppercase tracking-wide">
+                                        Ghi chú</p>
                                     <p class="text-body-medium text-on-surface italic">"{{ selectedReceipt.note }}"</p>
                                 </div>
                             </div>
@@ -426,11 +450,11 @@ async function confirmCancel() {
                                     class="text-label-medium font-bold text-on-surface-variant uppercase tracking-wider mb-3">
                                     Danh sách nguyên liệu
                                 </p>
-                                <div class="border border-outline-variant/20 rounded-xl overflow-hidden">
+                                <div class="border border-outline-variant/15 rounded-xl overflow-hidden">
                                     <table class="w-full text-left border-collapse">
                                         <thead>
                                             <tr
-                                                class="bg-surface-container border-b border-outline-variant/20 text-label-large text-on-surface-variant">
+                                                class="bg-surface-container border-b border-outline-variant/15 text-label-large text-on-surface-variant">
                                                 <th class="px-4 py-3 font-bold">Nguyên liệu</th>
                                                 <th class="px-4 py-3 font-bold text-right">SL</th>
                                                 <th class="px-4 py-3 font-bold text-center">ĐV</th>
@@ -442,7 +466,7 @@ async function confirmCancel() {
                                         </thead>
                                         <tbody class="divide-y divide-outline-variant/10">
                                             <tr v-for="item in selectedReceipt.details" :key="item.id"
-                                                class="hover:bg-surface-container-low/50 transition-colors">
+                                                class="hover:bg-surface-container-low/50 transition-colors duration-200">
                                                 <td class="px-4 py-3 font-bold text-on-surface text-body-medium">
                                                     {{ item.material?.material_name || '— (đã xoá)' }}
                                                 </td>
@@ -456,7 +480,7 @@ async function confirmCancel() {
                                                         {{ item.material?.input_unit || '—' }}
                                                     </span>
                                                 </td>
-                                                <td class="px-4 py-3 text-right text-gray-500">
+                                                <td class="px-4 py-3 text-right text-on-surface-variant/70">
                                                     {{ item.expiry_date ? item.expiry_date.slice(0,
                                                         10).split('-').reverse().join('/') : '—'
                                                     }}
@@ -472,7 +496,7 @@ async function confirmCancel() {
                                             </tr>
                                         </tbody>
                                         <tfoot>
-                                            <tr class="border-t-2 border-outline-variant/20 bg-surface-container-low">
+                                            <tr class="border-t-2 border-outline-variant/15 bg-surface-container-low">
                                                 <td colspan="4"
                                                     class="px-4 py-3 text-right font-bold text-on-surface-variant text-label-medium uppercase">
                                                     Tổng cộng
@@ -489,7 +513,7 @@ async function confirmCancel() {
 
                             <!-- Form xác nhận huỷ -->
                             <div v-if="showCancelForm"
-                                class="bg-error/5 border border-error/25 rounded-xl p-5 space-y-3">
+                                class="bg-error/5 border border-error/25 rounded-2xl p-5 space-y-3">
                                 <div class="flex items-start gap-2">
                                     <span class="material-symbols-outlined text-error mt-0.5">warning</span>
                                     <div>
@@ -502,14 +526,14 @@ async function confirmCancel() {
                                     </div>
                                 </div>
                                 <input v-model="cancelReason" type="text" placeholder="Lý do huỷ (tuỳ chọn)"
-                                    class="w-full border border-outline-variant bg-surface rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-error/20 transition-all" />
+                                    class="w-full border border-outline-variant/60 bg-surface rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-error/20 focus:border-error transition-all duration-200" />
                                 <div class="flex justify-end gap-2">
                                     <button @click="showCancelForm = false"
-                                        class="px-4 py-2 text-label-medium font-bold text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors">
+                                        class="px-4 py-2 text-label-medium font-bold text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors duration-200">
                                         Không, giữ lại
                                     </button>
                                     <button @click="confirmCancel" :disabled="cancelling"
-                                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-error text-on-error font-bold text-label-medium rounded-xl hover:bg-error/90 disabled:opacity-50 transition-colors">
+                                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-error text-on-error font-bold text-label-medium rounded-xl hover:bg-error/90 disabled:opacity-50 transition-colors duration-200">
                                         <span v-if="cancelling"
                                             class="material-symbols-outlined text-[16px] animate-spin">sync</span>
                                         {{ cancelling ? 'Đang huỷ...' : 'Xác nhận huỷ phiếu' }}
@@ -521,22 +545,22 @@ async function confirmCancel() {
 
                     <!-- Footer modal -->
                     <div
-                        class="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-between flex-shrink-0">
+                        class="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-between flex-shrink-0 bg-surface">
                         <div v-if="selectedReceipt?.status === 'active' && !showCancelForm" class="flex gap-2">
                             <Link :href="route('admin.kho.nhap.edit', selectedReceipt.id)"
-                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 font-bold rounded-full transition-colors text-label-medium">
+                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 font-bold rounded-full transition-colors duration-200 text-label-medium">
                                 <span class="material-symbols-outlined text-[16px]">edit</span>
                                 Sửa phiếu
                             </Link>
                             <button @click="openCancelForm"
-                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-error/10 text-error hover:bg-error/20 font-bold rounded-full transition-colors text-label-medium">
+                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-error/10 text-error hover:bg-error/20 font-bold rounded-full transition-colors duration-200 text-label-medium">
                                 <span class="material-symbols-outlined text-[16px]">delete</span>
                                 Huỷ phiếu
                             </button>
                         </div>
                         <div v-else></div>
                         <button @click="closeModal"
-                            class="px-5 py-2 bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-bold rounded-full transition-colors text-label-medium">
+                            class="px-5 py-2 bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-bold rounded-full transition-colors duration-200 text-label-medium">
                             Đóng
                         </button>
                     </div>

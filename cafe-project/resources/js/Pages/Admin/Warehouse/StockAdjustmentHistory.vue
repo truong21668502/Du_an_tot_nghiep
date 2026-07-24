@@ -71,7 +71,6 @@ function unitLabel(material) {
     return material?.input_unit || material?.base_unit || ''
 }
 
-// Tổng hợp số liệu nhanh cho summary bar
 const summary = computed(() => {
     const data = props.adjustments.data
     const total = data.length
@@ -87,111 +86,134 @@ const hasActiveFilters = computed(() =>
 
 <template>
     <AdminLayout title="Lịch Sử Điều Chỉnh Tồn Kho">
-        <div class="space-y-5 font-sans">
+        <div class="space-y-6 font-sans">
 
             <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div class="space-y-1">
-                    <div class="flex items-center gap-2">
+                <div class="space-y-2.5">
+                    <div class="flex items-center gap-1.5">
                         <Link :href="route('admin.kho.index')"
-                            class="inline-flex items-center gap-1 text-label-medium text-on-surface-variant hover:text-primary transition-colors">
+                            class="inline-flex items-center gap-1 text-label-medium text-on-surface-variant hover:text-primary transition-colors duration-200">
                             <span class="material-symbols-outlined text-sm">arrow_back</span>
                             Kho
                         </Link>
                         <span class="text-outline-variant text-label-small">/</span>
-                        <span class="text-label-medium text-on-surface-variant">Điều chỉnh tồn kho</span>
+                        <span class="text-label-medium text-on-surface font-medium">Điều chỉnh tồn kho</span>
                     </div>
-                    <h1 class="text-2xl font-bold text-on-surface text-primary mt-2"><span class="material-symbols-outlined text-primary">inventory_2</span> LỊCH SỬ ĐIỀU CHỈNH TỒN KHO</h1>
+                    <div class="flex items-center gap-3.5">
+                        <div
+                            class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
+                            <span class="material-symbols-outlined text-on-primary text-[24px]">inventory_2</span>
+                        </div>
+                        <div>
+                            <h1
+                                class="text-headline-md font-bold text-on-surface text-2xl leading-tight tracking-tight">
+                                Lịch sử điều chỉnh tồn kho
+                            </h1>
+                            <p class="text-body-small text-on-surface-variant mt-0.5">
+                                Theo dõi kiểm kê, thất thoát và các thay đổi tồn kho theo thời gian
+                            </p>
+                        </div>
+                    </div>
                 </div>
                 <Link :href="route('admin.kho.dieu-chinh.create')"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 rounded-full font-bold transition-colors shadow-sm self-start sm:self-auto">
+                    class="inline-flex items-center gap-2 px-5 py-3 bg-primary text-on-primary hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0 rounded-full font-bold transition-all duration-200 shadow-sm shadow-primary/20 self-start sm:self-auto shrink-0">
                     <span class="material-symbols-outlined text-[18px]">add</span>
                     Điều chỉnh mới
                 </Link>
             </div>
 
             <!-- Summary cards -->
-            <div class="grid grid-cols-3 gap-3">
-                <div class="bg-surface border border-outline-variant/20 rounded-2xl p-4 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-primary text-[20px]">history</span>
+            <div class="grid grid-cols-3 gap-3.5">
+                <div
+                    class="relative overflow-hidden bg-surface border border-outline-variant/15 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div class="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-primary text-[22px]">history</span>
                     </div>
-                    <div>
-                        <p class="text-label-small text-on-surface-variant">Trang này</p>
-                        <p class="text-title-large font-bold text-on-surface font-mono">{{ summary.total }}</p>
-                    </div>
-                </div>
-                <div class="bg-surface border border-outline-variant/20 rounded-2xl p-4 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-tertiary/10 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-tertiary text-[20px]">trending_up</span>
-                    </div>
-                    <div>
-                        <p class="text-label-small text-on-surface-variant">Tăng tồn</p>
-                        <p class="text-title-large font-bold text-tertiary font-mono">{{ summary.increases }}</p>
+                    <div class="min-w-0">
+                        <p class="text-label-small text-on-surface-variant font-semibold uppercase tracking-wide">Trang
+                            này</p>
+                        <p class="text-title-large font-bold text-on-surface font-mono leading-tight">{{ summary.total
+                            }}</p>
                     </div>
                 </div>
-                <div class="bg-surface border border-outline-variant/20 rounded-2xl p-4 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-error text-[20px]">trending_down</span>
+                <div
+                    class="relative overflow-hidden bg-surface border border-outline-variant/15 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div class="w-11 h-11 rounded-2xl bg-tertiary/10 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-tertiary text-[22px]">trending_up</span>
                     </div>
-                    <div>
-                        <p class="text-label-small text-on-surface-variant">Giảm tồn</p>
-                        <p class="text-title-large font-bold text-error font-mono">{{ summary.decreases }}</p>
+                    <div class="min-w-0">
+                        <p class="text-label-small text-on-surface-variant font-semibold uppercase tracking-wide">Tăng
+                            tồn</p>
+                        <p class="text-title-large font-bold text-tertiary font-mono leading-tight">{{ summary.increases
+                            }}</p>
+                    </div>
+                </div>
+                <div
+                    class="relative overflow-hidden bg-surface border border-outline-variant/15 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div class="w-11 h-11 rounded-2xl bg-error/10 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-error text-[22px]">trending_down</span>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-label-small text-on-surface-variant font-semibold uppercase tracking-wide">Giảm
+                            tồn</p>
+                        <p class="text-title-large font-bold text-error font-mono leading-tight">{{ summary.decreases }}
+                        </p>
                     </div>
                 </div>
             </div>
 
             <!-- Bộ lọc -->
-            <div class="bg-surface rounded-2xl border border-outline-variant/20 shadow-sm p-5">
+            <div class="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm p-5">
                 <div class="flex items-center justify-between mb-4">
                     <p class="text-label-medium font-bold text-on-surface-variant flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-[16px]">filter_list</span>
+                        <span class="material-symbols-outlined text-[18px] text-primary">filter_list</span>
                         Lọc kết quả
                     </p>
                     <button v-if="hasActiveFilters" @click="resetFilters"
-                        class="text-label-small text-primary hover:text-primary/70 transition-colors flex items-center gap-1">
+                        class="text-label-small text-primary hover:text-primary/70 transition-colors duration-200 flex items-center gap-1 font-semibold">
                         <span class="material-symbols-outlined text-[14px]">close</span>
                         Xoá bộ lọc
                     </button>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3.5">
                     <div class="flex flex-col gap-1.5">
-                        <label class="text-label-small text-on-surface-variant font-bold">Nguyên liệu</label>
+                        <label class="text-label-small text-on-surface-variant font-semibold">Nguyên liệu</label>
                         <select v-model="filters.material_id" @change="applyFilters"
-                            class="w-full border border-outline-variant bg-surface-container-low rounded-xl px-3 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                            class="w-full border border-outline-variant/60 bg-surface-container-low rounded-xl px-3 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 cursor-pointer">
                             <option value="">Tất cả</option>
                             <option v-for="m in materials" :key="m.id" :value="m.id">{{ m.material_name }}</option>
                         </select>
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <label class="text-label-small text-on-surface-variant font-bold">Lý do</label>
+                        <label class="text-label-small text-on-surface-variant font-semibold">Lý do</label>
                         <select v-model="filters.reason" @change="applyFilters"
-                            class="w-full border border-outline-variant bg-surface-container-low rounded-xl px-3 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
+                            class="w-full border border-outline-variant/60 bg-surface-container-low rounded-xl px-3 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 cursor-pointer">
                             <option value="">Tất cả</option>
                             <option v-for="(label, value) in reasonLabels" :key="value" :value="value">{{ label }}
                             </option>
                         </select>
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <label class="text-label-small text-on-surface-variant font-bold">Từ ngày</label>
+                        <label class="text-label-small text-on-surface-variant font-semibold">Từ ngày</label>
                         <input v-model="filters.from_date" @change="applyFilters" type="date"
-                            class="w-full border border-outline-variant bg-surface-container-low rounded-xl px-3 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
+                            class="w-full border border-outline-variant/60 bg-surface-container-low rounded-xl px-3 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200" />
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <label class="text-label-small text-on-surface-variant font-bold">Đến ngày</label>
+                        <label class="text-label-small text-on-surface-variant font-semibold">Đến ngày</label>
                         <input v-model="filters.to_date" @change="applyFilters" type="date"
-                            class="w-full border border-outline-variant bg-surface-container-low rounded-xl px-3 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
+                            class="w-full border border-outline-variant/60 bg-surface-container-low rounded-xl px-3 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200" />
                     </div>
                 </div>
             </div>
 
-            <!-- Danh sách dạng card thay vì bảng ngang khó đọc -->
-            <div class="space-y-2">
+            <!-- Danh sách -->
+            <div class="space-y-3">
 
                 <div v-if="adjustments.data.length === 0"
-                    class="bg-surface border border-outline-variant/20 rounded-2xl p-16 text-center text-on-surface-variant">
+                    class="bg-surface-container-low/60 border-2 border-dashed border-outline-variant/30 rounded-2xl p-16 text-center text-on-surface-variant">
                     <span class="material-symbols-outlined text-[48px] mb-3 block text-outline">manage_search</span>
-                    <p class="text-body-large font-medium">Chưa có điều chỉnh nào.</p>
+                    <p class="text-body-large font-semibold text-on-surface">Chưa có điều chỉnh nào</p>
                     <p class="text-body-medium mt-1">
                         {{ hasActiveFilters
                             ? 'Thử thay đổi bộ lọc để xem kết quả khác.' :
@@ -201,17 +223,17 @@ const hasActiveFilters = computed(() =>
                 </div>
 
                 <div v-for="a in adjustments.data" :key="a.id"
-                    class="bg-surface border border-outline-variant/20 rounded-2xl p-5 hover:border-outline-variant/40 hover:shadow-sm transition-all">
+                    class="group bg-surface border border-outline-variant/15 rounded-2xl p-5 hover:border-primary/25 hover:shadow-md transition-all duration-200">
 
                     <div class="flex items-start justify-between gap-4">
 
                         <!-- Trái: Icon chênh lệch + tên nguyên liệu -->
                         <div class="flex items-start gap-4 min-w-0">
 
-                            <!-- Icon chênh lệch -->
-                            <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" :class="Number(a.change_amount) > 0
-                                ? 'bg-tertiary/10'
-                                : (Number(a.change_amount) < 0 ? 'bg-error/10' : 'bg-surface-container-high')">
+                            <div class="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+                                :class="Number(a.change_amount) > 0
+                                    ? 'bg-tertiary/10'
+                                    : (Number(a.change_amount) < 0 ? 'bg-error/10' : 'bg-surface-container-high')">
                                 <span class="material-symbols-outlined text-[22px]" :class="Number(a.change_amount) > 0
                                     ? 'text-tertiary'
                                     : (Number(a.change_amount) < 0 ? 'text-error' : 'text-on-surface-variant')">
@@ -220,13 +242,11 @@ const hasActiveFilters = computed(() =>
                             </div>
 
                             <div class="min-w-0">
-                                <!-- Tên nguyên liệu -->
                                 <p class="text-body-large font-bold text-on-surface truncate">
                                     {{ a.material?.material_name || '—' }}
                                 </p>
 
-                                <!-- Số liệu: Trước → Sau -->
-                                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                                     <span class="font-mono text-body-medium text-on-surface-variant">
                                         {{ toInputUnit(a.quantity_before, a.material) }} {{ unitLabel(a.material) }}
                                     </span>
@@ -236,9 +256,8 @@ const hasActiveFilters = computed(() =>
                                         {{ toInputUnit(a.quantity_after, a.material) }} {{ unitLabel(a.material) }}
                                     </span>
 
-                                    <!-- Chênh lệch badge -->
                                     <span
-                                        class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-label-small font-bold"
+                                        class="inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-label-small font-bold"
                                         :class="Number(a.change_amount) > 0
                                             ? 'bg-tertiary/10 text-tertiary'
                                             : (Number(a.change_amount) < 0 ? 'bg-error/10 text-error' : 'bg-surface-container-high text-on-surface-variant')">
@@ -247,15 +266,13 @@ const hasActiveFilters = computed(() =>
                                     </span>
                                 </div>
 
-                                <!-- Meta: lý do + người thực hiện + ghi chú -->
-                                <div class="flex items-center gap-3 mt-2 flex-wrap">
+                                <div class="flex items-center gap-2.5 mt-2.5 flex-wrap">
                                     <span
-                                        class="inline-flex items-center gap-1 text-label-small text-on-surface-variant">
+                                        class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface-container-low text-label-small text-on-surface-variant font-medium">
                                         <span class="material-symbols-outlined text-[14px]">{{ reasonIcons[a.reason] ||
                                             'info' }}</span>
                                         {{ reasonLabels[a.reason] || a.reason }}
                                     </span>
-                                    <span class="w-1 h-1 rounded-full bg-outline-variant flex-shrink-0"></span>
                                     <span
                                         class="inline-flex items-center gap-1 text-label-small text-on-surface-variant">
                                         <span class="material-symbols-outlined text-[14px]">person</span>
@@ -275,7 +292,8 @@ const hasActiveFilters = computed(() =>
 
                         <!-- Phải: Thời gian -->
                         <div class="text-right flex-shrink-0">
-                            <p class="text-label-small text-on-surface-variant whitespace-nowrap">
+                            <p
+                                class="text-label-small text-on-surface-variant whitespace-nowrap bg-surface-container-low px-2.5 py-1 rounded-lg">
                                 {{ formatDate(a.created_at) }}
                             </p>
                         </div>
@@ -287,7 +305,7 @@ const hasActiveFilters = computed(() =>
             <div v-if="adjustments.links?.length > 3" class="flex items-center justify-center gap-1 pb-2">
                 <template v-for="(link, idx) in adjustments.links" :key="idx">
                     <Link v-if="link.url" :href="link.url" v-html="link.label" preserve-scroll
-                        class="px-3 py-1.5 text-label-medium rounded-lg transition-all"
+                        class="px-3 py-1.5 text-label-medium rounded-lg transition-all duration-200"
                         :class="link.active
                             ? 'bg-primary text-on-primary font-bold shadow-sm'
                             : 'bg-surface border border-outline-variant/50 text-on-surface-variant hover:bg-surface-container-high'" />

@@ -103,20 +103,33 @@ function submit() {
 
             <div class="flex items-center gap-3">
                 <Link :href="route('admin.kho.dieu-chinh.index')"
-                    class="inline-flex items-center gap-1 text-label-large text-on-surface-variant hover:text-primary transition-colors">
+                    class="inline-flex items-center gap-1 text-label-large text-on-surface-variant hover:text-primary transition-colors duration-200">
                     <span class="material-symbols-outlined text-md">arrow_back</span> Quay lại lịch sử điều chỉnh
                 </Link>
             </div>
 
-            <h1 class="text-headline-md font-bold text-primary text-3xl"><span class="material-symbols-outlined text-primary">inventory_2</span> ĐIỀU CHỈNH TỒN KHO (KIỂM KÊ)</h1>
+            <div class="flex items-center gap-3.5">
+                <div
+                    class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
+                    <span class="material-symbols-outlined text-on-primary text-[24px]">inventory_2</span>
+                </div>
+                <div>
+                    <h1 class="text-headline-md font-bold text-on-surface text-2xl leading-tight tracking-tight">
+                        Điều chỉnh tồn kho (kiểm kê)
+                    </h1>
+                    <p class="text-body-small text-on-surface-variant mt-0.5">
+                        Cập nhật số lượng thực tế và ngưỡng cảnh báo cho nguyên liệu
+                    </p>
+                </div>
+            </div>
 
-            <div class="bg-surface w-full rounded-2xl border border-outline-variant/20 shadow-sm p-6 space-y-5">
+            <div class="bg-surface w-full rounded-2xl border border-outline-variant/15 shadow-sm p-6 space-y-5">
 
                 <!-- Chọn nguyên liệu -->
                 <div class="flex flex-col gap-1.5">
                     <label class="text-label-medium text-on-surface-variant font-bold">Nguyên liệu</label>
                     <select v-model="form.material_id" @change="onMaterialChange"
-                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface outline-none text-body-medium focus:ring-2 focus:ring-primary/20 transition-all">
+                        class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low outline-none text-body-medium focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 cursor-pointer">
                         <option value="">-- Chọn nguyên liệu --</option>
                         <option v-for="m in materials" :key="m.id" :value="m.id">{{ m.material_name }}</option>
                     </select>
@@ -127,15 +140,15 @@ function submit() {
                 </div>
 
                 <!-- Thông tin tồn kho hiện tại (hiển thị theo input_unit) -->
-                <div v-if="selectedMaterial"
-                    class="bg-surface-container-low border border-outline-variant/20 rounded-xl p-4 space-y-1">
-                    <p class="text-body-medium text-on-surface-variant">
+                <div v-if="selectedMaterial" class="bg-primary/5 border border-primary/15 rounded-xl p-4 space-y-1">
+                    <p class="text-body-medium text-on-surface-variant flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-primary text-[18px]">database</span>
                         Tồn hệ thống hiện tại:
                         <span class="font-mono font-bold text-on-surface">
                             {{ formatNum(currentStockDisplay) }} {{ selectedMaterial.input_unit }}
                         </span>
                     </p>
-                    <p class="text-body-small text-on-surface-variant/60 font-mono">
+                    <p class="text-body-small text-on-surface-variant/60 font-mono pl-[26px]">
                         (= {{ formatNum(selectedMaterial.quantity_in_stock) }} {{ selectedMaterial.base_unit }}
                         trong DB · tỉ lệ: 1 {{ selectedMaterial.input_unit }}
                         = {{ formatNum(selectedMaterial.exchange_rate) }} {{ selectedMaterial.base_unit }})
@@ -147,12 +160,12 @@ function submit() {
                     <label class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1">
                         Số lượng thực tế đếm được
                         <span v-if="selectedMaterial"
-                            class="text-primary bg-primary/10 px-1.5 py-0.5 rounded text-[10px]">
+                            class="text-primary bg-primary/10 px-1.5 py-0.5 rounded text-[10px] font-bold">
                             {{ selectedMaterial.input_unit }}
                         </span>
                     </label>
                     <input v-model="form.actual_quantity" type="number" min="0" step="0.01" placeholder="0"
-                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium font-mono" />
+                        class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium font-mono" />
 
                     <!-- Preview quy đổi sang base_unit để người dùng biết DB sẽ lưu gì -->
                     <p v-if="selectedMaterial && form.actual_quantity !== ''"
@@ -168,68 +181,77 @@ function submit() {
                 </div>
 
                 <!-- Chênh lệch (theo input_unit) -->
-                <div v-if="diff !== null" class="rounded-xl p-4 text-body-medium font-bold flex items-center gap-2"
-                    :class="diff === 0
-                        ? 'bg-surface-container-low text-on-surface-variant'
-                        : (diff > 0 ? 'bg-tertiary-container/40 text-on-tertiary-container' : 'bg-error-container/30 text-error')">
-                    <span class="material-symbols-outlined">
-                        {{ diff === 0 ? 'check_circle' : (diff > 0 ? 'trending_up' : 'trending_down') }}
-                    </span>
-                    <span>
-                        Chênh lệch:
-                        <span class="font-mono font-bold">
-                            {{ diff > 0 ? '+' : '' }}{{ formatNum(Number(diff.toFixed(2))) }} {{
-                                selectedMaterial?.input_unit }}
+                <transition enter-active-class="transition duration-200 ease-out"
+                    enter-from-class="opacity-0 -translate-y-1" enter-to-class="opacity-100 translate-y-0">
+                    <div v-if="diff !== null"
+                        class="rounded-xl p-4 text-body-medium font-bold flex items-center gap-2.5"
+                        :class="diff === 0
+                            ? 'bg-surface-container-low text-on-surface-variant'
+                            : (diff > 0 ? 'bg-tertiary-container/40 text-on-tertiary-container' : 'bg-error-container/30 text-error')">
+                        <span class="material-symbols-outlined">
+                            {{ diff === 0 ? 'check_circle' : (diff > 0 ? 'trending_up' : 'trending_down') }}
                         </span>
-                        <span v-if="diff > 0"> (thực tế nhiều hơn hệ thống)</span>
-                        <span v-else-if="diff < 0"> (hao hụt so với hệ thống)</span>
-                        <span v-else> (khớp với hệ thống)</span>
-                    </span>
+                        <span>
+                            Chênh lệch:
+                            <span class="font-mono font-bold">
+                                {{ diff > 0 ? '+' : '' }}{{ formatNum(Number(diff.toFixed(2))) }} {{
+                                    selectedMaterial?.input_unit }}
+                            </span>
+                            <span v-if="diff > 0" class="font-medium"> (thực tế nhiều hơn hệ thống)</span>
+                            <span v-else-if="diff < 0" class="font-medium"> (hao hụt so với hệ thống)</span>
+                            <span v-else class="font-medium"> (khớp với hệ thống)</span>
+                        </span>
+                    </div>
+                </transition>
+
+                <!-- Ngưỡng tồn kho tối thiểu / tối đa -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-1.5">
+                        <label
+                            class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1 flex-wrap">
+                            Ngưỡng tồn tối thiểu
+                            <span v-if="selectedMaterial"
+                                class="text-primary bg-primary/10 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                {{ selectedMaterial.input_unit }}
+                            </span>
+                            <span class="text-label-small text-on-surface-variant font-normal">(tuỳ chọn)</span>
+                        </label>
+                        <input v-model="form.min_stock" type="number" min="0" step="0.01"
+                            :placeholder="selectedMaterial ? `Hiện tại: ${currentMinStockDisplay || 0} ${selectedMaterial.input_unit}` : '0'"
+                            class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium font-mono" />
+                        <p class="text-label-small text-on-surface-variant/60">
+                            Để trống = giữ nguyên. Cảnh báo khi tồn ≤ ngưỡng này.
+                        </p>
+                        <span v-if="form.errors.min_stock"
+                            class="text-body-small text-error flex items-center gap-0.5 mt-1">
+                            <span class="material-symbols-outlined text-sm">error</span>{{ form.errors.min_stock }}
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label
+                            class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1 flex-wrap">
+                            Ngưỡng tồn tối đa
+                            <span v-if="selectedMaterial"
+                                class="text-primary bg-primary/10 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                {{ selectedMaterial.input_unit }}
+                            </span>
+                            <span class="text-label-small text-on-surface-variant font-normal">(tuỳ chọn)</span>
+                        </label>
+                        <input v-model="form.max_stock" type="number" min="0" step="0.01"
+                            :placeholder="selectedMaterial ? `Hiện tại: ${currentMaxStockDisplay || 0} ${selectedMaterial.input_unit}` : '0'"
+                            class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium font-mono" />
+                        <p class="text-label-small text-on-surface-variant/60">
+                            Để trống = giữ nguyên. Cảnh báo khi nhập vượt mức tồn trữ.
+                        </p>
+                        <span v-if="form.errors.max_stock"
+                            class="text-body-small text-error flex items-center gap-0.5 mt-1">
+                            <span class="material-symbols-outlined text-sm">error</span>{{ form.errors.max_stock }}
+                        </span>
+                    </div>
                 </div>
 
-                <!-- Ngưỡng tồn kho tối thiểu -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1">
-                        Ngưỡng tồn kho tối thiểu
-                        <span v-if="selectedMaterial"
-                            class="text-primary bg-primary/10 px-1.5 py-0.5 rounded text-[10px]">
-                            {{ selectedMaterial.input_unit }}
-                        </span>
-                        <span class="text-label-small text-on-surface-variant font-normal ml-1">(tuỳ chọn)</span>
-                    </label>
-                    <input v-model="form.min_stock" type="number" min="0" step="0.01"
-                        :placeholder="selectedMaterial ? `Hiện tại: ${currentMinStockDisplay || 0} ${selectedMaterial.input_unit}` : '0'"
-                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium font-mono" />
-                    <p class="text-label-small text-on-surface-variant/60">
-                        Để trống = giữ nguyên ngưỡng cũ. Hệ thống cảnh báo khi tồn kho ≤ ngưỡng này.
-                    </p>
-                    <span v-if="form.errors.min_stock"
-                        class="text-body-small text-error flex items-center gap-0.5 mt-1">
-                        <span class="material-symbols-outlined text-sm">error</span>{{ form.errors.min_stock }}
-                    </span>
-                </div>
-
-                <!-- Ngưỡng tồn kho tối đa -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1">
-                        Ngưỡng tồn kho tối đa
-                        <span v-if="selectedMaterial"
-                            class="text-primary bg-primary/10 px-1.5 py-0.5 rounded text-[10px]">
-                            {{ selectedMaterial.input_unit }}
-                        </span>
-                        <span class="text-label-small text-on-surface-variant font-normal ml-1">(tuỳ chọn)</span>
-                    </label>
-                    <input v-model="form.max_stock" type="number" min="0" step="0.01"
-                        :placeholder="selectedMaterial ? `Hiện tại: ${currentMaxStockDisplay || 0} ${selectedMaterial.input_unit}` : '0'"
-                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium font-mono" />
-                    <p class="text-label-small text-on-surface-variant/60">
-                        Để trống = giữ nguyên ngưỡng cũ. Dùng để cảnh báo nhập kho vượt mức tồn trữ hợp lý.
-                    </p>
-                    <span v-if="form.errors.max_stock"
-                        class="text-body-small text-error flex items-center gap-0.5 mt-1">
-                        <span class="material-symbols-outlined text-sm">error</span>{{ form.errors.max_stock }}
-                    </span>
-                </div>
+                <!-- Hạn sử dụng -->
                 <div v-if="selectedMaterial" class="flex flex-col gap-1.5">
                     <label class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1">
                         Hạn sử dụng
@@ -237,10 +259,12 @@ function submit() {
                             chọn)</span>
                     </label>
                     <input v-model="form.expiry_date" type="date" :disabled="!form.import_receipt_detail_id"
-                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium disabled:opacity-50" />
+                        class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium disabled:opacity-50 disabled:cursor-not-allowed" />
 
-                    <p v-if="selectedMaterial.expiry_is_past" class="text-label-small text-error font-bold">
-                        ⚠ Lô này đã hết hạn ({{ selectedMaterial.expiry_date }}).
+                    <p v-if="selectedMaterial.expiry_is_past"
+                        class="text-label-small text-error font-bold flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[14px]">warning</span>
+                        Lô này đã hết hạn ({{ selectedMaterial.expiry_date }}).
                     </p>
                     <p v-else-if="!form.import_receipt_detail_id" class="text-label-small text-on-surface-variant/60">
                         Nguyên liệu này chưa có lô nhập kho nào để gắn hạn sử dụng.
@@ -251,7 +275,7 @@ function submit() {
                 <div class="flex flex-col gap-1.5">
                     <label class="text-label-medium text-on-surface-variant font-bold">Lý do điều chỉnh</label>
                     <select v-model="form.reason"
-                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface outline-none text-body-medium focus:ring-2 focus:ring-primary/20 transition-all">
+                        class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low outline-none text-body-medium focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 cursor-pointer">
                         <option v-for="r in reasons" :key="r.value" :value="r.value">{{ r.label }}</option>
                     </select>
                     <span v-if="form.errors.reason" class="text-body-small text-error flex items-center gap-0.5 mt-1">
@@ -264,12 +288,12 @@ function submit() {
                     <label class="text-label-medium text-on-surface-variant font-bold">Ghi chú (tuỳ chọn)</label>
                     <textarea v-model="form.note" rows="3"
                         placeholder="VD: Đếm lại kho ngày 29/06, phát hiện thiếu 2kg..."
-                        class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all text-body-medium"></textarea>
+                        class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium resize-none"></textarea>
                 </div>
 
-                <div class="flex justify-end pt-2 border-t border-outline-variant/20">
+                <div class="flex justify-end pt-2 border-t border-outline-variant/15">
                     <button @click="submit" :disabled="form.processing"
-                        class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-full shadow-md hover:bg-primary/90 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+                        class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-full shadow-sm shadow-primary/20 hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-sm">
                         <span v-if="form.processing" class="material-symbols-outlined animate-spin">sync</span>
                         <span v-else class="material-symbols-outlined">save</span>
                         {{ form.processing ? 'Đang lưu...' : 'Lưu điều chỉnh' }}
