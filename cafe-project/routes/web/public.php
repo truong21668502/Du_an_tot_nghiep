@@ -77,7 +77,7 @@ Route::middleware('auth')->group(function () {
 
 
 // !!!!!!!!!!!!!!! KHÔNG TỰ TIỆN RỜ VÀO QUAN TRỌNG !!!!!!!!!!!!!!!!!!!!!!!!!!
-Route::post('/chat', [ChatController::class, 'message'])->name('chat.message');
+// Route::post('/chat', [ChatController::class, 'message'])->name('chat.message');
 Route::get('/chat-test', function () {
     return Inertia::render('ChatTest');
 });

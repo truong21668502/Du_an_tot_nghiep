@@ -60,6 +60,8 @@ class ChatAiService
             $payload['tool_choice'] = 'auto';
         }
 
+        dd($payload);
+
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . config('ai.openrouter_key'),
             'Content-Type'  => 'application/json',

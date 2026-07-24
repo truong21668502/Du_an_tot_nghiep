@@ -125,7 +125,7 @@ const handleClickOutside = (event) => {
     <!-- Nút yêu thích -->
     <button
       @click.stop="toggleFavorite(item.id)"
-      :disabled="favoriting"
+      :disabled="loading"
       class="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-surface/80 backdrop-blur-sm border border-outline-variant/30 flex items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-surface"
       :title="isFavorited ? 'Xóa yêu thích' : 'Thêm yêu thích'"
     >
