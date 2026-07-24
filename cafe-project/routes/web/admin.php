@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\RecipeController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StockMovementController;
 use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\ProhibitedWordController;
 
 /*
 |--------------------------------------------------------------------------
@@ -154,4 +155,11 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::delete('cong-thuc/nguyen-lieu/{recipe}', [RecipeController::class, 'destroy'])->name('recipes.destroy');
     Route::post('cong-thuc/{fromVariant}/sao-chep/{toVariant}', [RecipeController::class, 'copy'])
         ->name('recipes.copy');
+
+    // quản lý từ khoá vi phạm
+    Route::get('/tu-khoa-vi-pham', [ProhibitedWordController::class, 'index'])->name('prohibited-words.index');
+    Route::post('/tu-khoa-vi-pham', [ProhibitedWordController::class, 'store'])->name('prohibited-words.store');
+    Route::put('/tu-khoa-vi-pham/{prohibited_word}', [ProhibitedWordController::class, 'update'])->name('prohibited-words.update');
+    Route::delete('/tu-khoa-vi-pham/{prohibited_word}', [ProhibitedWordController::class, 'destroy'])->name('prohibited-words.destroy');
+    Route::patch('/tu-khoa-vi-pham/{prohibited_word}/toggle', [ProhibitedWordController::class, 'toggleActive'])->name('prohibited-words.toggle');
 });

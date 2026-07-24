@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Customer;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\ProhibitedWord;
 
 class UpdateReviewRequest extends FormRequest
 {
@@ -16,7 +17,24 @@ class UpdateReviewRequest extends FormRequest
     {
         return [
             'rating'  => ['sometimes', 'required', 'integer', 'between:1,5'],
-            'comment' => ['required', 'string', 'min:10', 'max:500'],
+            'comment' => ['required', 'string', 'min:5', 'max:500',
+                function ($attribute, $value, $fail) {
+                    if (empty($value)) return;
+                    
+                    $prohibitedWords = ProhibitedWord::where('is_active', true)
+                        ->pluck('word')
+                        ->toArray();
+                    
+                    foreach ($prohibitedWords as $word) {
+                        $pattern = '/\b' . preg_quote($word, '/') . '\b/iu';
+                        
+                        if (preg_match($pattern, $value)) {
+                            $fail("Bình luận chứa từ ngữ không phù hợp. Vui lòng kiểm tra lại.");
+                            return;
+                        }
+                    }
+                },
+        ],
         ];
     }
 
@@ -25,7 +43,7 @@ class UpdateReviewRequest extends FormRequest
         return [
             'rating.between' => 'Điểm đánh giá phải từ 1 đến 5.',
             'comment.max'    => 'Nội dung không vượt quá 500 ký tự.',
-            'comment.min'    => 'Nội dung phải có ít nhất 10 ký tự.',
+            'comment.min'    => 'Nội dung phải có ít nhất 5 ký tự.',
             'comment.required' => 'Nội dung đánh giá là bắt buộc.',
         ];
     }

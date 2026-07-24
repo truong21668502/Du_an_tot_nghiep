@@ -5,13 +5,22 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\PostComment;
+use App\Models\ProhibitedWord;
 
 class PostCommentController extends Controller
 {
     public function store(Request $request, int $postId)
     {
         $validated = $request->validate([
-            'content' => 'required|string|max:1000',
+            'content' => [
+                'required',
+                'string',
+                'max:1000',
+                // Gọi hàm private bằng cách truyền tham số vào Closure
+                function ($attribute, $value, $fail) {
+                    $this->requestContent($attribute, $value, $fail);
+                }
+            ],
             'rating' => 'nullable|integer|min:1|max:5',
         ], [
             'content.required' => 'Vui lòng nhập nội dung bình luận.',
@@ -29,6 +38,23 @@ class PostCommentController extends Controller
         return back();
     }
 
+    private function requestContent($attribute, $value, $fail){
+            if (empty($value)) return;
+            
+            $prohibitedWords = ProhibitedWord::where('is_active', true)
+                ->pluck('word')
+                ->toArray();
+            
+            foreach ($prohibitedWords as $word) {
+                $pattern = '/\b' . preg_quote($word, '/') . '\b/iu';
+                
+                if (preg_match($pattern, $value)) {
+                    $fail("Bình luận chứa từ ngữ không phù hợp. Vui lòng kiểm tra lại.");
+                    return;
+                }
+            }
+    }
+
     public function update(Request $request, int $postId, PostComment $comment)
     {
         // Chỉ chủ comment mới được sửa
@@ -42,7 +68,15 @@ class PostCommentController extends Controller
         }
 
         $validated = $request->validate([
-            'content' => 'required|string|max:1000',
+            'content' => [
+                'required',
+                'string',
+                'max:1000',
+                // Gọi hàm private bằng cách truyền tham số vào Closure
+                function ($attribute, $value, $fail) {
+                    $this->requestContent($attribute, $value, $fail);
+                }
+            ],
             'rating' => 'nullable|integer|min:1|max:5',
         ], [
             'content.required' => 'Vui lòng nhập nội dung bình luận.',

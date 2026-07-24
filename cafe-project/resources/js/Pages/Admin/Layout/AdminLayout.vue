@@ -16,7 +16,9 @@ const isActive = (path) => {
 };
 
 const navigateTo = (href) => {
-    router.visit(href);
+    router.visit(href, {
+        preserveScroll: true
+    });
     mobileOpen.value = false;
 };
 
@@ -106,13 +108,20 @@ const menuGroups = [
             { label: "Thương hiệu", href: "/quan-tri/thuong-hieu", icon: "store" },
         ],
     },
+    {
+        label: "Tính năng bổ sung",
+        icon: "settings",
+        children: [
+            { label: "Từ khoá vi phạm", href: "/quan-tri/tu-khoa-vi-pham", icon: "block" },
+        ],
+    }
 ];
 
 const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
 </script>
 
 <template>
-    <div class="flex h-screen overflow-hidden bg-surface-container-low">
+    <div class="flex h-screen overflow-hidden bg-surface-container-low" >
         <!-- Mobile overlay -->
         <div v-if="mobileOpen" @click="mobileOpen = false"
             class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden"></div>
