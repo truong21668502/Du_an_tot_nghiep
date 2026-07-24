@@ -237,7 +237,7 @@ class ProductController extends Controller
                     'comment' => $review->comment,
                     'user' => [
                         'name' => $review->user->full_name ?? 'Ẩn danh',
-                        'user_id' => $review->user->id ?? null,
+                        'id' => $review->user->id ?? null,
                         'avatar' => $review->user->avatar ?? null,
                     ],
                     'created_at' => $review->created_at,

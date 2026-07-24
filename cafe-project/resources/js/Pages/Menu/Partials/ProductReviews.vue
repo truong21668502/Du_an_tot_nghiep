@@ -10,7 +10,9 @@ const props = defineProps({
     submitReview:  { type: Function, required: true },
     updateReview:  { type: Function, required: true },
     deleteReview:  { type: Function, required: true },
+    errors:        { type: Object,   default: () => ({}) },
 })
+
 
 const page = usePage()
 const user = computed(() => page.props.auth?.user || null)
@@ -89,6 +91,7 @@ const handleDeleteReview = async (reviewId) => {
 }
 </script>
 
+
 <template>
     <div class="mt-16">
         <h2 class="font-serif text-headline-md text-primary mb-8">Đánh giá sản phẩm</h2>
@@ -129,6 +132,13 @@ const handleDeleteReview = async (reviewId) => {
                 </div>
                 <textarea v-model="form.comment" rows="3" placeholder="Chia sẻ trải nghiệm của bạn..."
                     class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl font-sans text-body-md focus:outline-none focus:border-secondary resize-none"/>
+                <p
+                    v-if="errors.comment"
+
+                    class="mt-0 flex items-center gap-1 text-sm text-error"
+                >
+                    <span>{{ errors.comment[0] }}</span>
+                </p>
                 <div class="flex gap-2 justify-end">
                     <button @click="showForm = false"
                         class="px-4 py-2 border border-outline-variant/30 rounded-full font-sans text-label-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">
@@ -174,7 +184,7 @@ const handleDeleteReview = async (reviewId) => {
                                     {{ formatDate(review.created_at) }}
                                 </span>
                                 <!-- Chỉ hiện nút khi là review của chính mình -->
-                                <div v-if="user && review.user.user_id === user.id" class="flex gap-1">
+                                <div v-if="user && review.user.id === user.id" class="flex gap-1">
                                     <button @click="startEdit(review)"
                                         class="material-symbols-outlined text-base text-on-surface-variant hover:text-primary transition-colors">
                                         edit
@@ -201,6 +211,11 @@ const handleDeleteReview = async (reviewId) => {
                             </div>
                             <textarea v-model="editForm.comment" rows="2"
                                 class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl font-sans text-body-md focus:outline-none focus:border-secondary resize-none"/>
+                            <p
+                                v-if="errors.comment"
+                                class="mt-0 flex items-center gap-1 text-sm text-error">
+                                <span>{{ errors.comment[0] }}</span>
+                            </p>
                             <div class="flex gap-2 justify-end">
                                 <button @click="cancelEdit"
                                     class="px-4 py-2 border border-outline-variant/30 rounded-full font-sans text-label-sm text-on-surface-variant hover:bg-surface-container-low transition-colors">

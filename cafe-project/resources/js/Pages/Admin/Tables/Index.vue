@@ -165,7 +165,7 @@ const closeQrPreview = () => {
         <div class="space-y-6 relative">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl">Sơ đồ & Quản lý bàn ăn</h1>
+                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl mt-2 mb-2"><span class="material-symbols-outlined text-primary">table_bar</span> SƠ ĐỒ & QUẢN LÝ BÀN ĂN</h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">Quản lý định danh mã QR đầu cuối phục vụ tại bàn cho Nắng Coffee.</p>
                 </div>
                 <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer">

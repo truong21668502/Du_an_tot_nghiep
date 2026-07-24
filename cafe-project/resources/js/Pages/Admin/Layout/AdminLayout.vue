@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { usePage, router } from "@inertiajs/vue3";
+import NotificationMenu from "./NotificationMenu.vue";
 
 const page = usePage();
 const currentUrl = computed(() => page.url);
@@ -52,7 +53,7 @@ const menuGroups = [
         ],
     },
     {
-        label: "Nội dung",
+        label: "Quản lý bài viết",
         icon: "article",
         children: [
             { label: "Bài viết", href: "/quan-tri/bai-viet", icon: "post" },
@@ -82,7 +83,7 @@ const menuGroups = [
         ],
     },
     {
-        label: "Kinh doanh",
+        label: "Quản lý khuyến mãi",
         icon: "settings",
         children: [
             {
@@ -201,10 +202,9 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                     <span class="material-symbols-outlined">menu</span>
                 </button>
                 <div class="flex items-center gap-3 ml-auto">
-                    <button class="p-2 hover:bg-surface-container-low rounded-full transition-colors relative">
-                        <span class="material-symbols-outlined text-on-surface-variant">notifications</span>
-                        <span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
-                    </button>
+                    <div class="p-2 hover:bg-surface-container-low rounded-full transition-colors relative">
+                        <NotificationMenu />
+                    </div>
                     <a href="/dang-xuat" @click.prevent="router.post('/logout')"
                         class="p-2 hover:bg-error-container/20 rounded-full transition-colors text-on-surface-variant hover:text-error"
                         title="Đăng xuất">

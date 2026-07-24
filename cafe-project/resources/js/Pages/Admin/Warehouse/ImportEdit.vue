@@ -153,7 +153,7 @@ async function submitNewMaterial() {
                     <span class="material-symbols-outlined text-md">arrow_back</span> Quay lại lịch sử
                 </Link>
                 <span class="text-outline-variant">/</span>
-                <h1 class="text-headline-md font-bold text-on-surface text-primary text-3xl">Sửa Phiếu Nhập #{{
+                <h1 class="text-headline-md font-bold text-on-surface text-primary text-3xl"><span class="material-symbols-outlined text-primary">edit</span> SỬA PHIẾU NHẬP #{{
                     receipt.id }}</h1>
             </div>
 

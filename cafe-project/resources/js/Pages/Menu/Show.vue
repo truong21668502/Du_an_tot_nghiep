@@ -9,7 +9,7 @@ import ProductInfo from './Partials/ProductInfo.vue'
 import ProductReviews from './Partials/ProductReviews.vue'
 defineOptions({ layout: MainLayout })
 const page = usePage()
-const { product, selectedVariant, selectedQuantity, loading, variants, isOutOfStock, availableVariants, currentPrice, originalPrice, selectVariant, canAddToCart, addToCart, submitReview, updateReview, deleteReview, formatPrice, formatDate } = useProduct(page.props.product || null)
+const { product, errors, selectedVariant, selectedQuantity, loading, variants, isOutOfStock, availableVariants, currentPrice, originalPrice, selectVariant, canAddToCart, addToCart, submitReview, updateReview, deleteReview, formatPrice, formatDate } = useProduct(page.props.product || null)
 const activeImage = ref(null)
 const note = ref('')
 onMounted(() => {
@@ -30,9 +30,7 @@ const allImages = computed(() => {
   return imgs.map(i => i.url)
 })
 
-console.log('Product page props:', page.props);
 
-console.log(page.props);
 </script>
 <template>
   <div class="w-full">
@@ -68,6 +66,7 @@ console.log(page.props);
           :submit-review="submitReview" 
           :update-review="updateReview"
           :delete-review="deleteReview"
+          :errors="errors"
       />
       </AnimateOnScroll>
     </div>
