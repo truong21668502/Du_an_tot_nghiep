@@ -36,6 +36,21 @@ class TableController extends Controller
 
         // Nếu dọn bàn, ta tách các đơn hàng cũ (đã hoàn thành/hủy) ra khỏi bàn để khách mới vào không thấy
         if ($request->status === 'EMPTY') {
+            // Kiểm tra xem có đơn hàng nào chưa hoàn thành hoặc chưa thanh toán không
+            $hasUnfinishedOrders = $table->orders()->where(function($query) {
+                $query->whereNotIn('status', ['COMPLETED', 'CANCELLED'])
+                      ->orWhere(function($subQuery) {
+                          $subQuery->where('status', 'COMPLETED')
+                                   ->whereHas('payment', function($paymentQuery) {
+                                       $paymentQuery->where('payment_status', '!=', 'PAID');
+                                   });
+                      });
+            })->exists();
+
+            if ($hasUnfinishedOrders) {
+                return redirect()->back()->withErrors(['status' => 'Bàn còn đơn chưa hoàn thành hoặc chưa thanh toán, không thể dọn!']);
+            }
+
             $table->orders()->whereIn('status', ['COMPLETED', 'CANCELLED'])->update(['table_id' => null]);
         }
 

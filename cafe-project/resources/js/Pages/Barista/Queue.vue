@@ -64,8 +64,8 @@ const closePanel = () => { selected.value = null; };
 const expandedOrders = ref({}); // object map order_id -> boolean
 
 const isOrderExpanded = (orderId) => {
-    // Mặc định mở nếu chưa được set false
-    return expandedOrders.value[orderId] !== false;
+    // Mặc định đóng nếu chưa được set true
+    return expandedOrders.value[orderId] === true;
 };
 
 const toggleOrder = (orderId) => {
@@ -91,18 +91,29 @@ const advanceStatus = async (detail) => {
             if (newStatus === 'COMPLETED') {
                 doneSoFar.value++;
                 toast.success(`Đã hoàn thành: ${detail.product?.product_name}`, { autoClose: 2500 });
-                // Xóa khỏi queue sau 2 giây để nhân viên thấy trạng thái
+                
+                // Tìm món tiếp theo để tự động chuyển panel công thức
+                const wasSelected = selected.value?.id === detail.id;
+                
                 setTimeout(() => {
                     queue.value = queue.value.filter(d => d.id !== detail.id);
-                    if (selected.value?.id === detail.id) selected.value = null;
-                }, 2000);
+                    
+                    // Nếu đang xem công thức của món vừa hoàn thành → tự động chuyển sang món kế tiếp
+                    if (wasSelected) {
+                        const nextItem = queue.value.find(d => 
+                            d.barista_status === 'PREPARING' || d.barista_status === 'PENDING'
+                        );
+                        selected.value = nextItem || null;
+                    }
+                }, 1500);
             } else {
                 toast.info(`Đang pha: ${detail.product?.product_name}`, { autoClose: 2000 });
             }
         }
     } catch (err) {
         console.error('Lỗi cập nhật trạng thái:', err);
-        toast.error('Không thể cập nhật trạng thái!');
+        const errorMsg = err.response?.data?.error || 'Không thể cập nhật trạng thái!';
+        toast.error(errorMsg);
     }
 };
 
@@ -122,7 +133,7 @@ onMounted(() => {
                 onSuccess: (page) => {
                     queue.value = page.props.initialQueue;
                     if (e.order?.status === 'PROCESSING') {
-                        toast.info(`🔔 Đơn mới tiếp nhận! Bàn ${e.order.table?.table_name || 'mang đi'}`, {
+                        toast.info(`Đơn mới tiếp nhận! Bàn ${e.order.table?.table_name || 'mang đi'}`, {
                             position: 'top-right',
                             autoClose: 4000,
                         });
@@ -216,8 +227,14 @@ onUnmounted(() => {
                                         class="material-symbols-outlined text-on-surface-variant transition-transform duration-300"
                                         :class="isOrderExpanded(group.order.id) ? 'rotate-180' : ''">expand_more</span>
                                     <div>
-                                        <h3 class="text-[15px] font-bold text-on-surface">Đơn #{{ group.order.id }} — {{
-                                            group.order.table?.table_name || 'Mang đi' }}</h3>
+                                        <h3 class="text-[15px] font-bold text-on-surface flex items-center gap-1.5">
+                                            Đơn #{{ group.order.id }} — {{ group.order.table?.table_name || 'Mang đi' }}
+                                            <span v-if="group.details.some(d => d.barista_status === 'PENDING')" 
+                                                  class="material-symbols-outlined text-error text-[18px] animate-wiggle"
+                                                  title="Có món mới chờ pha">
+                                                notifications_active
+                                            </span>
+                                        </h3>
                                         <p class="text-[12px] text-on-surface-variant mt-0.5">{{ new
                                             Date(group.order.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit',
                                             minute: '2-digit' }) }} • {{ group.details.length }} món</p>

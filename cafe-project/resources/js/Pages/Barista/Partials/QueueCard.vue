@@ -51,17 +51,20 @@ const formatTime = (dateStr) => {
         <div class="pl-5 pr-4 py-4">
             <!-- Header -->
             <div class="flex items-start justify-between gap-2 mb-2">
-                <div class="flex-1 min-w-0">
-                    <p class="text-[16px] font-bold text-on-surface truncate">
-                        {{ detail.product?.product_name }}
-                    </p>
-                    <div class="flex items-center gap-1.5 mt-0.5">
-                        <span class="material-symbols-outlined text-[14px] text-on-surface-variant">table_restaurant</span>
-                        <span class="text-[13px] text-on-surface-variant">
-                            {{ detail.order?.table?.table_name || 'Mang đi' }}
-                        </span>
-                        <span class="text-[13px] text-on-surface-variant/50">•</span>
-                        <span class="text-[13px] text-on-surface-variant">×{{ detail.quantity }}</span>
+                <div class="flex-1 min-w-0 flex items-center gap-3">
+                    <img v-if="detail.product?.image_url" :src="detail.product.image_url" class="w-10 h-10 rounded-md object-cover flex-shrink-0 border border-outline-variant/20" alt="" />
+                    <div class="min-w-0">
+                        <p class="text-[16px] font-bold text-on-surface truncate">
+                            {{ detail.product?.product_name }}
+                        </p>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span class="material-symbols-outlined text-[14px] text-on-surface-variant">table_restaurant</span>
+                            <span class="text-[13px] text-on-surface-variant">
+                                {{ detail.order?.table?.table_name || 'Mang đi' }}
+                            </span>
+                            <span class="text-[13px] text-on-surface-variant/50">•</span>
+                            <span class="text-[13px] text-on-surface-variant">×{{ detail.quantity }}</span>
+                        </div>
                     </div>
                 </div>
 

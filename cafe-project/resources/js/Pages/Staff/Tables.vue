@@ -478,7 +478,17 @@ onUnmounted(() => {
                                 <!-- Clean table: 2-step confirmation -->
                                 <template v-if="selectedTable?.status === 'OCCUPIED'">
                                     <button v-if="!showCleanConfirm"
-                                        @click="showCleanConfirm = true"
+                                        @click="(() => {
+                                            const canClean = !selectedTable.orders || selectedTable.orders.every(o => 
+                                                o.status === 'CANCELLED' || 
+                                                (o.status === 'COMPLETED' && o.payment?.payment_status === 'PAID')
+                                            );
+                                            if (!canClean) {
+                                                toast.warning('Bàn còn đơn chưa hoàn thành hoặc chưa thanh toán, không thể dọn!');
+                                            } else {
+                                                showCleanConfirm = true;
+                                            }
+                                        })()"
                                         class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-outline-variant/40 font-bold text-on-surface hover:bg-surface-container transition-all text-label-md">
                                         <span class="material-symbols-outlined text-[18px]">cleaning_services</span> Khách về — Dọn bàn
                                     </button>

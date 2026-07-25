@@ -29,16 +29,21 @@ const btnConfig = {
         <!-- Header -->
         <div class="px-5 py-4 bg-surface border-b border-outline-variant/15 flex items-start justify-between">
             <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
+                <div class="flex items-center gap-2 mb-2">
                     <span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings:'FILL' 1">menu_book</span>
                     <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-primary">Công thức pha chế</p>
                 </div>
-                <h2 class="text-[16px] font-bold text-on-surface truncate">{{ detail.product?.product_name }}</h2>
-                <p class="text-[11px] text-on-surface-variant mt-0.5">
-                    Size {{ detail.variant?.size || '---' }} •
-                    {{ detail.order?.table?.table_name || 'Mang đi' }} •
-                    ×{{ detail.quantity }}
-                </p>
+                <div class="flex items-center gap-3">
+                    <img v-if="detail.product?.image_url" :src="detail.product.image_url" class="w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-outline-variant/20" alt="" />
+                    <div class="min-w-0">
+                        <h2 class="text-[16px] font-bold text-on-surface truncate">{{ detail.product?.product_name }}</h2>
+                        <p class="text-[11px] text-on-surface-variant mt-0.5">
+                            Size {{ detail.variant?.size || '---' }} •
+                            {{ detail.order?.table?.table_name || 'Mang đi' }} •
+                            ×{{ detail.quantity }}
+                        </p>
+                    </div>
+                </div>
             </div>
             <button @click="$emit('close')" class="ml-2 w-7 h-7 flex items-center justify-center rounded-full hover:bg-surface-container text-on-surface-variant transition-colors flex-shrink-0">
                 <span class="material-symbols-outlined text-[18px]">close</span>

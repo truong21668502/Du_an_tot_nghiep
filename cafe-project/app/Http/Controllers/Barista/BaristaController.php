@@ -73,7 +73,32 @@ class BaristaController extends Controller
         }
 
         $newStatus = $transitions[$currentStatus];
-        $detail->update(['barista_status' => $newStatus]);
+        
+        if ($newStatus === 'COMPLETED') {
+            $stockService = new \App\Services\StockService();
+            // Load necessary relationships to get the recipe and material
+            $detail->load(['variant.recipes', 'product']);
+            
+            try {
+                \Illuminate\Support\Facades\DB::transaction(function () use ($detail, $stockService, $newStatus) {
+                    foreach ($detail->variant->recipes as $recipe) {
+                        $qtyToDeduct = (float) $recipe->quantity_needed * (int) $detail->quantity;
+                        $stockService->consume(
+                            $recipe->material_id, 
+                            $qtyToDeduct, 
+                            'order', 
+                            $detail->order_id, 
+                            "Pha chế món {$detail->product->product_name} x{$detail->quantity}"
+                        );
+                    }
+                    $detail->update(['barista_status' => $newStatus]);
+                });
+            } catch (\Exception $e) {
+                return response()->json(['error' => $e->getMessage()], 400);
+            }
+        } else {
+            $detail->update(['barista_status' => $newStatus]);
+        }
 
         // Broadcast realtime để Staff thấy trạng thái món thay đổi
         broadcast(new BaristaDetailUpdated($detail->load(['order.table', 'product', 'variant'])))->toOthers();

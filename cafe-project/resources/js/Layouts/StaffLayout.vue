@@ -74,7 +74,7 @@ const newOrderForm = ref({
     order_type: 'TAKE_AWAY',
     table_id: '',
     payment_method: 'CASH',
-    payment_status: 'PAID',
+    payment_status: 'PENDING',
     items: []
 });
 
@@ -140,7 +140,7 @@ const submitNewOrder = () => {
         preserveScroll: true,
         onSuccess: () => {
             isCreateModalOpen.value = false;
-            newOrderForm.value = { order_type: 'TAKE_AWAY', table_id: '', payment_method: 'CASH', payment_status: 'PAID', items: [] };
+            newOrderForm.value = { order_type: 'TAKE_AWAY', table_id: '', payment_method: 'CASH', payment_status: 'PENDING', items: [] };
             toast.success("Tạo đơn thành công!");
         },
         onError: (errors) => {
@@ -385,21 +385,12 @@ const submitNewOrder = () => {
                                         <span class="text-headline-sm font-bold text-primary">{{ formatCurrency(newOrderTotal) }}</span>
                                     </div>
 
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-[10px] font-bold text-on-surface-variant mb-1 uppercase tracking-wider">Hình thức</label>
-                                            <select v-model="newOrderForm.payment_method" class="w-full rounded-lg border-outline-variant/50 bg-surface-container-lowest text-sm py-2">
-                                                <option value="CASH">Tiền mặt</option>
-                                                <option value="BANK_TRANSFER">Chuyển khoản</option> 
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-[10px] font-bold text-on-surface-variant mb-1 uppercase tracking-wider">Tình trạng tt</label>
-                                            <select v-model="newOrderForm.payment_status" class="w-full rounded-lg border-outline-variant/50 bg-surface-container-lowest text-sm py-2 font-bold" :class="newOrderForm.payment_status === 'PAID' ? 'text-secondary' : 'text-error'">
-                                                <option value="PAID">ĐÃ THU TIỀN</option>
-                                                <option value="PENDING">CHƯA THU</option>
-                                            </select>
-                                        </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-on-surface-variant mb-1 uppercase tracking-wider">Hình thức thanh toán</label>
+                                        <select v-model="newOrderForm.payment_method" class="w-full rounded-lg border-outline-variant/50 bg-surface-container-lowest text-sm py-2">
+                                            <option value="CASH">Tiền mặt</option>
+                                            <option value="BANK_TRANSFER">Chuyển khoản</option> 
+                                        </select>
                                     </div>
                                 </div>
                             </div>

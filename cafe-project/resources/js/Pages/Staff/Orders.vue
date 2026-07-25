@@ -420,16 +420,10 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                 class="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-outline-variant/30 mt-3 shadow-sm">
                                 <p class="text-[13px] font-bold text-[#005BAA] mb-3 flex items-center gap-2">
                                     <span class="material-symbols-outlined text-[18px]">qr_code_scanner</span> Quét mã
-                                    thanh toán VNPay
+                                    chuyển khoản
                                 </p>
-                                <div v-if="vnpayQrUrl" class="relative">
-                                    <img :src="vnpayQrUrl" alt="VNPay QR"
-                                        class="w-full h-auto object-contain border p-1 shadow-sm" />
-                                </div>
-                                <div v-else
-                                    class="w-40 h-40 flex items-center justify-center bg-gray-50 animate-pulse border border-outline-variant/30">
-                                    <span class="material-symbols-outlined text-gray-300 text-[32px]">qr_code</span>
-                                </div>
+                                <img src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1784969273/Qr_VietComBank_Nhat_Duy_yiygbz.jpg" alt="QR Chuyển khoản"
+                                    class="w-full max-w-[200px] h-auto object-contain border p-1 shadow-sm" />
                                 <p class="text-[14px] text-error font-bold mt-3">Số tiền: {{
                                     formatCurrency(selectedOrder?.final_amount) }}</p>
                             </div>
@@ -465,13 +459,19 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                 class="px-6 py-2 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:bg-primary/90 flex items-center gap-2 transition-all shadow-sm">
                                 <span class="material-symbols-outlined text-[18px]">check_circle</span> Tiếp nhận đơn
                             </button>
-                            <!-- Nút Hoàn thành: chỉ bấm được khi đã thanh toán -->
+                            <!-- Nút Hoàn thành: chỉ bấm được khi đã thanh toán VÀ tất cả món đã pha xong -->
                             <button v-else-if="selectedOrder?.status === 'PROCESSING'"
-                                @click="selectedOrder?.payment?.payment_status === 'PAID' ? completeOrder(selectedOrder.id) : toast.warning('⚠️ Đơn chưa được thanh toán, không thể hoàn thành!')"
-                                :class="selectedOrder?.payment?.payment_status === 'PAID'
+                                @click="(() => {
+                                    const allDone = selectedOrder?.details?.every(d => d.barista_status === 'COMPLETED');
+                                    const paid = selectedOrder?.payment?.payment_status === 'PAID';
+                                    if (!allDone) { toast.warning('Chưa pha xong hết các món, không thể hoàn thành!'); }
+                                    else if (!paid) { toast.warning('Đơn chưa được thanh toán, không thể hoàn thành!'); }
+                                    else { completeOrder(selectedOrder.id); }
+                                })()"
+                                :class="(selectedOrder?.payment?.payment_status === 'PAID' && selectedOrder?.details?.every(d => d.barista_status === 'COMPLETED'))
                                     ? 'bg-secondary text-on-secondary hover:bg-secondary/90 shadow-sm cursor-pointer'
                                     : 'bg-surface-container-high text-on-surface-variant/50 border border-outline-variant/30 cursor-not-allowed'"
-                                class="px-6 py-2 rounded-xl bg-secondary text-on-secondary font-bold text-label-md flex items-center gap-2 transition-all">
+                                class="px-6 py-2 rounded-xl font-bold text-label-md flex items-center gap-2 transition-all">
                                 <span class="material-symbols-outlined text-[18px]">task_alt</span> Đã hoàn thành
                             </button>
                         </div>
