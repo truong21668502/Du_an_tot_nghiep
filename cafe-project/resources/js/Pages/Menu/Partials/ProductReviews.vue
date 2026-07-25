@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { usePage, Link } from '@inertiajs/vue3'
 import BaseButton from '@/Components/Base/BaseButton.vue'
+import axios from 'axios'
 
 const props = defineProps({
     reviews:       { type: Array,    default: () => [] },
@@ -13,15 +14,21 @@ const props = defineProps({
     errors:        { type: Object,   default: () => ({}) },
 })
 
-
 const page = usePage()
 const user = computed(() => page.props.auth?.user || null)
 
+const canReply = computed(() => {
+    if (!user.value) return false
+    return ['ADMIN', 'STAFF', 'BARISTA'].includes(user.value.role)
+})
 
+const isAdmin = computed(() => user.value?.role === 'ADMIN')
+
+// ── Review state ────────────────────────────────────────────────────────────
 const showForm    = ref(false)
 const form        = ref({ rating: 5, comment: '' })
 const loading     = ref(false)
-const editingId   = ref(null)        // id review đang được sửa
+const editingId   = ref(null)
 const editForm    = ref({ rating: 5, comment: '' })
 
 const localReviews = ref([...props.reviews])
@@ -38,7 +45,6 @@ const ratingCounts = computed(() => {
     return counts
 })
 
-
 // ── Submit mới ──────────────────────────────────────────────────────────────
 const handleSubmitReview = async () => {
     loading.value = true
@@ -54,7 +60,7 @@ const handleSubmitReview = async () => {
     }
 }
 
-// ── Sửa ─────────────────────────────────────────────────────────────────────
+// ── Sửa review ──────────────────────────────────────────────────────────────
 const startEdit = (review) => {
     editingId.value = review.id
     editForm.value  = { rating: review.rating, comment: review.comment || '' }
@@ -76,7 +82,7 @@ const handleUpdateReview = async (reviewId) => {
     }
 }
 
-// ── Xóa ─────────────────────────────────────────────────────────────────────
+// ── Xóa review ──────────────────────────────────────────────────────────────
 const handleDeleteReview = async (reviewId) => {
     if (!confirm('Bạn có chắc muốn xóa đánh giá này?')) return
     loading.value = true
@@ -87,6 +93,121 @@ const handleDeleteReview = async (reviewId) => {
         // lỗi đã toast trong composable
     } finally {
         loading.value = false
+    }
+}
+
+// ── Reply state ─────────────────────────────────────────────────────────────
+const replyingTo       = ref(null)
+const replyContent     = ref('')
+const replyLoading     = ref(false)
+const replyError       = ref('')
+
+const editingReplyId   = ref(null)
+const editReplyContent = ref('')
+const editReplyLoading = ref(false)
+const editReplyError   = ref('')
+
+// Kiểm tra user đã reply review này chưa
+const hasReplied = (review) => {
+    if (!canReply.value || !review.replies) return false
+    return review.replies.some(r => r.user?.id === user.value?.id)
+}
+
+// ── Submit reply mới ────────────────────────────────────────────────────────
+const handleSubmitReply = async (reviewId) => {
+    if (!replyContent.value.trim()) return
+    
+    replyLoading.value = true
+    replyError.value = ''
+    
+    try {
+        const response = await axios.post(`/reviews/${reviewId}/replies`, {
+            comment: replyContent.value
+        })
+        
+        if (response.data.success) {
+            const review = localReviews.value.find(r => r.id === reviewId)
+            if (review) {
+                if (!review.replies) review.replies = []
+                review.replies.push(response.data.data)
+            }
+            replyContent.value = ''
+            replyingTo.value = null
+        }
+    } catch (error) {
+        if (error.response?.data?.message) {
+            replyError.value = error.response.data.message
+        } else {
+            replyError.value = 'Có lỗi xảy ra, vui lòng thử lại.'
+        }
+    } finally {
+        replyLoading.value = false
+    }
+}
+
+// ── Sửa reply ───────────────────────────────────────────────────────────────
+const startEditReply = (reply) => {
+    editingReplyId.value = reply.id
+    editReplyContent.value = reply.comment
+    editReplyError.value = ''
+}
+
+const cancelEditReply = () => {
+    editingReplyId.value = null
+    editReplyContent.value = ''
+    editReplyError.value = ''
+}
+
+const handleUpdateReply = async (replyId, reviewId) => {
+    if (!editReplyContent.value.trim()) return
+    
+    editReplyLoading.value = true
+    editReplyError.value = ''
+    
+    try {
+        const response = await axios.patch(`/replies/${replyId}`, {
+            comment: editReplyContent.value
+        })
+        
+        if (response.data.success) {
+            const review = localReviews.value.find(r => r.id === reviewId)
+            if (review && review.replies) {
+                const replyIndex = review.replies.findIndex(r => r.id === replyId)
+                if (replyIndex !== -1) {
+                    review.replies[replyIndex] = {
+                        ...review.replies[replyIndex],
+                        ...response.data.data
+                    }
+                }
+            }
+            cancelEditReply()
+        }
+    } catch (error) {
+        if (error.response?.data?.message) {
+            editReplyError.value = error.response.data.message
+        } else {
+            editReplyError.value = 'Có lỗi xảy ra, vui lòng thử lại.'
+        }
+    } finally {
+        editReplyLoading.value = false
+    }
+}
+
+// ── Xóa reply ───────────────────────────────────────────────────────────────
+const handleDeleteReply = async (replyId, reviewId) => {
+    if (!confirm('Bạn có chắc muốn xóa phản hồi này?')) return
+    
+    try {
+        const response = await axios.delete(`/replies/${replyId}`)
+        
+        if (response.data.success) {
+            const review = localReviews.value.find(r => r.id === reviewId)
+            if (review && review.replies) {
+                review.replies = review.replies.filter(r => r.id !== replyId)
+            }
+        }
+    } catch (error) {
+        // Toast error
     }
 }
 </script>
@@ -230,6 +351,135 @@ const handleDeleteReview = async (reviewId) => {
                     <p v-else-if="review.comment" class="font-sans text-body-md text-on-surface-variant">
                         {{ review.comment }}
                     </p>
+<!-- ── Replies Section ────────────────────────────────────── -->
+<div v-if="review.replies && review.replies.length > 0" class="mt-3 space-y-2">
+    <div v-for="reply in review.replies" :key="reply.id"
+        class="bg-primary-container/10 rounded-lg p-3 ml-4 border-l-2 border-primary/30">
+        
+        <div class="flex items-start gap-2">
+            <div class="w-8 h-8 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                <img v-if="reply.user?.avatar" :src="reply.user.avatar" class="w-full h-full object-cover" />
+                <span v-else class="material-symbols-outlined text-primary text-sm">support_agent</span>
+            </div>
+            <div class="flex-1">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="font-sans text-label-sm font-semibold text-primary">
+                            {{ reply.user?.name || 'Nhân viên' }}
+                        </span>
+                        <span class="bg-primary/10 text-primary text-label-xs px-2 py-0.5 rounded-full">
+                            {{ reply.user?.role === 'ADMIN' ? 'Quản lý' : 'Nhân viên' }}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-sans text-label-xs text-on-surface-variant">
+                            {{ formatDate(reply.created_at) }}
+                        </span>
+                        <!-- Nút sửa: chỉ hiện khi là chủ sở hữu reply -->
+                        <button 
+                            v-if="user && reply.user?.id === user.id"
+                            @click="startEditReply(reply)"
+                            class="material-symbols-outlined text-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                            title="Chỉnh sửa"
+                        >
+                            edit
+                        </button>
+                        <!-- Nút xóa: chỉ admin -->
+                        <button 
+                            v-if="isAdmin"
+                            @click="handleDeleteReply(reply.id, review.id)"
+                            class="material-symbols-outlined text-sm text-on-surface-variant hover:text-error transition-colors cursor-pointer"
+                            title="Xóa phản hồi"
+                        >
+                            delete
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Nội dung reply hoặc form sửa -->
+                <template v-if="editingReplyId === reply.id">
+                    <div class="space-y-2 mt-1">
+                        <textarea 
+                            v-model="editReplyContent"
+                            rows="2"
+                            class="w-full px-3 py-2 bg-surface-container-low border border-outline-variant/30 rounded-lg font-sans text-body-sm focus:outline-none focus:border-primary resize-none"
+                        ></textarea>
+                        
+                        <p v-if="editReplyError" class="text-label-xs text-error flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">error</span>
+                            {{ editReplyError }}
+                        </p>
+                        
+                        <div class="flex gap-2 justify-end">
+                            <button 
+                                @click="cancelEditReply"
+                                class="px-3 py-1.5 text-label-xs border border-outline-variant/30 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer"
+                            >
+                                Hủy
+                            </button>
+                            <button 
+                                @click="handleUpdateReply(reply.id, review.id)"
+                                :disabled="editReplyLoading || !editReplyContent.trim()"
+                                class="px-3 py-1.5 text-label-xs bg-primary text-on-primary rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
+                            >
+                                {{ editReplyLoading ? 'Đang lưu...' : 'Lưu' }}
+                            </button>
+                        </div>
+                    </div>
+                </template>
+                <p v-else class="font-sans text-body-sm text-on-surface-variant mt-1">
+                    {{ reply.comment }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Reply Button ────────────────────────────────────── -->
+<!-- ── Reply Button & Form Section ────────────────────────────────────── -->
+<div v-if="canReply" class="mt-3 ml-4">
+    <!-- 1. Nút "Trả lời": Chỉ hiện khi CHƯA trả lời VÀ ĐANG KHÔNG mở form của review này -->
+    <button 
+        v-if="!hasReplied(review) && replyingTo !== review.id"
+        @click="replyingTo = review.id; replyContent = ''; replyError = ''"
+        class="ml-auto flex items-center gap-1 text-primary hover:text-primary/80 font-sans text-label-sm transition-colors cursor-pointer"
+    >
+        <span class="material-symbols-outlined text-sm">reply</span>
+        Trả lời
+    </button>
+
+    <!-- 2. Form Trả lời: Chỉ hiện khi người dùng BẤM nút "Trả lời" (replyingTo === review.id) -->
+    <div v-if="replyingTo === review.id" class="space-y-2">
+        <textarea 
+            v-model="replyContent"
+            rows="2"
+            placeholder="Nhập phản hồi của bạn..."
+            class="w-full px-3 py-2 bg-surface-container-low border border-outline-variant/30 rounded-lg font-sans text-body-sm focus:outline-none focus:border-primary resize-none"
+        ></textarea>
+        
+        <p v-if="replyError" class="text-label-xs text-error flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">error</span>
+            {{ replyError }}
+        </p>
+        
+        <div class="flex gap-2 justify-end">
+            <button 
+                @click="replyingTo = null; replyError = ''"
+                class="px-3 py-1.5 text-label-xs border border-outline-variant/30 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors cursor-pointer"
+            >
+                Hủy
+            </button>
+            <button 
+                @click="handleSubmitReply(review.id)"
+                :disabled="replyLoading || !replyContent.trim()"
+                class="px-3 py-1.5 text-label-xs bg-primary text-on-primary rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1"
+            >
+                <span v-if="replyLoading" class="material-symbols-outlined text-sm animate-spin">sync</span>
+                {{ replyLoading ? 'Đang gửi...' : 'Gửi' }}
+            </button>
+        </div>
+    </div>
+</div>
                 </div>
             </div>
         </div>
@@ -240,3 +490,13 @@ const handleDeleteReview = async (reviewId) => {
         </div>
     </div>
 </template>
+<style scoped>
+/* Thêm vào cuối file style hiện tại */
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+</style>

@@ -21,6 +21,9 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StockMovementController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ProhibitedWordController;
+use App\Http\Controllers\Admin\ReviewReplyController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -162,4 +165,13 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::put('/tu-khoa-vi-pham/{prohibited_word}', [ProhibitedWordController::class, 'update'])->name('prohibited-words.update');
     Route::delete('/tu-khoa-vi-pham/{prohibited_word}', [ProhibitedWordController::class, 'destroy'])->name('prohibited-words.destroy');
     Route::patch('/tu-khoa-vi-pham/{prohibited_word}/toggle', [ProhibitedWordController::class, 'toggleActive'])->name('prohibited-words.toggle');
+});
+
+Route::middleware(['auth', 'role:ADMIN,STAFF,BARISTA'])->group(function () {
+    // Reply routes - chỉ cho admin
+    Route::post('/reviews/{review}/replies', [ReviewReplyController::class, 'store'])
+        ->name('reviews.replies.store');
+    Route::delete('/replies/{reply}', [ReviewReplyController::class, 'destroy'])
+        ->name('replies.destroy');
+    Route::patch('/replies/{reply}', [ReviewReplyController::class, 'update'])->name('replies.update');
 });

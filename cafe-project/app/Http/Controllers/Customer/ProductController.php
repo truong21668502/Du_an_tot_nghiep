@@ -157,10 +157,10 @@ class ProductController extends Controller
             ->where('is_active', 'Đang bán')
             ->firstOrFail();
 
-        $reviews = Review::with('user')
-            ->where('product_id', $product->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(5);
+    $reviews = Review::with(['user', 'replies.user']) 
+        ->where('product_id', $product->id)
+        ->orderBy('created_at', 'desc')
+        ->paginate(5);
 
         $isFavorited = false;
         if (Auth::check()) {
@@ -231,18 +231,31 @@ class ProductController extends Controller
         return inertia('Menu/Show', [
             'product' => $productData,
             'reviews' => $reviews->through(function ($review) {
-                return [
-                    'id' => $review->id,
-                    'rating' => $review->rating,
-                    'comment' => $review->comment,
-                    'user' => [
-                        'name' => $review->user->full_name ?? 'Ẩn danh',
-                        'id' => $review->user->id ?? null,
-                        'avatar' => $review->user->avatar ?? null,
-                    ],
-                    'created_at' => $review->created_at,
-                ];
-            }),
+                    return [
+                        'id' => $review->id,
+                        'rating' => $review->rating,
+                        'comment' => $review->comment,
+                        'user' => [
+                            'name' => $review->user->full_name ?? 'Ẩn danh',
+                            'id' => $review->user->id ?? null,
+                            'avatar' => $review->user->avatar ?? null,
+                        ],
+                        'created_at' => $review->created_at,
+                        'replies' => $review->replies->map(function ($reply) {
+                            return [
+                                'id' => $reply->id,
+                                'comment' => $reply->comment,
+                                'user' => [
+                                    'id' => $reply->user->id,
+                                    'name' => $reply->user->full_name ?? 'Nhân viên',
+                                    'role' => $reply->user->role,
+                                    'avatar' => $reply->user->avatar ?? null,
+                                ],
+                                'created_at' => $reply->created_at,
+                            ];
+                        }),
+                    ];
+                }),
             'relatedProducts' => $relatedProducts,
             'isFavorited' => $isFavorited,
         ]);
