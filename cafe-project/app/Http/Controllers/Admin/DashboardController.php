@@ -36,7 +36,8 @@ class DashboardController extends Controller
             'users' => [
                 'total' => User::count(),
                 'customers' => User::where('role', 'CUSTOMER')->count(),
-                'staff' => User::where('role', '!=', 'CUSTOMER')->count(),
+                'staff' => User::where('role', 'STAFF')->count(),
+                'barista' => User::where('role', 'BARISTA')->count(),
             ],
             'ingredients' => [
                 'total' => Material::count()
@@ -56,32 +57,26 @@ class DashboardController extends Controller
         $revenue = Order::where('status', 'COMPLETED')->sum('final_amount');
 
         // BÁO ĐỘNG KHO (Nguyên liệu)
-        $unitAlertLimits = [
-            'ml'    => 1000,
-            'g'     => 500,
-            'hũ'    => 5,
-            'quả'   => 10,
-            'cái'   => 10,
-            'lát'   => 10,
-            'miếng' => 10,
-        ];
+        $lowStockIngredients = Material::query()
+            ->select('id', 'material_name', 'quantity_in_stock', 'base_unit', 'min_stock')
+            ->get()
+            ->filter(function ($ing) {
+                $stock = (float) $ing->quantity_in_stock;
+                $min = (float) $ing->min_stock;
 
-        $allIngredients = Material::all(['material_name', 'quantity_in_stock', 'base_unit']);
-        $lowStockIngredients = [];
-
-        foreach ($allIngredients as $ing) {
-            $unitLower = mb_strtolower($ing->base_unit, 'UTF-8');
-            $limit = $unitAlertLimits[$unitLower] ?? 5;
-
-            if ($ing->quantity_in_stock <= $limit) {
-                $lowStockIngredients[] = [
+                // Báo động nếu: Hết hàng hẳn (<= 0) HOẶC chạm ngưỡng min_stock (> 0)
+                return $stock <= 0 || ($min > 0 && $stock <= $min);
+            })
+            ->map(function ($ing) {
+                return [
                     'material_name'     => $ing->material_name,
-                    'quantity_in_stock' => (float)$ing->quantity_in_stock,
+                    'quantity_in_stock' => (float) $ing->quantity_in_stock,
                     'base_unit'         => $ing->base_unit,
-                    'limit'             => $limit
+                    'limit'             => (float) $ing->min_stock,
                 ];
-            }
-        }
+            })
+            ->values()
+            ->toArray();
 
         // TOP SẢN PHẨM & BÀI VIẾT
         $topSellingProducts = Product::select('products.id', 'products.product_name', 'products.image_url', DB::raw('SUM(order_details.quantity) as total_sold'))

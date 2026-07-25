@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Throwable;
+use App\Models\Material;
 
 class NotificationController extends Controller
 {
@@ -18,38 +19,28 @@ class NotificationController extends Controller
             // ----------------------------------------------------------------
             // 1. BÁO ĐỘNG KHO (Nguyên liệu)
             // ----------------------------------------------------------------
-            $unitAlertLimits = [
-                'ml'    => 1000,
-                'g'     => 500,
-                'hũ'    => 5,
-                'quả'   => 10,
-                'cái'   => 10,
-                'lát'   => 10,
-                'miếng' => 10,
-            ];
-
-            $lowStockItems = DB::table('materials')
-                ->where(function ($query) use ($unitAlertLimits) {
-                    foreach ($unitAlertLimits as $unit => $limit) {
-                        $query->orWhere(function ($q) use ($unit, $limit) {
-                            $q->where('base_unit', $unit)
-                            ->where('quantity_in_stock', '<=', $limit);
-                        });
-                    }
+            $lowStockItems = Material::query()
+                ->where(function ($query) {
+                    $query->where('quantity_in_stock', '<=', 0)
+                        ->orWhere(function ($q) {
+                        $q->where('min_stock', '>', 0)
+                        ->whereColumn('quantity_in_stock', '<=', 'min_stock');
+                    });
                 })
-                ->select('id', 'material_name', 'quantity_in_stock', 'base_unit')
+                ->select('id', 'material_name', 'quantity_in_stock', 'base_unit', 'min_stock')
                 ->orderBy('quantity_in_stock', 'asc')
                 ->limit(5)
                 ->get();
 
+            // Tạo danh sách thông báo
             foreach ($lowStockItems as $item) {
                 $notifications[] = [
-                    'id' => 'stock_' . $item->id,
-                    'type' => 'danger',
-                    'title' => 'Cảnh báo tồn kho',
+                    'id'      => 'stock_' . $item->id,
+                    'type'    => 'danger',
+                    'title'   => 'Cảnh báo tồn kho',
                     'message' => "Nguyên liệu '{$item->material_name}' chỉ còn {$item->quantity_in_stock} {$item->base_unit} trong kho.",
-                    'link' => '/quan-tri/kho',
-                    'time' => 'Mới nhất'
+                    'link'    => '/quan-tri/kho',
+                    'time'    => 'Mới nhất',
                 ];
             }
 

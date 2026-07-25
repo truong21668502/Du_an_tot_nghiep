@@ -76,7 +76,7 @@ onMounted(() => {
 
                 <!-- Empty State -->
                 <div v-else-if="notifications.length === 0" class="p-6 text-center text-outline text-body-small">
-                    🎉 Không có cảnh báo nào!
+                    🎉 Không có thông báo nào !
                 </div>
 
                 <!-- Items List -->

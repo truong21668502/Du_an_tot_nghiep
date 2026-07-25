@@ -9,9 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Review extends Model
 {
-    protected $fillable = ['product_id', 'user_id', 'order_id', 'rating', 'comment'];
+    protected $fillable = ['product_id', 'user_id', 'order_id', 'rating', 'comment', 'is_visible'];
 
-    protected $casts = ['rating' => 'integer'];
+    protected $casts = [
+        'rating' => 'integer',
+        'is_visible' => 'boolean'
+    ];
 
     public function product(): BelongsTo
     {

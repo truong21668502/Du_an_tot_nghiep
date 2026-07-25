@@ -81,7 +81,7 @@ const formatCurrency = (value) => {
                     <div class="space-y-1">
                         <span class="text-label-medium text-on-surface-variant font-bold uppercase tracking-wider">Thành viên</span>
                         <h2 class="text-headline-medium font-bold text-on-surface font-serif">{{ counters.users.total }}</h2>
-                        <p class="text-body-small text-outline">Hệ thống có {{ counters.users.staff }} nhân viên</p>
+                        <p class="text-body-small text-outline">Hệ thống có {{ counters.users.staff }} nhân viên, {{ counters.users.barista }} pha chế và {{ counters.users.customers }} khách hàng</p>
                     </div>
                     <span class="material-symbols-outlined text-display-small text-primary">group</span>
                 </div>
@@ -169,7 +169,7 @@ const formatCurrency = (value) => {
                 <div class="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5 space-y-4">
                     <div class="flex items-center gap-2 text-primary">
                         <span class="material-symbols-outlined">leaderboard</span>
-                        <h3 class="font-sans text-title-large font-bold">Mua nhiều nhất</h3>
+                        <h3 class="font-sans text-title-large font-bold">Top 5 sản phẩm bán chạy nhất</h3>
                     </div>
                     <div class="divide-y divide-outline-variant/20">
                         <div v-for="(prod, idx) in topSellingProducts" :key="prod.id" class="py-3 flex justify-between items-center">
@@ -187,7 +187,7 @@ const formatCurrency = (value) => {
                 <div class="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5 space-y-4">
                     <div class="flex items-center gap-2 text-tertiary">
                         <span class="material-symbols-outlined">favorite</span>
-                        <h3 class="font-sans text-title-large font-bold">Yêu thích nhất (Món)</h3>
+                        <h3 class="font-sans text-title-large font-bold">Top 5 sản phẩm được yêu thích nhất</h3>
                     </div>
                     <div class="divide-y divide-outline-variant/20">
                         <div v-for="(prod, idx) in topLikedProducts" :key="prod.id" class="py-3 flex justify-between items-center">
@@ -213,7 +213,7 @@ const formatCurrency = (value) => {
 
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2 text-primary">
-                    <h3 class="font-sans text-title-large font-bold">Top Khách hàng thân thiết</h3>
+                    <h3 class="font-sans text-title-large font-bold">Top 5 Khách hàng thân thiết</h3>
                 </div>
                 <span class="text-body-small text-outline">Tính trên đơn hàng hoàn tất</span>
             </div>
@@ -265,7 +265,7 @@ const formatCurrency = (value) => {
             </div>
 
             <div class="flex items-center gap-2 text-on-surface">
-                <h3 class="font-sans text-title-large font-bold text-on-surface text-primary">Bài viết được đánh giá cao</h3>
+                <h3 class="font-sans text-title-large font-bold text-on-surface text-primary">Top 5 bài viết được đánh giá cao nhất</h3>
             </div>
             
             <div class="overflow-x-auto">
