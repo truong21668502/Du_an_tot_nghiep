@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\StockMovementController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ProhibitedWordController;
 use App\Http\Controllers\Admin\ReviewReplyController;
+use App\Http\Controllers\Admin\BannerController;
 
 
 
@@ -165,6 +166,19 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::put('/tu-khoa-vi-pham/{prohibited_word}', [ProhibitedWordController::class, 'update'])->name('prohibited-words.update');
     Route::delete('/tu-khoa-vi-pham/{prohibited_word}', [ProhibitedWordController::class, 'destroy'])->name('prohibited-words.destroy');
     Route::patch('/tu-khoa-vi-pham/{prohibited_word}/toggle', [ProhibitedWordController::class, 'toggleActive'])->name('prohibited-words.toggle');
+
+    // quản lý banner
+    Route::post('banners/reorder',[BannerController::class, 'reorder'])->name('banners.reorder');
+    Route::patch('banners/{banner}/toggle',[BannerController::class, 'toggleActive'])->name('banners.toggle');
+
+    Route::get('banners', [BannerController::class, 'index'])->name('banners.index');
+    Route::post('banners',[BannerController::class, 'store'])->name('banners.store');
+    Route::put('banners/{banner}', [BannerController::class, 'update'])->name('banners.update');
+    Route::delete('banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
+    Route::get('banners/{banner}/chinh-sua', [BannerController::class, 'edit'])->name('banners.edit');
+    Route::get('banners/tao-moi', [BannerController::class, 'create'])->name('banners.create');
+
+
 });
 
 Route::middleware(['auth', 'role:ADMIN,STAFF,BARISTA'])->group(function () {
