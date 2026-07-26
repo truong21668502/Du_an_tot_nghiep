@@ -36,6 +36,8 @@ return new class extends Migration
             $table->integer('rating')->comment('Điểm số đánh giá từ 1 đến 5 sao');
             
             $table->text('comment')->nullable()->comment('Nội dung bình luận chi tiết của khách');
+
+            $table->boolean('is_visible')->default(true)->comment('Trạng thái hiển thị: true = Hiển thị, false = Ẩn (Dành cho quản trị viên)');
             
             // Thời gian tạo (Chính là thời gian đánh giá)
             $table->timestamp('created_at')->useCurrent()->comment('Thời gian khách gửi đánh giá');

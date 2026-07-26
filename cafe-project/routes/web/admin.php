@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\ProhibitedWordController;
 use App\Http\Controllers\Admin\ReviewReplyController;
 use App\Http\Controllers\Admin\BannerController;
 
+use App\Http\Controllers\Admin\AdminReviewController;
 
 
 /*
@@ -97,6 +98,13 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
 
     // API lấy thông báo
     Route::get('/api/notifications', [NotificationController::class, 'getNotifications'])->name('notifications');
+
+    // Quản lý bình luận đánh giá sản phẩm của quản trị viên
+    Route::get('/danh-gia-san-pham', [AdminReviewController::class, 'index'])->name('admin-reviews.index');
+    Route::patch('/danh-gia-san-pham/{id}/toggle-visibility', [AdminReviewController::class, 'toggleVisibility'])->name('admin-reviews.toggle-visibility');
+    Route::post('/danh-gia-san-pham/{id}/reply', [AdminReviewController::class, 'reply'])->name('admin-reviews.reply');
+    Route::delete('/danh-gia-san-pham/reply/{replyId}', [AdminReviewController::class, 'destroyReply'])->name('admin-reviews.destroy-reply');
+    Route::post('/danh-gia-san-pham/{id}/ai-reply', [AdminReviewController::class, 'generateAiReply'])->name('admin-reviews.ai-reply');
 
 
 

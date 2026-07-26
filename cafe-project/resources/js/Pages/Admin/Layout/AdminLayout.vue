@@ -51,6 +51,7 @@ const menuGroups = [
         children: [
             { label: "Danh mục", href: "/quan-tri/danh-muc", icon: "category" },
             { label: "Sản phẩm", href: "/quan-tri/san-pham", icon: "coffee" },
+            { label: "Đánh giá sản phẩm", href: "/quan-tri/danh-gia-san-pham", icon: "star" },
             { label: "Công thức", href: "/quan-tri/cong-thuc", icon: "science" },
         ],
     },
