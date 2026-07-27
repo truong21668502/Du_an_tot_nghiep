@@ -14,6 +14,10 @@ class BannerSeeder extends Seeder
     {
         DB::table('banners')->insert([
             [
+                                'title' => null,
+                'description' => null,
+                'button_text' => null,
+                'button_url' => null,
                 'theme' => 'light',
                 'text_align' => 'center',
                 'position' => 'center',
@@ -22,6 +26,10 @@ class BannerSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                                'title' => null,
+                'description' => null,
+                'button_text' => null,
+                'button_url' => null,
                 'theme' => 'light',
                 'text_align' => 'center',
                 'position' => 'center',
@@ -30,6 +38,10 @@ class BannerSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                                'title' => null,
+                'description' => null,
+                'button_text' => null,
+                'button_url' => null,
                 'theme' => 'light',
                 'text_align' => 'center',
                 'position' => 'center',
@@ -38,6 +50,10 @@ class BannerSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                                'title' => null,
+                'description' => null,
+                'button_text' => null,
+                'button_url' => null,
                 'theme' => 'light',
                 'text_align' => 'center',
                 'position' => 'center',
@@ -46,6 +62,10 @@ class BannerSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'title' => null,
+                'description' => null,
+                'button_text' => null,
+                'button_url' => null,
                 'theme' => 'light',
                 'text_align' => 'center',
                 'position' => 'center',
@@ -54,7 +74,11 @@ class BannerSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'theme' => 'light',
+                'title' => 'Nắng ấm áp, Cà phê đậm đà',
+                'description' => "Bắt đầu ngày mới đầy năng lượng với hương vị cà phê mộc mạc và không gian ngập tràn ánh nắng tại Nắng Coffee.",
+                'button_text' => "Xem menu",
+                'button_url' => "http://localhost:8000/thuc-don",
+                'theme' => 'dark',
                 'text_align' => 'center',
                 'position' => 'center',
                 'image_url' => 'https://res.cloudinary.com/dltgjdf9t/image/upload/v1783495774/background_nangcoffee_gdibni.png',
