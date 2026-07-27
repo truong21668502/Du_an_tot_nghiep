@@ -55,6 +55,7 @@ class Order extends Model
         'updated_at' => 'datetime',
     ];
 
+    protected $appends = ['barista_progress'];
     /**
      * Mối quan hệ: Đơn hàng thuộc về một bàn cụ thể (nếu có)
      * Liên kết với bảng tables qua khóa ngoại 'table_id'
@@ -88,8 +89,24 @@ class Order extends Model
     {
         return $this->hasOne(Payment::class);
     }
-        public function reviews(): HasMany
+    public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function getBaristaProgressAttribute(): array
+    {
+        $this->loadMissing('details');
+
+        $activeDetails = $this->details->where('barista_status', '!=', 'CANCELLED');
+        $total = $activeDetails->count();
+        $done = $activeDetails->where('barista_status', 'COMPLETED')->count();
+
+        return [
+            'done' => $done,
+            'total' => $total,
+            'is_complete' => $total > 0 && $done === $total,
+            'label' => "{$done}/{$total}",
+        ];
     }
 }

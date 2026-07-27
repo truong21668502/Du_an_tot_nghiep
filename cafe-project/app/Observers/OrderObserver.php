@@ -31,9 +31,6 @@ class OrderObserver
         if (!$order->wasChanged('status')) {
             return;
         }
-        if ($order->status === 'COMPLETED') {
-            app(\App\Services\RecipeStockService::class)->deductStock($order);
-        }
 
         try {
             event(new OrderStatusUpdated($order));

@@ -23,9 +23,18 @@ class RecipeStockService
             }
         }
 
+        // Sắp xếp theo material_id tăng dần để tránh deadlock
+        // khi 2 đơn tiêu thụ chung nguyên liệu theo thứ tự khác nhau
+        ksort($required);
+
         return $required;
     }
 
+    /**
+     * Chỉ đọc, dùng để hiển thị cảnh báo trước khi bấm "Hoàn thành"
+     * (KHÔNG dùng để quyết định cho phép trừ kho — dễ bị race condition,
+     * chỉ dùng cho mục đích hiển thị UI/preview).
+     */
     public function checkAvailability(Order $order): array
     {
         $required = $this->calculateRequiredMaterials($order);
@@ -34,6 +43,54 @@ class RecipeStockService
         }
 
         $materials = Material::whereIn('id', array_keys($required))->get()->keyBy('id');
+
+        return $this->buildInsufficientList($required, $materials);
+    }
+
+    /**
+     * Kiểm tra tồn kho VÀ trừ kho trong CÙNG 1 transaction có lock.
+     * Đây là hàm duy nhất nên được gọi khi đơn chuyển sang COMPLETED.
+     *
+     * @return array Danh sách nguyên liệu thiếu (rỗng nếu đủ và đã trừ thành công)
+     */
+    public function checkAndDeduct(Order $order): array
+    {
+        $required = $this->calculateRequiredMaterials($order);
+        if (empty($required)) {
+            return [];
+        }
+
+        return DB::transaction(function () use ($required, $order) {
+            // Lock ngay trong transaction này — không tách rời check và deduct
+            $materials = Material::whereIn('id', array_keys($required))
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            $insufficient = $this->buildInsufficientList($required, $materials);
+
+            if (!empty($insufficient)) {
+                // Không có thao tác ghi nào xảy ra, transaction commit rỗng — an toàn
+                return $insufficient;
+            }
+
+            $stockService = app(StockService::class);
+            foreach ($required as $materialId => $qty) {
+                $stockService->consume(
+                    materialId: $materialId,
+                    qtyBase: $qty,
+                    referenceType: 'order',
+                    referenceId: $order->id,
+                    note: "Trừ kho khi hoàn thành đơn #{$order->id}"
+                );
+            }
+
+            return [];
+        });
+    }
+
+    protected function buildInsufficientList(array $required, $materials): array
+    {
         $insufficient = [];
 
         foreach ($required as $materialId => $neededQty) {
@@ -50,32 +107,6 @@ class RecipeStockService
         }
 
         return $insufficient;
-    }
-
-    /**
-     * Trừ kho thực tế sau khi đơn được xác nhận hoàn thành.
-     * Trừ theo FIFO (lô nhập cũ nhất còn hàng bị trừ trước) qua StockService.
-     */
-    public function deductStock(Order $order): void
-    {
-        $required = $this->calculateRequiredMaterials($order);
-        if (empty($required)) {
-            return;
-        }
-
-        DB::transaction(function () use ($required, $order) {
-            $stockService = app(StockService::class);
-
-            foreach ($required as $materialId => $qty) {
-                $stockService->consume(
-                    materialId: $materialId,
-                    qtyBase: $qty,
-                    referenceType: 'order',
-                    referenceId: $order->id,
-                    note: "Trừ kho khi hoàn thành đơn #{$order->id}"
-                );
-            }
-        });
     }
 
     public function findVariantsWithoutRecipe(Order $order): array

@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\Table; 
-use App\Events\OrderCreated; 
+use App\Models\Table;
+use App\Events\OrderCreated;
 use App\Events\TableStatusUpdated;
 use App\Events\OrderPaymentConfirmed;
 use App\Events\OrderCancelled;
@@ -17,13 +17,13 @@ class OrderController extends Controller
 {
     public function index()
     {
-        $activeOrders = Order::with(['table','details.product','details.variant','payment'])
-            ->whereIn('status', ['PENDING', 'PROCESSING']) 
+        $activeOrders = Order::with(['table', 'details.product', 'details.variant', 'payment'])
+            ->whereIn('status', ['PENDING', 'PROCESSING'])
             ->orderBy('created_at', 'asc')
             ->get();
 
         return Inertia::render('Staff/Orders', [
-            'initialOrders' => $activeOrders,     
+            'initialOrders' => $activeOrders,
         ]);
     }
 
@@ -41,13 +41,14 @@ class OrderController extends Controller
             'order_type' => $request->order_type,
             'table_id' => $request->order_type === 'DINE_IN' ? $request->table_id : null,
             'status' => 'PENDING',
+            'source' => 'STAFF',
             'total_amount' => $request->total_amount,
             'final_amount' => $request->total_amount,
             'discount_amount' => 0,
         ]);
 
         // Tạo chi tiết món
-        foreach($request->items as $item) {
+        foreach ($request->items as $item) {
             $order->details()->create([
                 'product_id' => $item['product_id'],
                 'variant_id' => $item['variant_id'],
@@ -72,7 +73,7 @@ class OrderController extends Controller
                 broadcast(new TableStatusUpdated($table));
             }
         }
-        
+
         // Load thêm quan hệ 'payment' để bắn qua Vue
         broadcast(new OrderCreated($order->load(['table', 'details.product', 'details.variant', 'payment'])));
 
@@ -140,7 +141,7 @@ class OrderController extends Controller
         $tmnCode = config('services.vnpay.tmn_code');
         $hashSecret = config('services.vnpay.hash_secret');
         $baseUrl = config('services.vnpay.url');
-        
+
         $params = [
             'vnp_Version' => '2.1.0',
             'vnp_TmnCode' => $tmnCode,
@@ -181,11 +182,11 @@ class OrderController extends Controller
         }
 
         $order->update(['status' => 'CANCELLED']);
-        
+
         if ($order->table_id) {
             $remainingOrders = Order::where('table_id', $order->table_id)
-                                    ->whereIn('status', ['PENDING', 'PROCESSING'])
-                                    ->count();
+                ->whereIn('status', ['PENDING', 'PROCESSING'])
+                ->count();
             if ($remainingOrders === 0) {
                 $table = Table::find($order->table_id);
                 if ($table) {
@@ -194,7 +195,7 @@ class OrderController extends Controller
                 }
             }
         }
-        
+
         broadcast(new OrderCancelled($order));
 
         return redirect()->back();

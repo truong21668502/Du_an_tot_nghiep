@@ -62,7 +62,7 @@ class OrderController extends Controller
     private function placeOrder(Cart $cart, array $data, Request $request): Order
     {
         $cart->loadMissing('items.product.variants', 'items.variant');
-        
+
         if ($cart->items->isEmpty()) {
             throw new CartException('Giỏ hàng đang trống, không thể đặt hàng');
         }
@@ -74,7 +74,7 @@ class OrderController extends Controller
 
             $this->syncOrderDetails($order, $cart);
             $this->syncPayment($order, $data['payment_method']);
-            
+
             // THÊM: Cập nhật trạng thái bàn thành OCCUPIED nếu có chọn bàn
             // if ($data['table_id']) {
             //     $table = Table::where('id', $data['table_id'])->first();
@@ -136,6 +136,7 @@ class OrderController extends Controller
             'final_amount' => $subtotal - $discountAmount,
             'order_type' => $data['order_type'],
             'status' => 'PENDING',
+            'source' => 'CUSTOMER',
             'note' => $data['note'] ?? null,
         ];
 
@@ -206,10 +207,12 @@ class OrderController extends Controller
     private function mergeGuestCartIntoUserCart(Request $request, Cart $userCart): void
     {
         $token = $request->cookie(self::COOKIE_NAME);
-        if (!$token) return;
+        if (!$token)
+            return;
 
         $guestCart = Cart::whereNull('user_id')->where('token', $token)->first();
-        if (!$guestCart || $guestCart->id === $userCart->id) return;
+        if (!$guestCart || $guestCart->id === $userCart->id)
+            return;
 
         foreach ($guestCart->items as $guestItem) {
             $userItem = $userCart->items()
@@ -247,7 +250,7 @@ class OrderController extends Controller
     {
         $coupon = Coupon::where('code', strtoupper(trim($code)))
             ->where('status', 'ACTIVE')
-            ->where(fn ($q) => $q->whereNull('expiration_date')->orWhere('expiration_date', '>=', now()))
+            ->where(fn($q) => $q->whereNull('expiration_date')->orWhere('expiration_date', '>=', now()))
             ->first();
 
         if (!$coupon) {
