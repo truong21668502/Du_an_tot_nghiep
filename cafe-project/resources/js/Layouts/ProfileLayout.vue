@@ -12,6 +12,7 @@ const tabs = [
     { key: 'password', label: 'Đổi mật khẩu', icon: 'lock', route: 'profile.password' },
     { key: 'orders', label: 'Đơn hàng của tôi', icon: 'receipt_long', route: 'profile.orders' },
     { key: 'addresses', label: 'Địa chỉ giao hàng', icon: 'location_on', route: 'profile.addresses' },
+    { key: 'vouchers', label: 'Ví voucher', icon: 'local_offer', route: 'profile.vouchers' },
 ]
 
 const currentUrl = computed(() => page.url)
@@ -20,6 +21,8 @@ const activeTab = computed(() => {
     if (currentUrl.value.includes('/mat-khau')) return 'password'
     if (currentUrl.value.includes('/don-hang')) return 'orders'
     if (currentUrl.value.includes('/dia-chi')) return 'addresses'
+    if (currentUrl.value.includes('/voucher')) return 'vouchers'
+
 
     return 'info'
 })
