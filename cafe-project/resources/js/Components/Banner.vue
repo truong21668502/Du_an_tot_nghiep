@@ -4,6 +4,8 @@ import { computed } from 'vue'
 const props = defineProps({
   banner: { type: Object, required: true },
   preview: { type: Boolean, default: false },
+  rounded: { type: Boolean, default: true },
+  aspectClass: { type: String, default: '' },
 })
 
 const zone = computed(() => {
@@ -35,8 +37,11 @@ const hasContent = computed(
 
 <template>
   <div
-    class="banner-container relative w-full overflow-hidden rounded-2xl bg-surface-container-low"
-    style="aspect-ratio: 16/6"
+    class="banner-container relative w-full overflow-hidden bg-surface-container-low"
+    :class="[
+      rounded ? 'rounded-2xl' : '',
+      aspectClass || 'aspect-[16/6] md:aspect-[16/6] aspect-[4/3]',
+    ]"
   >
     <!-- Ảnh nền -->
     <img
@@ -59,10 +64,10 @@ const hasContent = computed(
     />
 
     <!-- Khối nội dung -->
-    <div class="absolute inset-0 grid p-6 md:p-10">
+    <div class="absolute inset-0 grid p-4 sm:p-6 md:p-10">
       <div
         v-if="hasContent"
-        class="banner-content space-y-3"
+        class="banner-content space-y-2 sm:space-y-3"
         :style="{
           alignSelf: contentStyle.alignSelf,
           justifySelf: contentStyle.justifySelf,
@@ -102,24 +107,75 @@ const hasContent = computed(
 
 /* Tiêu đề: font-size thay đổi theo chiều rộng banner */
 .banner-heading {
-  font-size: clamp(1.25rem, 3cqw + 0.5rem, 3rem);
+  font-size: clamp(1rem, 4cqw + 0.5rem, 1.5rem);
+  line-height: 1.2;
+}
+
+@media (min-width: 640px) {
+  .banner-heading {
+    font-size: clamp(1.25rem, 3cqw + 0.5rem, 2.25rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .banner-heading {
+    font-size: clamp(1.5rem, 3cqw + 0.5rem, 3rem);
+  }
 }
 
 /* Mô tả */
 .banner-description {
-  font-size: clamp(0.875rem, 1.5cqw + 0.5rem, 1.5rem);
-  line-height: 1.5;
+  font-size: clamp(0.75rem, 2cqw + 0.3rem, 0.875rem);
+  line-height: 1.4;
+}
+
+@media (min-width: 640px) {
+  .banner-description {
+    font-size: clamp(0.875rem, 1.5cqw + 0.5rem, 1.25rem);
+    line-height: 1.5;
+  }
+}
+
+@media (min-width: 1024px) {
+  .banner-description {
+    font-size: clamp(1rem, 1.5cqw + 0.5rem, 1.5rem);
+  }
 }
 
 /* Nút bấm: font-size và padding đều linh hoạt */
 .banner-button {
-  font-size: clamp(0.75rem, 1.2cqw + 0.2rem, 1.2rem);
-  padding: clamp(0.4rem, 0.8cqw + 0.1rem, 0.8rem) clamp(0.8rem, 1.8cqw + 0.4rem, 1.8rem);
+  font-size: clamp(0.625rem, 1.5cqw + 0.2rem, 0.75rem);
+  padding: clamp(0.3rem, 1cqw + 0.1rem, 0.5rem) clamp(0.6rem, 2cqw + 0.4rem, 1rem);
 }
 
+@media (min-width: 640px) {
+  .banner-button {
+    font-size: clamp(0.75rem, 1.2cqw + 0.2rem, 1rem);
+    padding: clamp(0.4rem, 0.8cqw + 0.1rem, 0.7rem) clamp(0.8rem, 1.8cqw + 0.4rem, 1.5rem);
+  }
+}
 
-/* Giới hạn chiều rộng khối nội dung cũng co giãn theo banner */
+@media (min-width: 1024px) {
+  .banner-button {
+    font-size: clamp(0.875rem, 1.2cqw + 0.2rem, 1.2rem);
+    padding: clamp(0.5rem, 0.8cqw + 0.1rem, 0.8rem) clamp(1rem, 1.8cqw + 0.4rem, 1.8rem);
+  }
+}
+
+/* Giới hạn chiều rộng khối nội dung cố định để đồng nhất giữa preview và trang chủ */
 .banner-content {
-  max-width: clamp(18rem, 50%, 42rem);
+  max-width: 100%;
+}
+
+@media (min-width: 640px) {
+  .banner-content {
+    max-width: 36rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .banner-content {
+    max-width: 42rem;
+  }
 }
 </style>

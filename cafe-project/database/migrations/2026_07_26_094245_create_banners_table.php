@@ -22,9 +22,12 @@ return new class extends Migration
             $table->string('button_url')->nullable();
             $table->enum('theme', ['light', 'dark'])->default('light');
             
-            $table->string('text_align', 10)->default('center');
-            
-            $table->string('position', 20)->default('center');
+            $table->enum('text_align', ['left', 'center', 'right'])->default('center');
+            $table->enum('position', [
+                'top-left', 'top-center', 'top-right', 
+                'center-left', 'center', 'center-right', 
+                'bottom-left', 'bottom-center', 'bottom-right'
+            ])->default('center');
             
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);

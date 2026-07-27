@@ -51,8 +51,13 @@ const heroImages = [
 
         <!-- ── Có banner: slider ảnh do admin quản lý, dùng chung component Banner ── -->
         <div
-            v-if="banners.length"
-            class="relative w-full h-[85vh] lg:h-[90vh]"
+    v-if="banners.length"
+    class="relative w-full
+           h-[40vh]
+           sm:h-[50vh]
+           md:h-[60vh]
+           lg:h-[80vh]
+           xl:h-[90vh]"
             role="region"
             aria-roledescription="carousel"
             @mouseenter="isPaused = true"

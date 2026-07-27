@@ -4,22 +4,36 @@ import { router, Link } from '@inertiajs/vue3'
 import axios          from 'axios'
 import { toast }      from 'vue3-toastify'
 import AdminLayout    from '@/Pages/Admin/Layout/AdminLayout.vue'
+import Pagination     from '@/Components/Main/Pagination.vue'
 import { POSITION_LABELS } from '@/Composables/useBanner'
 
 defineOptions({ layout: AdminLayout })
 
-const props = defineProps({ banners: Array })
+const props = defineProps({ 
+    banners: Object // Laravel Paginator object
+})
 
-const localBanners = ref([...props.banners])
+const localBanners = ref([...props.banners.data])
 const saving        = ref(false)
 
-// Sync khi Inertia reload props (sau create/update/delete)
-watch(() => props.banners, (val) => { localBanners.value = [...val] })
+// Sync khi Inertia reload props
+watch(() => props.banners, (val) => { 
+    localBanners.value = [...val.data] 
+})
+
+// ── Pagination handler ─────────────────────────────────────────────────────
+const handlePageChange = (page) => {
+    router.get(route('admin.banners.index', { page }), {}, {
+        preserveState: true,
+        preserveScroll: true,
+    })
+}
 
 // ── CRUD helpers ──────────────────────────────────────────────────────────────
 const deleteBanner = (banner) => {
     if (!confirm(`Xóa banner "${banner.title || '(không tiêu đề)'}"?`)) return
     router.delete(route('admin.banners.destroy', banner.id), {
+        preserveScroll: true,
         onSuccess: () => {
             localBanners.value = localBanners.value.filter(b => b.id !== banner.id)
         },
@@ -126,8 +140,8 @@ const saveOrder = async () => {
                 </span>
 
                 <!-- Order -->
-                <span class="font-sans text-label-sm text-outline-variant w-5 text-center flex-shrink-0 select-none">
-                    {{ index + 1 }}
+                <span class="font-sans text-label-sm text-outline-variant w-6 text-center flex-shrink-0 select-none">
+                    {{ banners.from + index }}
                 </span>
 
                 <!-- Thumbnail -->
@@ -170,7 +184,7 @@ const saveOrder = async () => {
                 >
                     <span :class="[
                         'absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
-                        banner.is_active ? '-translate-x-5' : 'translate-x-0'
+                        banner.is_active ? 'translate-x-0' : '-translate-x-5'
                     ]"/>
                 </button>
 
@@ -189,5 +203,15 @@ const saveOrder = async () => {
                 </div>
             </div>
         </div>
+
+        <!-- Pagination -->
+        <Pagination
+            v-if="banners.total > banners.per_page"
+            :current-page="banners.current_page"
+            :total-pages="banners.last_page"
+            :total-items="banners.total"
+            :per-page="banners.per_page"
+            @page-change="handlePageChange"
+        />
     </div>
 </template>

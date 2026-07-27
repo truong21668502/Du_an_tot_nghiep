@@ -14,7 +14,7 @@ class BannerController extends Controller
     public function index()
     {
         return Inertia::render('Admin/Banners/Index', [
-            'banners' => Banner::orderBy('sort_order')->get(),
+            'banners' => Banner::orderBy('sort_order')->paginate(10),
         ]);
     }
 

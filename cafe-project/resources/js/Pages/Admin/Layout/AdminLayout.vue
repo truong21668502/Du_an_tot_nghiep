@@ -107,6 +107,8 @@ const menuGroups = [
         children: [
             { label: "Bàn", href: "/quan-tri/ban", icon: "table_bar" },
             { label: "Thương hiệu", href: "/quan-tri/thuong-hieu", icon: "store" },
+            { label: "Banner trang chủ", href: "/quan-tri/banners", icon: "view_carousel" },
+            
         ],
     },
     {
