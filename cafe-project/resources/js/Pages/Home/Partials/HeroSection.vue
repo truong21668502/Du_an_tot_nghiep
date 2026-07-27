@@ -21,7 +21,7 @@ const prev = () => goTo(activeIndex.value - 1)
 onMounted(() => {
     timer = setInterval(() => {
         if (!isPaused.value && props.banners.length > 1) next()
-    }, 6000)
+    }, 4000)
 })
 onUnmounted(() => clearInterval(timer))
 
@@ -52,7 +52,7 @@ const heroImages = [
         <!-- ── Có banner: slider ảnh do admin quản lý, dùng chung component Banner ── -->
         <div
     v-if="banners.length"
-    class="relative w-full aspect-video"
+    class="relative max-w-[1100px] mx-auto aspect-video"
             role="region"
             aria-roledescription="carousel"
             @mouseenter="isPaused = true"

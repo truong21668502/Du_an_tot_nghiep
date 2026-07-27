@@ -280,7 +280,7 @@ const previewBanner = computed(() => ({
 
                         <!-- Preview area — chiếm toàn bộ không gian còn lại, không scroll -->
                         <div class="flex-1 flex items-center justify-center bg-surface-container-lowest/50 p-2 min-h-0">
-                            <div class="w-full h-full max-w-[1800px] max-h-full rounded-2xl overflow-hidden shadow-xl flex items-center justify-center">
+                            <div class="w-full h-full max-w-[1100px] aspect-8/3 rounded-2xl overflow-hidden shadow-xl flex items-center justify-center">
                                 <Banner :banner="previewBanner" preview class="w-full h-full" :rounded="true" aspect-class="w-full h-full" />
                             </div>
                         </div>

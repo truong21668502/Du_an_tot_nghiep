@@ -7,6 +7,7 @@ use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\Customer\FavoriteProductController;
 use App\Http\Controllers\Customer\CheckoutController;
+use App\Http\Controllers\Customer\VoucherController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,6 +23,7 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER,ADMIN'])->group(function (
         Route::get('/don-hang', [ProfileController::class, 'orders'])->name('orders');
         Route::get('/don-hang/{order}', [ProfileController::class, 'orderDetail'])->name('orders.detail');
         Route::get('/dia-chi', [ProfileController::class, 'addresses'])->name('addresses');
+        Route::get('/voucher', [VoucherController::class, 'index'])->name('vouchers');
     });
 
     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
@@ -60,4 +62,8 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER,ADMIN'])->group(function (
     Route::get('/don-hang', function () {
         return Inertia::render('Orders');
     })->name('orders');
+
+    // voucher
+    Route::post('/voucher/saved', [VoucherController::class, 'store'])->name('voucher.saved');
+
 });
