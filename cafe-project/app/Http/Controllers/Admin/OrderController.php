@@ -20,7 +20,8 @@ class OrderController extends Controller
                 'table:id,table_name,area',
                 'user:id,full_name,phone_number',
                 'payment',
-                'details:id,order_id,barista_status',
+                'details.product:id,product_name,image_url',
+                'details.variant:id,size,price',
             ])
             ->withCount('details');
 
