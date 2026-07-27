@@ -40,14 +40,14 @@ const hasContent = computed(
     class="banner-container relative w-full overflow-hidden bg-surface-container-low"
     :class="[
       rounded ? 'rounded-2xl' : '',
-      aspectClass || 'aspect-[16/6] md:aspect-[16/6] aspect-[4/3]',
+      aspectClass || 'aspect-[16/9] md:aspect-[16/6] aspect-[4/3]',
     ]"
   >
     <!-- Ảnh nền -->
     <img
       v-if="banner.image_url"
       :src="banner.image_url"
-      class="absolute inset-0 h-full w-full object-cover"
+      class="absolute inset-0 h-full w-full object-contain"
     />
     <div
       v-else
