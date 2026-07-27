@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\FavoriteProduct;
 use App\Models\Post;
 use App\Models\Product;
+use App\Models\Banner;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -86,6 +87,7 @@ class HomeController extends Controller
         return inertia('Home', [
             'drinks' => $drinks->values(),
             'articles' => $articles,
+            'banners' => Banner::where('is_active', true)->orderBy('sort_order')->get(),
         ]);
     }
 }

@@ -18,7 +18,7 @@ initialize()
 </script>
 <template>
   <div class="space-y-0 overflow-hidden bg-background">
-    <HeroSection />
+    <HeroSection :banners="props.banners" />
     <AnimateOnScroll animation="fade-up" :delay="100" :duration="800">
       <QrOrderingSection />
     </AnimateOnScroll>
