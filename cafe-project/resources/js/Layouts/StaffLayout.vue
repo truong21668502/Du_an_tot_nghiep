@@ -412,6 +412,7 @@ const submitNewOrder = () => {
 </template>
 
 <style scoped>
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 .slide-down-enter-active {
     transition: all 0.3s ease-out;
 }
