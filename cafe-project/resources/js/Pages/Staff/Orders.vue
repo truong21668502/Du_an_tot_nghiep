@@ -109,7 +109,7 @@ onMounted(() => {
     if (window.Echo) {
         window.Echo.channel('staff-orders')
             .listen('.order.created', (e) => {
-                // Reload dữ liệu đầy đủ từ server (event chỉ gửi thông tin tối thiểu)
+                new Audio('https://res.cloudinary.com/dltgjdf9t/video/upload/v1785330018/Chu%C3%B4ng_nh%E1%BA%AFc_nh%E1%BB%9F_nh%C3%A2n_vi%C3%AAn_lp3cpm.mp3').play().catch(() => {});
                 router.reload({
                     only: ['initialOrders'],
                     preserveScroll: true,
@@ -140,6 +140,9 @@ onMounted(() => {
                 orders.value = orders.value.filter(o => o.id !== e.id);
             })
             .listen('.barista.detail.updated', (e) => {
+                if (e.barista_status === 'COMPLETED') {
+                    new Audio('https://res.cloudinary.com/dltgjdf9t/video/upload/v1785330017/Chu%C3%B4ng_ho%C3%A0n_th%C3%A0nh_nh%C3%A2n_vi%C3%AAn_ixtcq2.mp3').play().catch(() => {});
+                }
                 const oIndex = orders.value.findIndex(o => o.id === e.order_id);
                 if (oIndex !== -1 && orders.value[oIndex].details) {
                     const dIndex = orders.value[oIndex].details.findIndex(d => d.id === e.id);

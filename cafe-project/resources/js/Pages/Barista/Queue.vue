@@ -133,6 +133,7 @@ onMounted(() => {
                 onSuccess: (page) => {
                     queue.value = page.props.initialQueue;
                     if (e.order?.status === 'PROCESSING') {
+                        new Audio('https://res.cloudinary.com/dltgjdf9t/video/upload/v1785330018/Chu%C3%B4ng_mario_pha_ch%E1%BA%BF_zc4uw5.mp3').play().catch(() => {});
                         toast.info(`Đơn mới tiếp nhận! Bàn ${e.order.table?.table_name || 'mang đi'}`, {
                             position: 'top-right',
                             autoClose: 4000,

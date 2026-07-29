@@ -4,11 +4,11 @@ namespace App\Events;
 
 use App\Models\OrderDetail;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class BaristaDetailUpdated implements ShouldBroadcast
+class BaristaDetailUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, SerializesModels;
 

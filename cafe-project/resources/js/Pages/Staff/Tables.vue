@@ -192,6 +192,7 @@ onMounted(() => {
 
         window.Echo.channel('staff-orders')
             .listen('.order.created', (e) => {
+                new Audio('https://res.cloudinary.com/dltgjdf9t/video/upload/v1785330018/Chu%C3%B4ng_nh%E1%BA%AFc_nh%E1%BB%9F_nh%C3%A2n_vi%C3%AAn_lp3cpm.mp3').play().catch(() => {});
                 if (e.order && e.order.table_id) {
                     const tableIndex = tables.value.findIndex(t => t.id === e.order.table_id);
                     if (tableIndex !== -1) {
