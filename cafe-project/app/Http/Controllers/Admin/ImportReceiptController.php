@@ -355,7 +355,8 @@ class ImportReceiptController extends Controller
                 'base_unit' => $validated['base_unit'],
                 'input_unit' => $validated['input_unit'],
                 'exchange_rate' => $validated['exchange_rate'],
-                'quantity_in_stock' => 0, // sẽ được cộng qua batch bên dưới
+                'quantity_in_stock' => 0,
+                'shelf_life_after_opening_days' => $validated['shelf_life_after_opening_days'] ?? null, // thêm dòng này
             ]);
 
             if ($initialQty > 0) {
@@ -394,7 +395,15 @@ class ImportReceiptController extends Controller
         });
 
         return response()->json([
-            'material' => $material->only(['id', 'material_name', 'base_unit', 'input_unit', 'exchange_rate', 'quantity_in_stock']),
+            'material' => $material->only([
+                'id',
+                'material_name',
+                'base_unit',
+                'input_unit',
+                'exchange_rate',
+                'quantity_in_stock',
+                'shelf_life_after_opening_days', // thêm field này
+            ]),
         ]);
     }
 

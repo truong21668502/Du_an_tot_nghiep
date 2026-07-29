@@ -155,6 +155,9 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
         Route::post('/nguyen-lieu/nhanh', [ImportReceiptController::class, 'quickStoreMaterial'])
             ->name('nguyen-lieu.quick-store');
 
+        Route::get('kho/nguyen-lieu/{material}/sua', [MaterialController::class, 'edit'])->name('nguyen-lieu.edit');
+        Route::put('kho/nguyen-lieu/{material}', [MaterialController::class, 'update'])->name('nguyen-lieu.update');
+
         Route::get('/dieu-chinh-ton', [StockAdjustmentController::class, 'index'])->name('dieu-chinh.index');
         Route::get('/dieu-chinh-ton/tao', [StockAdjustmentController::class, 'create'])->name('dieu-chinh.create');
         Route::post('/dieu-chinh-ton', [StockAdjustmentController::class, 'store'])->name('dieu-chinh.store');
@@ -176,11 +179,11 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::patch('/tu-khoa-vi-pham/{prohibited_word}/toggle', [ProhibitedWordController::class, 'toggleActive'])->name('prohibited-words.toggle');
 
     // quản lý banner
-    Route::post('banners/reorder',[BannerController::class, 'reorder'])->name('banners.reorder');
-    Route::patch('banners/{banner}/toggle',[BannerController::class, 'toggleActive'])->name('banners.toggle');
+    Route::post('banners/reorder', [BannerController::class, 'reorder'])->name('banners.reorder');
+    Route::patch('banners/{banner}/toggle', [BannerController::class, 'toggleActive'])->name('banners.toggle');
 
     Route::get('banners', [BannerController::class, 'index'])->name('banners.index');
-    Route::post('banners',[BannerController::class, 'store'])->name('banners.store');
+    Route::post('banners', [BannerController::class, 'store'])->name('banners.store');
     Route::put('banners/{banner}', [BannerController::class, 'update'])->name('banners.update');
     Route::delete('banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
     Route::get('banners/{banner}/chinh-sua', [BannerController::class, 'edit'])->name('banners.edit');

@@ -13,10 +13,11 @@ use Inertia\Inertia;
 use App\Models\StockMovement;
 use App\Models\ImportReceiptDetail;
 use Illuminate\Support\Facades\Log;
+use App\Services\MaterialExpiryService;
 
 class StockAdjustmentController extends Controller
 {
-    public function create()
+    public function create(MaterialExpiryService $expiryService)
     {
         $materials = Material::select(
             'id',
@@ -26,17 +27,30 @@ class StockAdjustmentController extends Controller
             'exchange_rate',
             'quantity_in_stock',
             'min_stock',
-            'max_stock'
+            'max_stock',
+            'shelf_life_after_opening_days'
         )
             ->with('adjustableExpiryDetail')
             ->orderBy('material_name')
             ->get()
-            ->each(function ($m) {
-                $m->expiry_date = $m->adjustableExpiryDetail?->expiry_date?->format('Y-m-d');
-                $m->nearest_expiry_detail_id = $m->adjustableExpiryDetail?->id;
-                $m->expiry_is_past = $m->adjustableExpiryDetail?->expiry_date
-                    ? \Carbon\Carbon::parse($m->adjustableExpiryDetail->expiry_date)->isPast()
+            ->each(function ($m) use ($expiryService) {
+                $batch = $m->adjustableExpiryDetail;
+
+                $m->expiry_date = $batch?->expiry_date?->format('Y-m-d');
+                $m->nearest_expiry_detail_id = $batch?->id;
+                $m->expiry_is_past = $batch?->expiry_date
+                    ? \Carbon\Carbon::parse($batch->expiry_date)->isPast()
                     : false;
+
+                $m->expiry_breakdown = $batch
+                    ? collect($expiryService->breakdown($batch, $m))->map(fn($part) => [
+                        'label' => $part['label'],
+                        'quantity_input_unit' => round($part['quantity_input_unit'], 2),
+                        'expiry_date' => $part['expiry_date']?->format('Y-m-d'),
+                        'is_past' => $part['expiry_date']?->isPast() ?? false,
+                    ])->values()
+                    : [];
+
                 unset($m->adjustableExpiryDetail);
             });
 
@@ -97,7 +111,7 @@ class StockAdjustmentController extends Controller
 
                 // --- MỚI: đồng bộ remaining_quantity của các lô để không phá vỡ FIFO ---
                 if ($change < 0) {
-                    $this->reduceBatchesFifo($material->id, abs($change));
+                    $this->reduceBatchesFefo($material, abs($change));
                 } elseif ($change > 0) {
                     $this->increaseSurplusBatch($material->id, $change);
                 }
@@ -133,19 +147,21 @@ class StockAdjustmentController extends Controller
     }
 
     /**
-     * Kiểm kê phát hiện HAO HỤT (change < 0): trừ dần vào các lô theo FIFO,
-     * lô cũ nhất còn hàng bị trừ trước — giống hệt logic xuất kho khi pha chế.
+     * Kiểm kê phát hiện HAO HỤT: trừ dần theo FEFO (lô hết hạn sớm nhất trừ trước),
+     * tự động đánh dấu opened_at khi bắt đầu dùng dở 1 đơn vị mới trong lô.
      */
-    private function reduceBatchesFifo(int $materialId, float $qty): void
+    private function reduceBatchesFefo(Material $material, float $qty): void
     {
         $remainingToReduce = $qty;
+        $rate = $material->exchange_rate ?: 1;
 
         $batches = ImportReceiptDetail::query()
             ->join('import_receipts', 'import_receipts.id', '=', 'import_receipt_details.receipt_id')
-            ->where('import_receipt_details.material_id', $materialId)
+            ->where('import_receipt_details.material_id', $material->id)
             ->where('import_receipts.status', 'active')
             ->where('import_receipt_details.remaining_quantity', '>', 0)
-            ->orderBy('import_receipt_details.created_at')
+            // Lô chưa có hạn (expiry_date null) xếp cuối cùng, không ưu tiên trừ trước
+            ->orderByRaw('import_receipt_details.expiry_date IS NULL, import_receipt_details.expiry_date ASC')
             ->select('import_receipt_details.*')
             ->lockForUpdate()
             ->get();
@@ -155,14 +171,20 @@ class StockAdjustmentController extends Controller
                 break;
 
             $deduct = min((float) $batch->remaining_quantity, $remainingToReduce);
-            $batch->decrement('remaining_quantity', $deduct);
+
+            // Dư = 0 nghĩa là đang đứng ở ranh giới chai nguyên -> deduction này mở 1 đơn vị mới
+            $remainderBefore = fmod((float) $batch->remaining_quantity, $rate);
+            $extra = [];
+            if ($remainderBefore == 0.0 && $batch->remaining_quantity > 0) {
+                $extra['opened_at'] = now();
+            }
+
+            $batch->decrement('remaining_quantity', $deduct, $extra);
             $remainingToReduce -= $deduct;
         }
 
-        // Kiểm kê là "nguồn sự thật" (người dùng đếm tay) — không throw exception ở đây
-        // (khác với StockService::consume()), chỉ ghi log để biết dữ liệu lô đã lệch trước đó.
         if ($remainingToReduce > 0.001) {
-            Log::warning("Kiểm kê nguyên liệu #{$materialId}: còn {$remainingToReduce} chưa trừ được vào lô nào — dữ liệu lô có thể đã lệch từ trước.");
+            Log::warning("Kiểm kê nguyên liệu #{$material->id}: còn {$remainingToReduce} chưa trừ được vào lô nào — dữ liệu lô có thể đã lệch từ trước.");
         }
     }
 

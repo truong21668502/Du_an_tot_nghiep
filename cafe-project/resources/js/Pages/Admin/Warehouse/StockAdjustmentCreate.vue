@@ -95,6 +95,12 @@ function submit() {
         expiry_date: data.expiry_date || null,
     })).post(route('admin.kho.dieu-chinh.store'))
 }
+
+function formatDate(val) {
+    if (!val) return '—'
+    const [year, month, day] = val.split('-')
+    return `${day}/${month}/${year}`
+}
 </script>
 
 <template>
@@ -254,20 +260,41 @@ function submit() {
                 <!-- Hạn sử dụng -->
                 <div v-if="selectedMaterial" class="flex flex-col gap-1.5">
                     <label class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1">
-                        Hạn sử dụng
-                        <span class="text-label-small text-on-surface-variant font-normal ml-1">(lô gần hạn nhất, tuỳ
-                            chọn)</span>
+                        Hạn sử dụng theo lô
+                        <span class="text-label-small text-on-surface-variant font-normal ml-1">(lô gần hạn nhất)</span>
                     </label>
-                    <input v-model="form.expiry_date" type="date" :disabled="!form.import_receipt_detail_id"
-                        class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium disabled:opacity-50 disabled:cursor-not-allowed" />
 
-                    <p v-if="selectedMaterial.expiry_is_past"
-                        class="text-label-small text-error font-bold flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[14px]">warning</span>
-                        Lô này đã hết hạn ({{ selectedMaterial.expiry_date }}).
-                    </p>
-                    <p v-else-if="!form.import_receipt_detail_id" class="text-label-small text-on-surface-variant/60">
+                    <!-- Tách hiển thị nếu lô có phần đang mở dở -->
+                    <div v-if="selectedMaterial.expiry_breakdown?.length" class="space-y-2">
+                        <div v-for="(part, idx) in selectedMaterial.expiry_breakdown" :key="idx"
+                            class="flex items-center justify-between px-4 py-2.5 rounded-xl border"
+                            :class="part.is_past ? 'border-error/30 bg-error/5' : 'border-outline-variant/40 bg-surface-container-low'">
+                            <span class="text-body-small text-on-surface-variant flex items-center gap-2">
+                                <span v-if="part.label" class="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase"
+                                    :class="part.label === 'đang mở' ? 'bg-amber-100 text-amber-700' : 'bg-primary/10 text-primary'">
+                                    {{ part.label }}
+                                </span>
+                                <span class="font-mono font-bold text-on-surface">
+                                    {{ formatNum(part.quantity_input_unit) }} {{ selectedMaterial.input_unit }}
+                                </span>
+                            </span>
+                            <span class="font-mono text-label-small font-bold"
+                                :class="part.is_past ? 'text-error' : 'text-on-surface'">
+                                {{ part.expiry_date ? formatDate(part.expiry_date) : '—' }}
+                                <span v-if="part.is_past" class="block text-[10px] text-right">Đã hết hạn</span>
+                            </span>
+                        </div>
+                    </div>
+                    <p v-else class="text-label-small text-on-surface-variant/60">
                         Nguyên liệu này chưa có lô nhập kho nào để gắn hạn sử dụng.
+                    </p>
+
+                    <!-- Sửa hạn gốc của lô -->
+                    <input v-model="form.expiry_date" type="date" :disabled="!form.import_receipt_detail_id"
+                        class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium disabled:opacity-50 disabled:cursor-not-allowed mt-1" />
+                    <p class="text-label-small text-on-surface-variant/60">
+                        Sửa hạn gốc của lô (áp dụng cho phần chưa mở). Phần "đang mở" dùng hạn riêng — tự tính từ ngày
+                        mở + số ngày dùng sau khi mở, không sửa trực tiếp ở đây.
                     </p>
                 </div>
 

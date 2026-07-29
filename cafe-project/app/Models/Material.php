@@ -26,6 +26,7 @@ class Material extends Model
         'max_stock',
         'supplier',
         'price',
+        'shelf_life_after_opening_days',
     ];
 
     /**
@@ -82,23 +83,26 @@ class Material extends Model
     }
 
     /**
-     * Lô có hạn sử dụng gần "hôm nay" nhất — dùng cho màn điều chỉnh kiểm kê.
-     * Khác với nearestExpiryDetail: KHÔNG loại trừ lô đã hết hạn,
-     * vì lý do "Hết hạn" chính là để sửa lại lô đã quá hạn.
+     * Lô đang được tiêu thụ theo FEFO (hạn sớm nhất trong các lô còn hàng) —
+     * đây là lô sẽ chứa phần "đang mở" nếu remaining_quantity không chia hết
+     * cho exchange_rate. Dùng cho màn điều chỉnh kiểm kê.
+     * Không loại trừ lô đã hết hạn — lý do "Hết hạn" chính là để sửa lô đã quá hạn.
      */
     public function adjustableExpiryDetail()
     {
         return $this->hasOne(ImportReceiptDetail::class, 'material_id')
             ->join('import_receipts', 'import_receipts.id', '=', 'import_receipt_details.receipt_id')
             ->where('import_receipts.status', 'active')
-            ->orderByDesc('import_receipt_details.created_at')
+            ->where('import_receipt_details.remaining_quantity', '>', 0)
+            ->orderByRaw('import_receipt_details.expiry_date IS NULL, import_receipt_details.expiry_date ASC')
             ->select('import_receipt_details.*');
     }
 
     /**
-     * Lô cũ nhất còn tồn thực tế — đại diện cho "hàng đang được dùng hiện tại" theo FIFO.
-     * Dùng để hiển thị nhà cung cấp đúng với lô đang tiêu thụ, khác latestImportDetail
-     * (vốn chỉ cho biết lần nhập gần nhất, bất kể còn hàng hay không).
+     * Lô đang được tiêu thụ theo FEFO (hạn sớm nhất trong các lô còn hàng) —
+     * đại diện cho "hàng đang được dùng hiện tại". Dùng để hiển thị nhà cung cấp
+     * đúng với lô đang tiêu thụ thực tế, khác latestImportDetail (chỉ cho biết
+     * lần nhập gần nhất, bất kể còn hàng hay không).
      */
     public function oldestActiveDetail()
     {
@@ -106,7 +110,7 @@ class Material extends Model
             ->join('import_receipts', 'import_receipts.id', '=', 'import_receipt_details.receipt_id')
             ->where('import_receipts.status', 'active')
             ->where('import_receipt_details.remaining_quantity', '>', 0)
-            ->orderBy('import_receipt_details.created_at') // cũ nhất trước — đúng thứ tự FIFO
+            ->orderByRaw('import_receipt_details.expiry_date IS NULL, import_receipt_details.expiry_date ASC')
             ->select([
                 'import_receipt_details.*',
                 'import_receipts.supplier_name',

@@ -19,72 +19,50 @@ const props = defineProps({
     filters: Object,
 });
 
-/*
-|--------------------------------------------------------------------------
-| THEME TOKENS
-|--------------------------------------------------------------------------
-*/
-
-const themeVars = {
-    "--ink": "#241F1B",
-    "--ink-soft": "#6B6259",
-    "--paper": "#FBF8F3",
-    "--paper-shade": "#EDE4D2",
-    "--brass": "#B8863B",
-    "--brass-soft": "#F5E9CE",
-    "--denim": "#33587A",
-    "--denim-soft": "#DCE7EF",
-    "--teal": "#2A7D6F",
-    "--teal-soft": "#DDEFEC",
-    "--forest": "#3C6B4E",
-    "--forest-soft": "#E1EEE4",
-    "--rust": "#A8452E",
-    "--rust-soft": "#F5E0DA",
-    "--plum": "#6B4C6B",
-    "--plum-soft": "#EAE0EA",
+const statusClasses = {
+    PENDING: "bg-tertiary-container text-on-tertiary-container",
+    PROCESSING: "bg-secondary-container text-on-secondary-container",
+    READY: "bg-primary-container text-on-primary-container",
+    DELIVERING: "bg-primary text-on-primary",
+    COMPLETED: "bg-surface-container-high text-on-surface-variant",
+    CANCELLED: "bg-error-container text-on-error-container",
 };
 
-const statusTheme = {
-    PENDING: { text: "var(--brass)", bg: "var(--brass-soft)" },
-    PROCESSING: { text: "var(--denim)", bg: "var(--denim-soft)" },
-    READY: { text: "var(--teal)", bg: "var(--teal-soft)" },
-    DELIVERING: { text: "var(--plum)", bg: "var(--plum-soft)" },
-    COMPLETED: { text: "var(--forest)", bg: "var(--forest-soft)" },
-    CANCELLED: { text: "var(--rust)", bg: "var(--rust-soft)" },
+const statusDotClasses = {
+    PENDING: "bg-tertiary",
+    PROCESSING: "bg-secondary",
+    READY: "bg-primary",
+    DELIVERING: "bg-on-primary",
+    COMPLETED: "bg-outline",
+    CANCELLED: "bg-error",
 };
 
-const sourceTheme = {
-    CUSTOMER: { text: "var(--plum)", bg: "var(--plum-soft)" },
-    STAFF: { text: "var(--ink-soft)", bg: "var(--paper-shade)" },
+const statusBorderClasses = {
+    PENDING: "border-l-tertiary",
+    PROCESSING: "border-l-secondary",
+    READY: "border-l-primary",
+    DELIVERING: "border-l-primary",
+    COMPLETED: "border-l-outline-variant",
+    CANCELLED: "border-l-error",
 };
 
-const paymentTheme = {
-    PAID: { text: "var(--forest)", bg: "var(--forest-soft)" },
-    PENDING: { text: "var(--brass)", bg: "var(--brass-soft)" },
-    UNPAID: { text: "var(--brass)", bg: "var(--brass-soft)" },
-    REFUNDED: { text: "var(--rust)", bg: "var(--rust-soft)" },
+const sourceClasses = {
+    CUSTOMER: "bg-secondary-container text-on-secondary-container",
+    STAFF: "bg-surface-container-high text-on-surface-variant",
 };
 
-const getStatusStyle = (status) => {
-    const t = statusTheme[status] ?? { text: "#6b7280", bg: "#f3f4f6" };
-    return { color: t.text, backgroundColor: t.bg };
+const paymentClasses = {
+    PAID: "bg-primary-container text-on-primary-container",
+    PENDING: "bg-tertiary-container text-on-tertiary-container",
+    UNPAID: "bg-tertiary-container text-on-tertiary-container",
+    REFUNDED: "bg-error-container text-on-error-container",
 };
 
-const getSourceStyle = (source) => {
-    const t = sourceTheme[source] ?? { text: "#6b7280", bg: "#f3f4f6" };
-    return { color: t.text, backgroundColor: t.bg };
-};
-
-const getPaymentStyle = (status) => {
-    const t = paymentTheme[status] ?? { text: "#6b7280", bg: "#f3f4f6" };
-    return { color: t.text, backgroundColor: t.bg };
-};
-
-/*
-|--------------------------------------------------------------------------
-| LOCAL ORDERS
-|--------------------------------------------------------------------------
-*/
+const getStatusClasses = (status) => statusClasses[status] ?? "bg-surface-container text-on-surface-variant";
+const getStatusDotClasses = (status) => statusDotClasses[status] ?? "bg-outline";
+const getStatusBorderClasses = (status) => statusBorderClasses[status] ?? "border-l-outline-variant";
+const getSourceClasses = (source) => sourceClasses[source] ?? "bg-surface-container text-on-surface-variant";
+const getPaymentClasses = (status) => paymentClasses[status] ?? "bg-tertiary-container text-on-tertiary-container";
 
 const localOrders = ref([...props.orders.data]);
 
@@ -94,12 +72,6 @@ watch(
         localOrders.value = [...newData];
     },
 );
-
-/*
-|--------------------------------------------------------------------------
-| REALTIME
-|--------------------------------------------------------------------------
-*/
 
 const realtimeConnected = ref(false);
 
@@ -145,45 +117,23 @@ onMounted(() => {
     realtimeConnected.value = true;
 
     window.Echo.channel("staff-orders")
-        /*
-        |--------------------------------------------------------------------------
-        | ORDER CREATED
-        |--------------------------------------------------------------------------
-        */
         .listen(".order.created", async (e) => {
             const exists = localOrders.value.some((o) => o.id === e.order.id);
-
             if (exists) return;
 
             try {
-                const { data } = await axios.get(
-                    `/quan-tri/don-hang/${e.order.id}`,
-                    {
-                        headers: {
-                            Accept: "application/json",
-                        },
-                    },
-                );
+                const { data } = await axios.get(`/quan-tri/don-hang/${e.order.id}`, {
+                    headers: { Accept: "application/json" },
+                });
 
                 localOrders.value.unshift(data);
-
-                toast.success(`Đơn hàng #${e.order.id} đã được tạo!`, {
-                    autoClose: 3000,
-                });
+                toast.success(`Đơn hàng #${e.order.id} đã được tạo!`, { autoClose: 3000 });
             } catch (error) {
                 console.error("Không thể tải chi tiết đơn hàng mới:", error);
             }
         })
-
-        /*
-        |--------------------------------------------------------------------------
-        | ORDER STATUS UPDATED
-        |--------------------------------------------------------------------------
-        */
         .listen(".order.status-updated", (e) => {
-            const index = localOrders.value.findIndex(
-                (o) => o.id === e.order.id,
-            );
+            const index = localOrders.value.findIndex((o) => o.id === e.order.id);
 
             if (index !== -1) {
                 localOrders.value[index] = {
@@ -194,48 +144,26 @@ onMounted(() => {
                 };
 
                 toast.info(
-                    `Đơn #${e.order.id} chuyển sang trạng thái "${statusLabel[e.order.status] ?? e.order.status
-                    }"`,
-                    {
-                        autoClose: 3000,
-                    },
+                    `Đơn #${e.order.id} chuyển sang trạng thái "${statusLabel[e.order.status] ?? e.order.status}"`,
+                    { autoClose: 3000 },
                 );
             }
         })
-
-        /*
-        |--------------------------------------------------------------------------
-        | BARISTA DETAIL UPDATED
-        |--------------------------------------------------------------------------
-        */
         .listen(".barista.detail.updated", (e) => {
             const order = localOrders.value.find((o) => o.id === e.order_id);
-
             if (!order || !order.details) return;
 
             const detail = order.details.find((d) => d.id === e.id);
 
             if (detail) {
                 detail.barista_status = e.barista_status;
-
                 order.barista_progress = computeBaristaProgress(order.details);
 
                 if (e.barista_status === "COMPLETED") {
-                    toast.success(
-                        `Đã pha xong "${e.product_name}" — đơn #${e.order_id}`,
-                        {
-                            autoClose: 3000,
-                        },
-                    );
+                    toast.success(`Đã pha xong "${e.product_name}" — đơn #${e.order_id}`, { autoClose: 3000 });
                 }
             }
         })
-
-        /*
-        |--------------------------------------------------------------------------
-        | PAYMENT CONFIRMED
-        |--------------------------------------------------------------------------
-        */
         .listen(".order.payment-confirmed", (e) => {
             const order = localOrders.value.find((o) => o.id === e.id);
 
@@ -243,12 +171,9 @@ onMounted(() => {
                 if (order.payment) {
                     order.payment.payment_status = e.payment_status;
                 }
-
                 order.status = e.status;
 
-                toast.success(`Đơn ${e.order_code} đã xác nhận thanh toán!`, {
-                    autoClose: 3000,
-                });
+                toast.success(`Đơn ${e.order_code} đã xác nhận thanh toán!`, { autoClose: 3000 });
             }
         });
 });
@@ -258,12 +183,6 @@ onUnmounted(() => {
         window.Echo.leaveChannel("staff-orders");
     }
 });
-
-/*
-|--------------------------------------------------------------------------
-| FILTERS
-|--------------------------------------------------------------------------
-*/
 
 const search = ref(props.filters?.search ?? "");
 const status = ref(props.filters?.status ?? "");
@@ -275,10 +194,7 @@ let searchTimeout = null;
 
 const onSearchInput = () => {
     clearTimeout(searchTimeout);
-
-    searchTimeout = setTimeout(() => {
-        applyFilters();
-    }, 400);
+    searchTimeout = setTimeout(() => applyFilters(), 400);
 };
 
 const applyFilters = () => {
@@ -291,10 +207,7 @@ const applyFilters = () => {
             table_id: tableId.value || undefined,
             source: source.value || undefined,
         },
-        {
-            preserveState: true,
-            replace: true,
-        },
+        { preserveState: true, replace: true },
     );
 };
 
@@ -309,45 +222,23 @@ const resetFilters = () => {
     orderType.value = "";
     tableId.value = "";
     source.value = "";
-
     applyFilters();
 };
 
 const hasActiveFilters = computed(() =>
-    Boolean(
-        search.value ||
-        status.value ||
-        orderType.value ||
-        tableId.value ||
-        source.value,
-    ),
+    Boolean(search.value || status.value || orderType.value || tableId.value || source.value),
 );
-
-/*
-|--------------------------------------------------------------------------
-| SUMMARY
-|--------------------------------------------------------------------------
-*/
 
 const summary = computed(() => {
     const data = localOrders.value;
 
     return {
         total: data.length,
-
         pending: data.filter((o) => o.status === "PENDING").length,
-
-        processing: data.filter((o) =>
-            ["PROCESSING", "READY", "DELIVERING"].includes(o.status),
-        ).length,
-
+        processing: data.filter((o) => ["PROCESSING", "READY", "DELIVERING"].includes(o.status)).length,
         completed: data.filter((o) => o.status === "COMPLETED").length,
-
         cancelled: data.filter((o) => o.status === "CANCELLED").length,
-
-        revenue: data
-            .filter((o) => o.status === "COMPLETED")
-            .reduce((sum, o) => sum + Number(o.final_amount ?? 0), 0),
+        revenue: data.filter((o) => o.status === "COMPLETED").reduce((sum, o) => sum + Number(o.final_amount ?? 0), 0),
     };
 });
 
@@ -359,19 +250,10 @@ const statusTabs = computed(() => [
     { value: "CANCELLED", label: "Đã hủy", count: summary.value.cancelled },
 ]);
 
-/*
-|--------------------------------------------------------------------------
-| HELPERS
-|--------------------------------------------------------------------------
-*/
-
-const formatMoney = (value) => {
-    return Number(value ?? 0).toLocaleString("vi-VN") + "đ";
-};
+const formatMoney = (value) => Number(value ?? 0).toLocaleString("vi-VN") + "đ";
 
 const formatDate = (value) => {
     if (!value) return "—";
-
     return new Date(value).toLocaleString("vi-VN", {
         day: "2-digit",
         month: "2-digit",
@@ -383,9 +265,7 @@ const formatDate = (value) => {
 
 const computeBaristaProgress = (details = []) => {
     const active = details.filter((d) => d.barista_status !== "CANCELLED");
-
     const total = active.length;
-
     const done = active.filter((d) => d.barista_status === "COMPLETED").length;
 
     return {
@@ -397,21 +277,10 @@ const computeBaristaProgress = (details = []) => {
     };
 };
 
-const getItemCount = (order) => {
-    return (order.details ?? []).reduce((t, d) => t + Number(d.quantity ?? 0), 0);
-};
-
-const getOrderTypeLabel = (type) => {
-    return orderTypeLabel[type] ?? type ?? "—";
-};
-
-const getOrderTypeIcon = (type) => {
-    return orderTypeIcon[type] ?? "receipt_long";
-};
-
-const getStatusLabel = (status) => {
-    return statusLabel[status] ?? status ?? "Không xác định";
-};
+const getItemCount = (order) => (order.details ?? []).reduce((t, d) => t + Number(d.quantity ?? 0), 0);
+const getOrderTypeLabel = (type) => orderTypeLabel[type] ?? type ?? "—";
+const getOrderTypeIcon = (type) => orderTypeIcon[type] ?? "receipt_long";
+const getStatusLabel = (status) => statusLabel[status] ?? status ?? "Không xác định";
 
 const openOrder = (order) => {
     selectedOrderId.value = order.id;
@@ -424,262 +293,227 @@ const closeOrderModal = () => {
 
 <template>
     <AdminLayout>
-        <div class="admin-orders-page min-h-screen space-y-5 p-1 font-sans" :style="themeVars">
-            <!-- ========================================================= -->
-            <!-- PAGE HEADER -->
-            <!-- ========================================================= -->
-
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="space-y-6 relative">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <p class="text-[11px] font-black uppercase tracking-[0.2em]" style="color: var(--brass)">
-                        Quầy vận hành
-                    </p>
-
-                    <h1 class="mt-0.5 text-2xl font-black" style="color: var(--ink)">
-                        Quản lý đơn hàng
+                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl">
+                        <span class="material-symbols-outlined text-primary">receipt_long</span>
+                        QUẢN LÝ ĐƠN HÀNG
                     </h1>
+                    <p class="font-sans text-body-medium text-on-surface-variant">
+                        Theo dõi và xử lý đơn hàng của Nắng Coffee theo thời gian thực.
+                    </p>
                 </div>
 
-                <div class="inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold"
-                    style="border-color: var(--paper-shade); color: var(--ink-soft)">
-                    <span class="h-2 w-2 rounded-full" :class="realtimeConnected ? 'animate-pulse' : ''"
-                        :style="{ backgroundColor: realtimeConnected ? 'var(--forest)' : '#cbd5e1' }"></span>
-
+                <div
+                    class="inline-flex w-fit items-center gap-2 rounded-full border border-outline-variant/20 bg-surface px-3.5 py-2 font-sans text-label-large text-on-surface-variant self-start sm:self-center">
+                    <span class="h-2 w-2 rounded-full"
+                        :class="realtimeConnected ? 'bg-primary animate-pulse' : 'bg-outline-variant'"></span>
                     {{ realtimeConnected ? "Đang cập nhật realtime" : "Realtime chưa kết nối" }}
                 </div>
             </div>
 
-            <!-- ========================================================= -->
-            <!-- STAT STRIP -->
-            <!-- ========================================================= -->
-
-            <section class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
-                <div class="stat-card" style="border-left-color: var(--brass)">
-                    <p class="stat-label">Chờ duyệt</p>
-                    <p class="stat-value" style="color: var(--brass)">{{ summary.pending }}</p>
+            <section class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div
+                    class="rounded-2xl border border-outline-variant/20 border-l-4 border-l-tertiary bg-surface p-4 shadow-sm">
+                    <p class="font-sans text-label-medium text-on-surface-variant">Chờ duyệt</p>
+                    <p class="mt-1 font-sans text-headline-md font-black text-tertiary">{{ summary.pending }}</p>
                 </div>
-
-                <div class="stat-card" style="border-left-color: var(--denim)">
-                    <p class="stat-label">Đang xử lý</p>
-                    <p class="stat-value" style="color: var(--denim)">{{ summary.processing }}</p>
+                <div
+                    class="rounded-2xl border border-outline-variant/20 border-l-4 border-l-secondary bg-surface p-4 shadow-sm">
+                    <p class="font-sans text-label-medium text-on-surface-variant">Đang xử lý</p>
+                    <p class="mt-1 font-sans text-headline-md font-black text-secondary">{{ summary.processing }}</p>
                 </div>
-
-                <div class="stat-card" style="border-left-color: var(--forest)">
-                    <p class="stat-label">Hoàn thành</p>
-                    <p class="stat-value" style="color: var(--forest)">{{ summary.completed }}</p>
+                <div
+                    class="rounded-2xl border border-outline-variant/20 border-l-4 border-l-primary bg-surface p-4 shadow-sm">
+                    <p class="font-sans text-label-medium text-on-surface-variant">Hoàn thành</p>
+                    <p class="mt-1 font-sans text-headline-md font-black text-primary">{{ summary.completed }}</p>
                 </div>
-
-                <div class="stat-card" style="border-left-color: var(--rust)">
-                    <p class="stat-label">Đã hủy</p>
-                    <p class="stat-value" style="color: var(--rust)">{{ summary.cancelled }}</p>
+                <div
+                    class="rounded-2xl border border-outline-variant/20 border-l-4 border-l-error bg-surface p-4 shadow-sm">
+                    <p class="font-sans text-label-medium text-on-surface-variant">Đã hủy</p>
+                    <p class="mt-1 font-sans text-headline-md font-black text-error">{{ summary.cancelled }}</p>
                 </div>
             </section>
 
-            <!-- ========================================================= -->
-            <!-- STATUS TABS + FILTERS -->
-            <!-- ========================================================= -->
+            <section class="flex flex-wrap items-center gap-2">
+                <button v-for="tab in statusTabs" :key="tab.value" type="button" @click="setStatusTab(tab.value)"
+                    class="rounded-full px-3.5 py-1.5 font-sans text-label-large font-bold transition-colors cursor-pointer"
+                    :class="status === tab.value
+                        ? 'bg-primary text-on-primary'
+                        : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container'">
+                    {{ tab.label }}
+                    <span class="ml-1 opacity-70">{{ tab.count }}</span>
+                </button>
+            </section>
 
-            <section class="rounded-2xl border bg-white p-4 shadow-sm" style="border-color: var(--paper-shade)">
-                <div class="flex flex-wrap items-center gap-2">
-                    <button v-for="tab in statusTabs" :key="tab.value" type="button" @click="setStatusTab(tab.value)"
-                        class="rounded-full border px-3.5 py-1.5 text-xs font-bold transition" :style="status === tab.value
-                            ? { backgroundColor: 'var(--ink)', color: '#fff', borderColor: 'var(--ink)' }
-                            : { borderColor: 'var(--paper-shade)', color: 'var(--ink-soft)' }">
-                        {{ tab.label }}
-                        <span class="ml-1 opacity-70">{{ tab.count }}</span>
-                    </button>
-
-                    <button v-if="hasActiveFilters" type="button" @click="resetFilters"
-                        class="ml-auto inline-flex items-center gap-1 text-xs font-bold" style="color: var(--rust)">
-                        <span class="material-symbols-outlined text-[16px]">restart_alt</span>
-                        Xóa bộ lọc
-                    </button>
+            <div class="bg-surface p-4 rounded-2xl border border-outline-variant/20 shadow-sm font-sans space-y-3">
+                <div
+                    class="flex items-center gap-2 text-label-large text-outline font-bold uppercase tracking-wider select-none">
+                    <span class="material-symbols-outlined text-lg">filter_list</span>
+                    <span>Bộ lọc tìm kiếm</span>
                 </div>
 
-                <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    <div class="relative xl:col-span-2">
-                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[19px]"
-                            style="color: var(--ink-soft)">search</span>
-
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 text-body-medium">
+                    <div
+                        class="sm:col-span-4 flex items-center gap-2 px-3 py-2 rounded-xl border border-outline-variant bg-surface-container-low focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+                        <span class="material-symbols-outlined text-outline text-xl select-none">search</span>
                         <input v-model="search" @input="onSearchInput" type="text"
                             placeholder="Mã đơn, tên khách, SĐT..."
-                            class="w-full rounded-xl border py-2.5 pl-10 pr-4 text-sm outline-none transition focus:ring-4"
-                            style="border-color: var(--paper-shade); background: var(--paper)" />
+                            class="w-full bg-transparent focus:outline-none text-on-surface" />
                     </div>
 
-                    <select v-model="orderType" @change="applyFilters"
-                        class="cursor-pointer rounded-xl border px-3.5 py-2.5 text-sm outline-none"
-                        style="border-color: var(--paper-shade); background: var(--paper); color: var(--ink)">
-                        <option value="">Tất cả loại đơn</option>
-                        <option value="DINE_IN">Tại chỗ</option>
-                        <option value="TAKE_AWAY">Mang đi</option>
-                        <option value="DELIVERY">Giao hàng</option>
-                    </select>
+                    <div class="sm:col-span-2">
+                        <select v-model="orderType" @change="applyFilters"
+                            class="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-on-surface focus:outline-none focus:border-primary cursor-pointer">
+                            <option value="">-- Tất cả loại đơn --</option>
+                            <option value="DINE_IN">Tại chỗ</option>
+                            <option value="TAKE_AWAY">Mang đi</option>
+                            <option value="DELIVERY">Giao hàng</option>
+                        </select>
+                    </div>
 
-                    <select v-model="tableId" @change="applyFilters"
-                        class="cursor-pointer rounded-xl border px-3.5 py-2.5 text-sm outline-none"
-                        style="border-color: var(--paper-shade); background: var(--paper); color: var(--ink)">
-                        <option value="">Tất cả bàn</option>
-                        <option v-for="table in tables" :key="table.id" :value="table.id">
-                            {{ table.table_name }}
-                        </option>
-                    </select>
+                    <div class="sm:col-span-2">
+                        <select v-model="tableId" @change="applyFilters"
+                            class="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-on-surface focus:outline-none focus:border-primary cursor-pointer">
+                            <option value="">-- Tất cả bàn --</option>
+                            <option v-for="table in tables" :key="table.id" :value="table.id">{{ table.table_name }}
+                            </option>
+                        </select>
+                    </div>
 
-                    <select v-model="source" @change="applyFilters"
-                        class="cursor-pointer rounded-xl border px-3.5 py-2.5 text-sm outline-none"
-                        style="border-color: var(--paper-shade); background: var(--paper); color: var(--ink)">
-                        <option value="">Tất cả nguồn</option>
-                        <option value="CUSTOMER">Khách tự đặt</option>
-                        <option value="STAFF">Nhân viên tạo</option>
-                    </select>
+                    <div class="sm:col-span-3">
+                        <select v-model="source" @change="applyFilters"
+                            class="w-full px-3 py-2 rounded-xl border border-outline-variant bg-surface text-on-surface focus:outline-none focus:border-primary cursor-pointer">
+                            <option value="">-- Tất cả nguồn --</option>
+                            <option value="CUSTOMER">Khách tự đặt</option>
+                            <option value="STAFF">Nhân viên tạo</option>
+                        </select>
+                    </div>
+
+                    <div class="sm:col-span-1 text-right">
+                        <button @click="resetFilters" v-if="hasActiveFilters"
+                            class="w-full h-full p-2 hover:bg-error-container/20 text-outline hover:text-error rounded-xl transition-colors flex items-center justify-center cursor-pointer"
+                            title="Xóa bộ lọc">
+                            <span class="material-symbols-outlined">filter_alt_off</span>
+                        </button>
+                    </div>
                 </div>
-            </section>
+            </div>
 
-            <!-- ========================================================= -->
-            <!-- ORDER LIST -->
-            <!-- ========================================================= -->
+            <div class="bg-surface rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm">
 
-            <section class="overflow-hidden rounded-2xl border bg-white shadow-sm"
-                style="border-color: var(--paper-shade)">
-                <div class="flex items-center justify-between border-b px-5 py-4"
-                    style="border-color: var(--paper-shade)">
-                    <h2 class="text-base font-black" style="color: var(--ink)">Danh sách đơn hàng</h2>
-                    <p class="text-xs font-semibold" style="color: var(--ink-soft)">
-                        {{ summary.total }} đơn hàng
-                    </p>
-                </div>
-
-                <!-- Empty -->
                 <div v-if="localOrders.length === 0"
                     class="flex flex-col items-center justify-center px-6 py-20 text-center">
-                    <div class="flex h-20 w-20 items-center justify-center rounded-3xl"
-                        style="background: var(--paper-shade); color: var(--ink-soft)">
+                    <div
+                        class="flex h-20 w-20 items-center justify-center rounded-3xl bg-surface-container-high text-on-surface-variant">
                         <span class="material-symbols-outlined text-4xl">receipt_long</span>
                     </div>
-
-                    <h3 class="mt-5 text-base font-bold" style="color: var(--ink)">Không có đơn hàng</h3>
-
-                    <p class="mt-1 max-w-sm text-sm" style="color: var(--ink-soft)">
-                        {{ hasActiveFilters
-                            ? "Thử thay đổi bộ lọc để xem kết quả khác."
-                            : "Đơn hàng mới sẽ xuất hiện tại đây." }}
+                    <h3 class="mt-5 font-sans text-body-medium font-bold text-on-surface">Không có đơn hàng</h3>
+                    <p class="mt-1 max-w-sm font-sans text-body-small text-on-surface-variant">
+                        {{
+                            hasActiveFilters
+                                ? "Thử thay đổi bộ lọc để xem kết quả khác."
+                                : "Đơn hàng mới sẽ xuất hiện tại đây."
+                        }}
                     </p>
-
                     <button v-if="hasActiveFilters" type="button" @click="resetFilters"
-                        class="mt-5 rounded-xl px-4 py-2.5 text-sm font-bold text-white" style="background: var(--ink)">
+                        class="mt-5 rounded-full bg-primary px-5 py-2.5 font-sans text-label-large font-bold text-on-primary cursor-pointer">
                         Xóa bộ lọc
                     </button>
                 </div>
 
-                <!-- Desktop table -->
                 <div v-else class="hidden overflow-x-auto lg:block">
-                    <table class="w-full border-collapse">
+                    <table class="w-full border-collapse text-center">
                         <thead>
-                            <tr class="text-left text-[11px] font-black uppercase tracking-wider"
-                                style="color: var(--ink-soft); background: var(--paper)">
-                                <th class="whitespace-nowrap px-5 py-3">Đơn hàng</th>
-                                <th class="whitespace-nowrap px-5 py-3">Khách hàng</th>
-                                <th class="whitespace-nowrap px-5 py-3">Loại đơn / Bàn</th>
-                                <th class="whitespace-nowrap px-5 py-3 text-center">Pha chế</th>
-                                <th class="whitespace-nowrap px-5 py-3">Thanh toán</th>
-                                <th class="whitespace-nowrap px-5 py-3 text-right">Tổng tiền</th>
-                                <th class="whitespace-nowrap px-5 py-3">Trạng thái</th>
+                            <tr
+                                class="bg-surface-container border-2 border-outline-variant/20 font-sans text-label-large text-on-surface-variant">
+                                <th class="p-4 text-left">Đơn hàng</th>
+                                <th class="p-4 text-left">Khách hàng</th>
+                                <th class="p-4 hidden lg:table-cell">Loại đơn / Bàn</th>
+                                <th class="p-4 hidden md:table-cell">Pha chế</th>
+                                <th class="p-4 hidden md:table-cell">Thanh toán</th>
+                                <th class="p-4 text-right">Tổng tiền</th>
+                                <th class="p-4 text-center">Trạng thái</th>
                             </tr>
                         </thead>
 
-                        <tbody>
+                        <tbody class="divide-y divide-outline-variant/10 font-sans text-body-medium text-on-surface">
                             <tr v-for="order in localOrders" :key="order.id" @click="openOrder(order)"
-                                class="group cursor-pointer border-b transition-colors"
-                                style="border-color: var(--paper-shade)"
-                                :style="{ boxShadow: `inset 4px 0 0 0 ${statusTheme[order.status]?.text ?? '#cbd5e1'}` }">
+                                class="hover:bg-surface-container-low/50 transition-colors cursor-pointer border-l-4"
+                                :class="getStatusBorderClasses(order.status)">
 
-                                <!-- Order -->
-                                <td class="px-5 py-4">
-                                    <p class="font-mono text-sm font-black" style="color: var(--ink)">
-                                        #{{ order.order_code ?? order.id }}
-                                    </p>
-                                    <p class="mt-0.5 text-xs" style="color: var(--ink-soft)">
+                                <td class="p-4 text-left">
+                                    <p class="font-mono font-black text-primary">#{{ order.order_code ?? order.id }}</p>
+                                    <p class="mt-0.5 font-sans text-body-small text-on-surface-variant">
                                         {{ formatDate(order.created_at) }} · {{ getItemCount(order) }} món
                                     </p>
                                     <span
-                                        class="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
-                                        :style="getSourceStyle(order.source)">
+                                        class="mt-1 inline-flex items-center rounded-full px-2 py-0.5 font-sans text-body-small font-bold"
+                                        :class="getSourceClasses(order.source)">
                                         {{ sourceLabel[order.source] ?? order.source }}
                                     </span>
                                 </td>
 
-                                <!-- Customer -->
-                                <td class="px-5 py-4">
-                                    <p class="text-sm font-bold" style="color: var(--ink)">
-                                        {{ order.user?.name ?? "Khách vãng lai" }}
-                                    </p>
-                                    <p v-if="order.user?.phone" class="mt-0.5 text-xs" style="color: var(--ink-soft)">
-                                        {{ order.user.phone }}
-                                    </p>
+                                <td class="p-4 text-left">
+                                    <p class="font-sans text-body-medium font-bold text-on-surface">{{ order.user?.name
+                                        ?? "Khách vãng lai" }}</p>
+                                    <p v-if="order.user?.phone"
+                                        class="mt-0.5 font-sans text-body-small text-on-surface-variant">{{
+                                            order.user.phone }}</p>
                                 </td>
 
-                                <!-- Type / table -->
-                                <td class="px-5 py-4">
+                                <td class="p-4 hidden lg:table-cell">
                                     <div class="flex items-center gap-1.5">
-                                        <span class="material-symbols-outlined text-[16px]"
-                                            style="color: var(--ink-soft)">
-                                            {{ getOrderTypeIcon(order.order_type) }}
-                                        </span>
-                                        <span class="text-sm" style="color: var(--ink)">{{
+                                        <span class="material-symbols-outlined text-[16px] text-on-surface-variant">{{
+                                            getOrderTypeIcon(order.order_type) }}</span>
+                                        <span class="font-sans text-body-medium text-on-surface">{{
                                             getOrderTypeLabel(order.order_type) }}</span>
                                     </div>
-                                    <p class="mt-0.5 text-xs" style="color: var(--ink-soft)">
-                                        {{ order.table?.table_name ?? "Không có bàn" }}
-                                    </p>
+                                    <p class="mt-0.5 font-sans text-body-small text-on-surface-variant">{{
+                                        order.table?.table_name ?? "Không có bàn" }}</p>
                                 </td>
 
-                                <!-- Barista -->
-                                <td class="px-5 py-4">
+                                <td class="p-4 hidden md:table-cell text-center">
                                     <div v-if="order.barista_progress" class="mx-auto w-24">
                                         <div class="mb-1 flex items-center justify-between">
-                                            <span class="text-[10px] font-bold" style="color: var(--ink-soft)">Tiến
+                                            <span
+                                                class="font-sans text-body-small font-bold text-on-surface-variant">Tiến
                                                 độ</span>
-                                            <span class="text-xs font-black"
-                                                :style="{ color: order.barista_progress.is_complete ? 'var(--forest)' : 'var(--ink)' }">
+                                            <span class="font-sans text-body-small font-black"
+                                                :class="order.barista_progress.is_complete ? 'text-primary' : 'text-on-surface'">
                                                 {{ order.barista_progress.label }}
                                             </span>
                                         </div>
-                                        <div class="h-1.5 overflow-hidden rounded-full"
-                                            style="background: var(--paper-shade)">
-                                            <div class="h-full rounded-full transition-all duration-500"
-                                                :style="{ width: `${order.barista_progress.percentage ?? 0}%`, background: 'var(--forest)' }">
-                                            </div>
+                                        <div class="h-1.5 overflow-hidden rounded-full bg-surface-container-high">
+                                            <div class="h-full rounded-full bg-primary transition-all duration-500"
+                                                :style="{ width: `${order.barista_progress.percentage ?? 0}%` }"></div>
                                         </div>
                                     </div>
-                                    <span v-else class="block text-center" style="color: var(--paper-shade)">—</span>
+                                    <span v-else class="text-outline-variant">—</span>
                                 </td>
 
-                                <!-- Payment -->
-                                <td class="px-5 py-4">
-                                    <p class="text-xs font-semibold" style="color: var(--ink)">
-                                        {{ order.payment?.payment_method ?? "—" }}
-                                    </p>
+                                <td class="p-4 hidden md:table-cell">
+                                    <p class="font-sans text-body-small font-semibold text-on-surface">{{
+                                        order.payment?.payment_method ?? "—" }}</p>
                                     <span
-                                        class="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
-                                        :style="getPaymentStyle(order.payment?.payment_status)">
+                                        class="mt-1 inline-flex items-center rounded-full px-2 py-0.5 font-sans text-body-small font-bold"
+                                        :class="getPaymentClasses(order.payment?.payment_status)">
                                         {{ paymentStatusLabel[order.payment?.payment_status] ?? "Chưa thanh toán" }}
                                     </span>
                                 </td>
 
-                                <!-- Money -->
-                                <td class="whitespace-nowrap px-5 py-4 text-right">
-                                    <span class="font-mono text-sm font-black" style="color: var(--ink)">
-                                        {{ formatMoney(order.final_amount) }}
-                                    </span>
+                                <td class="whitespace-nowrap p-4 text-right">
+                                    <span class="font-mono text-body-medium font-black text-on-surface">{{
+                                        formatMoney(order.final_amount) }}</span>
                                 </td>
 
-                                <!-- Status -->
-                                <td class="px-5 py-4">
+                                <td class="p-4">
                                     <span
-                                        class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold"
-                                        :style="getStatusStyle(order.status)">
+                                        class="inline-flex items-center gap-2 justify-center w-full px-3 py-1 rounded-full text-label-medium font-bold"
+                                        :class="getStatusClasses(order.status)">
                                         <span class="h-2 w-2 rounded-full"
-                                            :style="{ backgroundColor: statusTheme[order.status]?.text ?? '#9ca3af' }"></span>
+                                            :class="getStatusDotClasses(order.status)"></span>
                                         {{ getStatusLabel(order.status) }}
                                     </span>
                                 </td>
@@ -688,161 +522,90 @@ const closeOrderModal = () => {
                     </table>
                 </div>
 
-                <!-- ===================================================== -->
-                <!-- MOBILE TICKET CARDS -->
-                <!-- ===================================================== -->
-
                 <div v-if="localOrders.length" class="space-y-3 p-4 lg:hidden">
                     <article v-for="order in localOrders" :key="`mobile-${order.id}`" @click="openOrder(order)"
-                        class="ticket cursor-pointer overflow-hidden rounded-2xl shadow-sm active:scale-[0.99]">
-
-                        <!-- ticket head -->
-                        <div class="flex items-start justify-between gap-3 p-4"
-                            :style="{ background: statusTheme[order.status]?.bg ?? 'var(--paper-shade)' }">
+                        class="cursor-pointer overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface shadow-sm active:scale-[0.99]">
+                        <div class="flex items-start justify-between gap-3 border-b border-outline-variant/20 p-4"
+                            :class="getStatusClasses(order.status)">
                             <div>
-                                <p class="font-mono text-sm font-black" style="color: var(--ink)">
-                                    #{{ order.order_code ?? order.id }}
-                                </p>
-                                <p class="mt-0.5 text-xs" style="color: var(--ink-soft)">
-                                    {{ formatDate(order.created_at) }}
-                                </p>
+                                <p class="font-mono text-body-medium font-black">#{{ order.order_code ?? order.id }}</p>
+                                <p class="mt-0.5 font-sans text-body-small opacity-80">{{ formatDate(order.created_at)
+                                    }}</p>
                             </div>
-
                             <span
-                                class="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-bold"
-                                :style="{ color: statusTheme[order.status]?.text ?? '#6b7280' }">
+                                class="inline-flex items-center gap-1.5 rounded-full bg-surface/70 px-2.5 py-1 font-sans text-label-medium font-bold">
                                 {{ getStatusLabel(order.status) }}
                             </span>
                         </div>
 
-                        <!-- torn edge -->
-                        <div class="ticket-notch"
-                            :style="{ '--notch-color': statusTheme[order.status]?.bg ?? 'var(--paper-shade)' }"></div>
-
-                        <!-- ticket body -->
-                        <div class="bg-white p-4" style="background: var(--paper)">
-                            <div class="flex items-center justify-between rounded-xl p-3"
-                                style="background: var(--paper-shade)">
+                        <div class="p-4">
+                            <div class="flex items-center justify-between rounded-xl bg-surface-container p-3">
                                 <div>
-                                    <p class="text-sm font-bold" style="color: var(--ink)">
-                                        {{ order.user?.name ?? "Khách vãng lai" }}
-                                    </p>
-                                    <p v-if="order.user?.phone" class="mt-0.5 text-xs" style="color: var(--ink-soft)">
-                                        {{ order.user.phone }}
-                                    </p>
+                                    <p class="font-sans text-body-medium font-bold text-on-surface">{{ order.user?.name
+                                        ?? "Khách vãng lai" }}</p>
+                                    <p v-if="order.user?.phone"
+                                        class="mt-0.5 font-sans text-body-small text-on-surface-variant">{{
+                                            order.user.phone }}</p>
                                 </div>
-                                <span class="rounded-full px-2 py-1 text-[10px] font-bold"
-                                    :style="getSourceStyle(order.source)">
+                                <span class="rounded-full px-2 py-1 font-sans text-label-medium font-bold"
+                                    :class="getSourceClasses(order.source)">
                                     {{ sourceLabel[order.source] ?? order.source }}
                                 </span>
                             </div>
 
                             <div class="mt-3 grid grid-cols-2 gap-3">
                                 <div>
-                                    <p class="text-[10px] font-bold uppercase tracking-wider"
-                                        style="color: var(--ink-soft)">Loại đơn / Bàn</p>
+                                    <p
+                                        class="font-sans text-body-small font-bold uppercase tracking-wider text-on-surface-variant">
+                                        Loại đơn / Bàn</p>
                                     <div class="mt-1 flex items-center gap-1.5">
-                                        <span class="material-symbols-outlined text-[17px]"
-                                            style="color: var(--ink-soft)">
-                                            {{ getOrderTypeIcon(order.order_type) }}
-                                        </span>
-                                        <span class="text-sm font-semibold" style="color: var(--ink)">
-                                            {{ getOrderTypeLabel(order.order_type) }} · {{ order.table?.table_name ??
-                                                "—" }}
-                                        </span>
+                                        <span class="material-symbols-outlined text-[17px] text-on-surface-variant">{{
+                                            getOrderTypeIcon(order.order_type) }}</span>
+                                        <span class="font-sans text-body-medium font-semibold text-on-surface">{{
+                                            getOrderTypeLabel(order.order_type) }} · {{ order.table?.table_name ?? "—"
+                                            }}</span>
                                     </div>
                                 </div>
-
                                 <div>
-                                    <p class="text-[10px] font-bold uppercase tracking-wider"
-                                        style="color: var(--ink-soft)">Thanh toán</p>
-                                    <p class="mt-1 text-sm font-semibold" style="color: var(--ink)">
-                                        {{ order.payment?.payment_method ?? "—" }}
-                                    </p>
-                                    <span class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold"
-                                        :style="getPaymentStyle(order.payment?.payment_status)">
+                                    <p
+                                        class="font-sans text-body-small font-bold uppercase tracking-wider text-on-surface-variant">
+                                        Thanh toán</p>
+                                    <p class="mt-1 font-sans text-body-medium font-semibold text-on-surface">{{
+                                        order.payment?.payment_method ?? "—" }}</p>
+                                    <span
+                                        class="mt-1 inline-flex rounded-full px-2 py-1 font-sans text-label-medium font-bold"
+                                        :class="getPaymentClasses(order.payment?.payment_status)">
                                         {{ paymentStatusLabel[order.payment?.payment_status] ?? "Chưa thanh toán" }}
                                     </span>
                                 </div>
                             </div>
 
-                            <div class="mt-4 flex items-center justify-between border-t pt-4"
-                                style="border-color: var(--paper-shade)">
+                            <div class="mt-4 flex items-center justify-between border-t border-outline-variant/20 pt-4">
                                 <div v-if="order.barista_progress" class="flex items-center gap-2">
-                                    <div class="w-16 overflow-hidden rounded-full"
-                                        style="background: var(--paper-shade)">
-                                        <div class="h-1.5 rounded-full"
-                                            :style="{ width: `${order.barista_progress.percentage ?? 0}%`, background: 'var(--forest)' }">
-                                        </div>
+                                    <div class="w-16 overflow-hidden rounded-full bg-surface-container-high">
+                                        <div class="h-1.5 rounded-full bg-primary"
+                                            :style="{ width: `${order.barista_progress.percentage ?? 0}%` }"></div>
                                     </div>
-                                    <span class="text-xs font-bold" style="color: var(--ink-soft)">{{
+                                    <span class="font-sans text-body-small font-bold text-on-surface-variant">{{
                                         order.barista_progress.label }}</span>
                                 </div>
-                                <span v-else class="text-xs" style="color: var(--ink-soft)">{{ getItemCount(order) }}
-                                    món</span>
-
-                                <span class="font-mono text-base font-black" style="color: var(--ink)">
-                                    {{ formatMoney(order.final_amount) }}
-                                </span>
+                                <span v-else class="font-sans text-body-small text-on-surface-variant">{{
+                                    getItemCount(order) }} món</span>
+                                <span class="font-mono text-body-medium font-black text-on-surface">{{
+                                    formatMoney(order.final_amount) }}</span>
                             </div>
                         </div>
                     </article>
                 </div>
-            </section>
 
-            <!-- ========================================================= -->
-            <!-- PAGINATION -->
-            <!-- ========================================================= -->
-
-            <div v-if="orders.links?.length > 3" class="flex flex-wrap items-center justify-center gap-1 pb-4">
-                <template v-for="(link, index) in orders.links" :key="index">
-                    <Link v-if="link.url" :href="link.url" v-html="link.label" preserve-scroll
-                        class="min-w-9 rounded-xl px-3 py-2 text-center text-xs font-bold transition-all duration-200"
-                        :style="link.active
-                            ? { background: 'var(--ink)', color: '#fff' }
-                            : { border: '1px solid var(--paper-shade)', color: 'var(--ink-soft)' }" />
-
-                    <span v-else v-html="link.label" class="min-w-9 rounded-xl px-3 py-2 text-center text-xs font-bold"
-                        style="color: var(--paper-shade)" />
-                </template>
+                <div v-if="orders.links?.length > 3" class="flex items-left justify-center gap-1 mt-6 mb-3 font-sans">
+                    <Component :is="link.url ? Link : 'span'" v-for="(link, index) in orders.links" :key="index"
+                        :href="link.url" v-html="link.label" :preserve-scroll="true"
+                        :class="['px-3 py-1.5 text-label-medium rounded-lg transition-all', link.active ? 'bg-primary text-on-primary font-bold shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high', !link.url ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer']" />
+                </div>
             </div>
         </div>
 
         <OrderDetailModal :order="selectedOrder" @close="closeOrderModal" />
     </AdminLayout>
 </template>
-
-<style scoped>
-.stat-card {
-    background: #fff;
-    border-radius: 1rem;
-    border-left-width: 4px;
-    padding: 1rem 1.1rem;
-    box-shadow: 0 1px 2px rgba(36, 31, 27, 0.05);
-}
-
-.stat-label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--ink-soft);
-}
-
-.stat-value {
-    margin-top: 0.4rem;
-    font-size: 1.75rem;
-    font-weight: 900;
-}
-
-.ticket-notch {
-    height: 12px;
-    background-image:
-        linear-gradient(135deg, var(--notch-color) 8px, transparent 8px),
-        linear-gradient(-135deg, var(--notch-color) 8px, transparent 8px);
-    background-position: left top;
-    background-size: 16px 16px;
-    background-repeat: repeat-x;
-    background-color: var(--paper);
-}
-</style>

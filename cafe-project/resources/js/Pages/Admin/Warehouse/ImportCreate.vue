@@ -98,6 +98,7 @@ const newMaterialForm = reactive({
     input_unit: '',
     exchange_rate: '',
     quantity_in_stock: '',
+    shelf_life_after_opening_days: '',
 })
 
 function openAddMaterialModal(index) {
@@ -107,6 +108,7 @@ function openAddMaterialModal(index) {
     newMaterialForm.input_unit = ''
     newMaterialForm.exchange_rate = ''
     newMaterialForm.quantity_in_stock = ''
+    newMaterialForm.shelf_life_after_opening_days = ''
     materialErrors.value = {}
     showAddMaterialModal.value = true
 }
@@ -127,6 +129,7 @@ async function submitNewMaterial() {
             input_unit: newMaterialForm.input_unit,
             exchange_rate: newMaterialForm.exchange_rate,
             quantity_in_stock: newMaterialForm.quantity_in_stock || 0,
+            shelf_life_after_opening_days: newMaterialForm.shelf_life_after_opening_days || null,
         })
 
         const newMaterial = res.data.material
@@ -502,6 +505,20 @@ async function submitNewMaterial() {
                             <input v-model="newMaterialForm.quantity_in_stock" type="number" min="0" step="0.01"
                                 placeholder="0"
                                 class="w-full border border-outline-variant/60 bg-surface rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 font-mono" />
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1">
+                                Hạn dùng sau khi mở (ngày)
+                                <span class="text-body-small text-on-surface-variant/70 font-normal">(tuỳ chọn)</span>
+                            </label>
+                            <input v-model="newMaterialForm.shelf_life_after_opening_days" type="number" min="1"
+                                step="1" placeholder="VD: 3 — để trống nếu không áp dụng (nguyên liệu khô, mua rời...)"
+                                class="w-full border border-outline-variant/60 bg-surface rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 font-mono" />
+                            <p v-if="materialErrors.shelf_life_after_opening_days"
+                                class="text-body-small text-error flex items-center gap-0.5 mt-1">
+                                <span class="material-symbols-outlined text-sm">error</span>{{
+                                    materialErrors.shelf_life_after_opening_days[0] }}
+                            </p>
                         </div>
                     </div>
 

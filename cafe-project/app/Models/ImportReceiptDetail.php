@@ -21,6 +21,8 @@ class ImportReceiptDetail extends Model
         'stock_change',
         'remaining_quantity',
         'expiry_date',
+        'opened_at',
+
 
     ];
 
@@ -31,6 +33,7 @@ class ImportReceiptDetail extends Model
         'unit_price' => 'decimal:2',
         'stock_change' => 'decimal:2',
         'remaining_quantity' => 'decimal:2',
+        'opened_at' => 'datetime',
         'expiry_date' => 'date:Y-m-d',
     ];
 

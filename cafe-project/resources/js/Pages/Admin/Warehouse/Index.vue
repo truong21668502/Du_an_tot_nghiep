@@ -135,7 +135,8 @@ function goImport() {
             <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-on-surface text-primary"><span class="material-symbols-outlined text-primary">inventory</span> KHO NGUYÊN LIỆU</h1>
+                    <h1 class="text-2xl font-bold text-on-surface text-primary"><span
+                            class="material-symbols-outlined text-primary">inventory</span> KHO NGUYÊN LIỆU</h1>
                     <p class="text-body-medium text-on-surface-variant mt-1">
                         Đang hiển thị {{ filteredMaterials.length }}/{{ materials.length }} nguyên liệu
                     </p>
@@ -322,7 +323,18 @@ function goImport() {
 
                                 <!-- Hạn SD -->
                                 <td class="px-4 py-4 text-center hidden md:table-cell">
-                                    <span v-if="m.expiry_date" class="text-label-small font-mono"
+                                    <div v-if="m.expiry_breakdown?.some(p => p.label)" class="space-y-1">
+                                        <div v-for="(part, idx) in m.expiry_breakdown" :key="idx"
+                                            class="text-label-small font-mono leading-tight"
+                                            :class="isExpired({ expiry_date: part.expiry_date }) ? 'text-error font-bold' : (isExpiringSoon({ expiry_date: part.expiry_date }) ? 'text-amber-600 font-bold' : 'text-on-surface-variant')">
+                                            <span v-if="part.label" class="text-[9px] font-bold uppercase mr-1"
+                                                :class="part.label === 'đang mở' ? 'text-amber-600' : 'text-primary'">
+                                                {{ part.label }}
+                                            </span>
+                                            {{ formatDate(part.expiry_date) }}
+                                        </div>
+                                    </div>
+                                    <span v-else-if="m.expiry_date" class="text-label-small font-mono"
                                         :class="isExpired(m) ? 'text-error font-bold' : (isExpiringSoon(m) ? 'text-amber-600 font-bold' : 'text-on-surface-variant')">
                                         {{ formatDate(m.expiry_date) }}
                                         <span v-if="isExpired(m)" class="block text-[10px]">Đã hết hạn</span>
@@ -350,10 +362,10 @@ function goImport() {
                                             <span class="material-symbols-outlined text-[14px]">add</span>
                                             Nhập
                                         </button>
-                                        <Link :href="route('admin.kho.dieu-chinh.create')"
+                                        <Link :href="route('admin.kho.nguyen-lieu.edit', m.id)"
                                             class="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant rounded-full text-label-small font-bold transition-colors">
-                                            <span class="material-symbols-outlined text-[14px]">edit_note</span>
-                                            Chi tiết
+                                            <span class="material-symbols-outlined text-[14px]">edit</span>
+                                            Sửa
                                         </Link>
                                     </div>
                                 </td>

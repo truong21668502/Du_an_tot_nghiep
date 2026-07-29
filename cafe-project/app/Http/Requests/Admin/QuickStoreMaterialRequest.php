@@ -19,6 +19,7 @@ class QuickStoreMaterialRequest extends FormRequest
             'input_unit' => 'required|string|max:50',
             'exchange_rate' => 'required|numeric|min:0.000001',
             'quantity_in_stock' => 'nullable|numeric|min:0',
+            'shelf_life_after_opening_days' => 'nullable|integer|min:1|max:365',
         ];
     }
 
@@ -40,6 +41,9 @@ class QuickStoreMaterialRequest extends FormRequest
             'exchange_rate.min' => 'Tỉ lệ quy đổi phải lớn hơn 0.',
             'quantity_in_stock.numeric' => 'Số lượng tồn kho phải là số.',
             'quantity_in_stock.min' => 'Số lượng tồn kho không được nhỏ hơn 0.',
+            'shelf_life_after_opening_days.integer' => 'Hạn dùng sau khi mở phải là số nguyên.',
+            'shelf_life_after_opening_days.min' => 'Hạn dùng sau khi mở phải lớn hơn hoặc bằng 1.',
+            'shelf_life_after_opening_days.max' => 'Hạn dùng sau khi mở không được vượt quá 365 ngày.',
         ];
     }
 
@@ -51,6 +55,7 @@ class QuickStoreMaterialRequest extends FormRequest
             'input_unit' => 'đơn vị nhập kho',
             'exchange_rate' => 'tỉ lệ quy đổi',
             'quantity_in_stock' => 'số lượng tồn kho',
+            'shelf_life_after_opening_days' => 'hạn dùng sau khi mở',
         ];
     }
 }
