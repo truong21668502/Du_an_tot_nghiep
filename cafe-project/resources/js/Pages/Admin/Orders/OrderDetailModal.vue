@@ -250,9 +250,10 @@ const close = () => emit("close");
                                     </div>
                                     <div class="min-w-0">
                                         <p class="compact-label">Khách hàng</p>
-                                        <p class="compact-value truncate">{{ order.user?.name ?? "Khách vãng lai" }}</p>
-                                        <p v-if="order.user?.phone" class="text-[11px] text-slate-400">{{
-                                            order.user.phone }}</p>
+                                        <p class="compact-value truncate">{{ order.user?.full_name ?? "Khách vãng lai"
+                                            }}</p>
+                                        <p v-if="order.user?.phone_number" class="text-[11px] text-slate-400">{{
+                                            order.user.phone_number }}</p>
                                     </div>
                                 </div>
 
@@ -347,7 +348,7 @@ const close = () => emit("close");
                                                 </div>
                                             </td>
                                             <td class="px-3 py-3 text-xs text-slate-500">{{ detail.variant?.size ?? "—"
-                                                }}</td>
+                                            }}</td>
                                             <td class="px-3 py-3 text-center">
                                                 <span
                                                     class="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-slate-100 px-1.5 text-xs font-bold">
@@ -363,7 +364,7 @@ const close = () => emit("close");
                                                     <span class="material-symbols-outlined text-[13px]">{{
                                                         getBaristaIcon(detail.barista_status) }}</span>
                                                     {{ baristaStatusLabel[detail.barista_status] ??
-                                                    detail.barista_status }}
+                                                        detail.barista_status }}
                                                 </span>
                                             </td>
                                         </tr>

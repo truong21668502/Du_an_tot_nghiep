@@ -456,11 +456,12 @@ const closeOrderModal = () => {
                                 </td>
 
                                 <td class="p-4 text-left">
-                                    <p class="font-sans text-body-medium font-bold text-on-surface">{{ order.user?.name
+                                    <p class="font-sans text-body-medium font-bold text-on-surface">{{
+                                        order.user?.full_name
                                         ?? "Khách vãng lai" }}</p>
                                     <p v-if="order.user?.phone"
                                         class="mt-0.5 font-sans text-body-small text-on-surface-variant">{{
-                                            order.user.phone }}</p>
+                                            order.user.phone_number }}</p>
                                 </td>
 
                                 <td class="p-4 hidden lg:table-cell">
