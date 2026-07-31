@@ -1,9 +1,11 @@
 ﻿<script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { usePage, router, Link } from '@inertiajs/vue3'
+import axios from 'axios'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import AnimateOnScroll from '@/Components/Base/AnimateOnScroll.vue'
 import BaseButton from '@/Components/Base/BaseButton.vue'
+import AddressFormModal from '@/Pages/Profile/Partials/Components/AddressFormModal.vue'
 
 defineOptions({ layout: MainLayout })
 
@@ -18,9 +20,82 @@ const finalAmount = computed(() => Math.max(0, subtotal.value - discountAmount.v
 const loading = ref(false)
 const errors = ref({})
 
-const selectedAddressId = ref(addresses.value.find(a => a.is_default)?.id || addresses.value[0]?.id || null)
+const selectedAddressId = ref(null)
 const selectedPaymentMethod = ref('CASH')
 const note = ref('')
+
+// Trạng thái cho Modal Thêm/Sửa địa chỉ
+const showAddressModal = ref(false)
+const editingAddress = ref(null)
+const wards = ref([])
+
+// Tự động chọn địa chỉ mặc định ban đầu
+watch(addresses, (newVal) => {
+    if (newVal.length > 0 && !selectedAddressId.value) {
+        const defaultAddr = newVal.find(a => a.is_default) || newVal[0]
+        selectedAddressId.value = defaultAddr.id
+    }
+}, { immediate: true })
+
+// Lấy danh sách phường xã Đà Nẵng khi load trang
+onMounted(async () => {
+    try {
+        const res = await fetch("https://provinces.open-api.vn/api/v2/p/48?depth=2")
+        const data = await res.json()
+        wards.value = data.wards || []
+    } catch (e) {
+        console.error(e)
+    }
+})
+
+const openAddAddress = () => {
+    editingAddress.value = null
+    errors.value = {}
+    showAddressModal.value = true
+}
+
+const openEditAddress = (addr) => {
+    editingAddress.value = addr
+    errors.value = {}
+    showAddressModal.value = true
+}
+
+// Xử lý lưu hoặc cập nhật địa chỉ từ modal
+const handleAddressSubmit = async (formData) => {
+    loading.value = true
+    errors.value = {}
+
+    try {
+        let response
+        if (editingAddress.value) {
+            response = await axios.put(`/profile/user-addresses/${editingAddress.value.id}`, formData)
+        } else {
+            response = await axios.post('/profile/user-addresses', formData)
+        }
+
+        if (response.data.success) {
+            showAddressModal.value = false
+            // Reload lại props addresses từinertia
+            router.reload({
+                preserveScroll: true,
+                preserveState: true,
+                only: ['addresses'],
+                onSuccess: () => {
+                    // Nếu là thêm mới, tự động chọn luôn địa chỉ mới tạo (hoặc giữ nguyên nếu đang sửa)
+                    if (!editingAddress.value && response.data.data?.id) {
+                        selectedAddressId.value = response.data.data.id
+                    }
+                }
+            })
+        }
+    } catch (e) {
+        if (e.response?.status === 422) {
+            errors.value = e.response.data.errors || {}
+        }
+    } finally {
+        loading.value = false
+    }
+}
 
 const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 
@@ -28,7 +103,6 @@ const canSubmit = computed(() => {
   if (loading.value) return false
   return !!selectedAddressId.value
 })
-
 
 const submitOrder = () => {
   if (!canSubmit.value) return
@@ -69,29 +143,68 @@ const submitOrder = () => {
 
           <!-- Chọn địa chỉ giao hàng -->
           <AnimateOnScroll animation="fade-right" :duration="700">
-            <div class="bg-surface rounded-2xl border border-outline-variant/20 p-6 md:p-8">
-              <h2 class="font-serif text-headline-sm text-primary mb-4">Địa chỉ giao hàng</h2>
+            <div class="bg-surface rounded-2xl border border-outline-variant/20 p-6 md:p-8 space-y-4">
+              <div class="flex justify-between items-center">
+                <h2 class="font-serif text-headline-sm text-primary">Địa chỉ giao hàng</h2>
+                <button
+                    @click="openAddAddress"
+                    type="button"
+                    class="text-primary font-sans text-label-md hover:underline font-semibold flex items-center gap-1"
+                >
+                  <span class="material-symbols-outlined text-sm">add</span> Thêm địa chỉ mới
+                </button>
+              </div>
+
               <div v-if="addresses.length === 0" class="text-center py-6">
-                <p class="font-sans text-body-md text-on-surface-variant">Bạn chưa có địa chỉ nào</p>
-                <Link :href="route('profile.addresses')" class="text-primary font-sans text-label-md hover:underline mt-2 inline-block">
-                  + Thêm địa chỉ mới
-                </Link>
+                <p class="font-sans text-body-md text-on-surface-variant">Bạn chưa có địa chỉ nhận hàng nào</p>
               </div>
+
               <div v-else class="space-y-3">
-                <label v-for="address in addresses" :key="address.id"
-                  :class="['block p-4 rounded-xl border-2 cursor-pointer transition-all',
-                    selectedAddressId === address.id ? 'border-primary bg-primary-container/10' : 'border-outline-variant/20 hover:border-outline-variant']">
-                  <input v-model="selectedAddressId" :value="address.id" type="radio" name="address" class="sr-only" />
-                  <p class="font-sans text-label-md text-on-surface font-bold">
-                    {{ address.receiver_name }}
-                    <span v-if="address.is_default" class="text-label-sm text-primary font-normal">(Mặc định)</span>
-                  </p>
-                  <p class="font-sans text-label-sm text-on-surface-variant">{{ address.receiver_phone }}</p>
-                  <p class="font-sans text-label-sm text-on-surface-variant">
-                    {{ address.address_detail }}{{ address.ward ? ', ' + address.ward : '' }}{{ address.city ? ', ' + address.city : '' }}
-                  </p>
-                </label>
+                <div v-for="address in addresses" :key="address.id"
+                  :class="['flex justify-between items-start p-4 rounded-xl border-2 cursor-pointer transition-all',
+                    selectedAddressId === address.id ? 'border-primary bg-primary-container/10' : 'border-outline-variant/20 hover:border-outline-variant']"
+                  @click="selectedAddressId = address.id"
+                >
+                  <div class="space-y-1 flex-1">
+                    <div class="flex items-center gap-2">
+                      <input v-model="selectedAddressId" :value="address.id" type="radio" name="address" class="sr-only" />
+                      <p class="font-sans text-label-md text-on-surface font-bold">
+                        {{ address.receiver_name }}
+                      </p>
+                      <span v-if="address.is_default" class="px-2 py-0.5 bg-primary-container/30 text-on-primary-container rounded-full font-sans text-label-xs">
+                        Mặc định
+                      </span>
+                    </div>
+                    <p class="font-sans text-label-sm text-on-surface-variant">{{ address.receiver_phone }}</p>
+                    <p class="font-sans text-label-sm text-on-surface-variant">
+                      {{ address.address_detail }}{{ address.ward ? ', ' + address.ward : '' }}{{ address.city ? ', ' + address.city : '' }}
+                    </p>
+                  </div>
+
+                  <!-- Nút sửa địa chỉ ngay tại checkout -->
+                  <button
+                    @click.stop="openEditAddress(address)"
+                    type="button"
+                    class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors"
+                    title="Sửa địa chỉ"
+                  >
+                    <span class="material-symbols-outlined text-lg">edit</span>
+                  </button>
+                </div>
               </div>
+
+              <!-- Modal thêm / sửa địa chỉ tích hợp -->
+              <AddressFormModal
+                v-if="showAddressModal"
+                :show="showAddressModal"
+                :editing-address="editingAddress"
+                :wards="wards"
+                :loading="loading"
+                :errors="errors"
+                @close="showAddressModal = false"
+                @submit="handleAddressSubmit"
+              />
+
               <p v-if="errors.address_id" class="text-error text-label-sm mt-2">{{ errors.address_id }}</p>
             </div>
           </AnimateOnScroll>
@@ -101,19 +214,9 @@ const submitOrder = () => {
             <div class="bg-surface rounded-2xl border border-outline-variant/20 p-6 md:p-8">
               <h2 class="font-serif text-headline-sm text-primary mb-4">Phương thức thanh toán</h2>
               <div class="space-y-3">
-<label :class="[
-    'flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all',
-    selectedPaymentMethod === 'CASH'
-      ? 'border-primary bg-primary-container/10'
-      : 'border-outline-variant/20 hover:border-outline-variant'
-  ]">
-                                    <input
-                    v-model="selectedPaymentMethod"
-                    value="CASH"
-                    type="radio"
-                    name="payment"
-                    class="accent-primary"
-                  />
+                <label :class="['flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all',
+                  selectedPaymentMethod === 'CASH' ? 'border-primary bg-primary-container/10' : 'border-outline-variant/20 hover:border-outline-variant']">
+                  <input v-model="selectedPaymentMethod" value="CASH" type="radio" name="payment" class="accent-primary" />
                   <span class="material-symbols-outlined text-2xl text-on-surface-variant">payments</span>
                   <span class="font-sans text-label-md text-on-surface">Tiền mặt - COD</span>
                 </label>
@@ -176,4 +279,4 @@ const submitOrder = () => {
       </div>
     </div>
   </div>
-</template>
+</template>``

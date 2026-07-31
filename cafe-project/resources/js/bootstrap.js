@@ -8,4 +8,3 @@ const csrfToken = document.cookie.split('; ').find(row => row.startsWith('XSRF-T
 if (csrfToken) {
     window.axios.defaults.headers.common['X-XSRF-TOKEN'] = decodeURIComponent(csrfToken.split('=')[1]);
 }
-

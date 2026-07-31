@@ -109,7 +109,7 @@ class ProfileController extends Controller
         return redirect()->route('profile.orders')->with('toast-success', 'Hủy đơn hàng thành công');
     }
 
-    public function storeAddress(StoreAddressRequest $request)
+public function storeAddress(StoreAddressRequest $request)
     {
         $user = Auth::user();
         $data = $request->validated();
@@ -119,37 +119,72 @@ class ProfileController extends Controller
             UserAddress::where('user_id', $user->id)->update(['is_default' => false]);
         }
 
-        UserAddress::create($data);
-        return redirect()->route('profile.addresses')->with('toast-success', 'Thêm địa chỉ thành công');
+        $address = UserAddress::create($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Thêm địa chỉ thành công',
+            'data' => $address
+        ]);
     }
 
     public function updateAddress(UpdateAddressRequest $request, UserAddress $address)
     {
-        if ($address->user_id !== Auth::id()) abort(403);
+        if ($address->user_id !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
 
         if ($request->boolean('is_default')) {
             UserAddress::where('user_id', Auth::id())->update(['is_default' => false]);
         }
 
         $address->update($request->validated());
-        return redirect()->route('profile.addresses')->with('toast-success', 'Cập nhật địa chỉ thành công');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật địa chỉ thành công',
+            'data' => $address
+        ]);
     }
 
-    public function deleteAddress(UserAddress $address)
-    {
-        if ($address->user_id !== Auth::id()) abort(403);
-
-        $address->delete();
-        return redirect()->route('profile.addresses')->with('toast-success', 'Xóa địa chỉ thành công');
+public function deleteAddress(UserAddress $address)
+{
+    if ($address->user_id !== Auth::id()) {
+        return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
     }
+
+    $userId = Auth::id();
+    $wasDefault = $address->is_default;
+
+    // Xóa địa chỉ
+    $address->delete();
+
+    if ($wasDefault) {
+        $remainingAddress = UserAddress::where('user_id', $userId)->latest()->first();
+        if ($remainingAddress) {
+            $remainingAddress->update(['is_default' => true]);
+        }
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Xóa địa chỉ thành công'
+    ]);
+}
 
     public function setDefaultAddress(UserAddress $address)
     {
-        if ($address->user_id !== Auth::id()) abort(403);
+        if ($address->user_id !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
 
         UserAddress::where('user_id', Auth::id())->update(['is_default' => false]);
         $address->update(['is_default' => true]);
-        return redirect()->route('profile.addresses')->with('toast-success', 'Đã đặt làm địa chỉ mặc định');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã đặt làm địa chỉ mặc định'
+        ]);
     }
 
     private function getUserData(): array
