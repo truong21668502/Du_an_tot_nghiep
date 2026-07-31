@@ -163,7 +163,6 @@ class OrderController extends Controller
             return back()->with('toast-error', $result['error']);
         }
 
-        broadcast(new OrderStatusUpdated($result['order']));
 
         if ($request->wantsJson()) {
             return response()->json([
