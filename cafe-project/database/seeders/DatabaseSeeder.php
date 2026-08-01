@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -30,10 +29,13 @@ class DatabaseSeeder extends Seeder
             ImportReceiptSeeder::class,
             ImportReceiptDetailSeeder::class,
             PostCategorySeeder::class,
-            PostSeeder::class
+            PostSeeder::class,
+            ProhibitedWordSeeder::class,
+            BannerSeeder::class,
         ]);
     }
 
     //lệnh cho ae chạy nhanh toàn bộ migration và seeder
     //php artisan migrate:fresh --seed
+    
 }

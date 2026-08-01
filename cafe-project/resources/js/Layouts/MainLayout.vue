@@ -178,46 +178,95 @@ router.on('navigate', () => {
       <slot />
       <ChatBox />
     </main>
-    <footer class="w-full py-16 px-margin-mobile md:px-gutter bg-surface-container-low border-t border-surface-container-highest/20">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-[1280px] mx-auto">
-        <div class="col-span-1 md:col-span-2">
-          <div class="flex items-center gap-2.5 mb-4">
-            <img 
-              :src="logoUrl" 
-              :alt="brandName" 
-              class="w-10 h-10 rounded-full object-cover border-2 border-primary/20"
-            />
-            <span class="font-serif text-headline-sm text-primary">{{ brandName }}</span>
+    <footer class="w-full py-12 md:py-16 px-4 md:px-8 bg-surface-container-low border-t border-surface-container-highest/20">
+      <!-- Container chuyển sang Grid để tự động sắp xếp chuẩn responsive -->
+      <div class="max-w-[1280px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-8 md:gap-10">
+
+        <!-- Cột 1: Thông tin thương hiệu (Chiếm 4 cột trên PC) -->
+        <div class="lg:col-span-4 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-2.5 mb-4">
+              <img 
+                :src="logoUrl" 
+                :alt="brandName" 
+                class="w-10 h-10 rounded-full object-cover border-2 border-primary/20"
+              />
+              <span class="font-serif text-headline-sm text-primary">{{ brandName }}</span>
+            </div>
+            <p class="font-sans text-body-md text-on-surface-variant mb-6 max-w-sm">
+              Mỗi tách cà phê là một hành trình nghệ thuật thủ công đầy tâm huyết. Chúng tôi tỉ mỉ trong từng khâu chọn lọc hạt, rang xay chuẩn vị cho đến cách pha chế tinh tế — mang đến trọn vẹn hương vị nồng nà, thuần khiết trong từng giọt cà phê.
+            </p>
           </div>
-          <p class="font-sans text-body-md text-on-surface-variant mb-6 max-w-sm">
-            Một trải nghiệm nghệ thuật thủ công. Thưởng thức hương vị tinh tế trong từng giọt cà phê.
-          </p>
-          <div class="flex gap-4">
+        
+          <!-- Icon mạng xã hội -->
+          <div class="flex gap-3">
             <a href="#" class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container/30 text-on-surface-variant hover:text-primary flex items-center justify-center transition-all duration-200" aria-label="Instagram">
               <span class="material-symbols-outlined">camera_alt</span>
             </a>
             <a href="#" class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container/30 text-on-surface-variant hover:text-primary flex items-center justify-center transition-all duration-200" aria-label="Email">
               <span class="material-symbols-outlined">mail</span>
             </a>
-            <a href="#" class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container/30 text-on-surface-variant hover:text-primary flex items-center justify-center transition-all duration-200" aria-label="Facebook">
+            <a href="https://www.facebook.com/profile.php?id=61581909366342" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container/30 text-on-surface-variant hover:text-primary flex items-center justify-center transition-all duration-200" aria-label="Facebook">
               <span class="material-symbols-outlined">thumb_up</span>
             </a>
           </div>
         </div>
-        <div class="flex flex-col gap-4">
-          <h4 class="font-sans text-label-md text-primary font-semibold mb-2">Khám phá</h4>
+      
+        <!-- Cột 2: Khám phá (Chiếm 2 cột trên PC) -->
+        <div class="lg:col-span-2 flex flex-col gap-3">
+          <h4 class="font-sans text-label-md text-primary font-semibold mb-1">Khám phá</h4>
           <a href="/ve-chung-toi" @click.prevent="navigateTo('/ve-chung-toi')" class="font-sans text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors duration-200">Về chúng tôi</a>
           <a href="#" class="font-sans text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors duration-200">Hệ thống cửa hàng</a>
           <a href="#" class="font-sans text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors duration-200">Nghề nghiệp</a>
           <a href="/thuc-don" @click.prevent="navigateTo('/thuc-don')" class="font-sans text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors duration-200">Thực đơn</a>
         </div>
-        <div class="flex flex-col gap-4">
-          <h4 class="font-sans text-label-md text-primary font-semibold mb-2">Hỗ trợ</h4>
+      
+        <!-- Cột 3: Hỗ trợ (Chiếm 2 cột trên PC) -->
+        <div class="lg:col-span-2 flex flex-col gap-3">
+          <h4 class="font-sans text-label-md text-primary font-semibold mb-1">Hỗ trợ</h4>
           <a href="#" class="font-sans text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors duration-200">Chính sách bảo mật</a>
           <a href="#" class="font-sans text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors duration-200">Điều khoản sử dụng</a>
           <a href="/lien-he" @click.prevent="navigateTo('/lien-he')" class="font-sans text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors duration-200">Liên hệ</a>
           <a href="#" class="font-sans text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors duration-200">FAQ</a>
         </div>
+      
+        <!-- Cột 4: Liên hệ (Chiếm 4 cột trên PC, gộp thông tin liên hệ & Facebook iframe) -->
+        <div class="sm:col-span-2 lg:col-span-4 flex flex-col gap-4">
+          <div>
+            <h4 class="font-sans text-label-md text-primary font-semibold mb-2">Thông tin liên hệ</h4>
+            <p class="font-sans text-label-sm text-on-surface-variant/70 mb-1 leading-relaxed">
+              <strong>Địa chỉ:</strong> 137 Đường Nguyễn Thị Thập, Phường Hoà Minh, Quận Liên Chiểu, TP. Đà Nẵng
+            </p>
+            <p class="font-sans text-label-sm text-on-surface-variant/70 mb-1">
+              <strong>Điện thoại:</strong> 0336 620 188
+            </p>
+            <p class="font-sans text-label-sm text-on-surface-variant/70 mb-3">
+              <strong>Email:</strong> dinhtu20091998@gmail.com
+            </p>
+          </div>
+        
+          <!-- Fanpage Facebook Plugin -->
+          <div class="w-full max-w-[340px] overflow-hidden rounded-lg shadow-sm border border-surface-container-highest/30 bg-white">
+            <iframe 
+              src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fprofile.php%3Fid%3D61581909366342&tabs=&width=340&height=130&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=false&appId" 
+              width="100%" 
+              height="130" 
+              style="border:none;overflow:hidden" 
+              scrolling="no" 
+              frameborder="0" 
+              allowfullscreen="true" 
+              allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
+            </iframe>
+          </div>
+        </div>
+      
+      </div>
+    
+      <!-- Bổ sung dòng Copyright ở cuối chân trang -->
+      <div class="max-w-[1280px] mx-auto pt-8 mt-8 border-t border-surface-container-highest/10 text-center">
+        <p class="font-sans text-label-sm text-on-surface-variant/50">
+          © {{ new Date().getFullYear() }} {{ brandName }}. All rights reserved.
+        </p>
       </div>
     </footer>
   </div>

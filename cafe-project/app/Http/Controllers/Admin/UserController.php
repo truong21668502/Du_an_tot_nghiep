@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\UserAddress;
 use App\Http\Requests\Admin\UserStoreRequest;
 use App\Http\Requests\Admin\UserUpdateRequest;
 use Illuminate\Http\Request;
@@ -23,10 +24,10 @@ class UserController extends Controller
         // Khởi tạo truy vấn
         if ($tab === 'trash') {
             // Nếu bấm sang tab Thùng rác, CHỈ lấy những người đã bị xóa mềm
-            $query = User::onlyTrashed(); 
+            $query = User::onlyTrashed()->with('addresses'); // Lấy cả địa chỉ của người dùng trong thùng rác
         } else {
             // Ngược lại lấy danh sách người dùng bình thường (ẩn người trong thùng rác)
-            $query = User::query(); 
+            $query = User::query()->with('addresses');
         }
 
         if ($request->filled('search')) {
@@ -121,5 +122,28 @@ class UserController extends Controller
         $user = User::onlyTrashed()->findOrFail($id);
         $user->forceDelete();
         return redirect()->back()->with('toast-success', 'Đã xóa vĩnh viễn tài khoản khỏi cơ sở dữ liệu.');
+    }
+
+    // Hàm Cập Nhật Địa Chỉ Người Dùng
+    public function updateAddress(Request $request, $id)
+    {
+        // Validate dữ liệu đầu vào
+        $validated = $request->validate([
+            'receiver_name' => 'required|string|max:100',
+            'receiver_phone' => 'required|string|max:15',
+            'address_detail' => 'required|string|max:255',
+            'ward' => 'nullable|string|max:100',
+            'city' => 'nullable|string|max:100',
+        ], [
+            'receiver_name.required' => 'Tên người nhận không được để trống.',
+            'receiver_phone.required' => 'Số điện thoại không được để trống.',
+            'address_detail.required' => 'Chi tiết địa chỉ không được để trống.',
+        ]);
+
+        // Tìm và cập nhật địa chỉ
+        $address = UserAddress::findOrFail($id);
+        $address->update($validated);
+
+        return redirect()->back()->with('toast-success', 'Cập nhật địa chỉ thành công!');
     }
 }

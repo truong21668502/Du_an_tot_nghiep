@@ -2,6 +2,8 @@
 import { ref, computed } from "vue";
 import { usePage, router } from "@inertiajs/vue3";
 import NotificationMenu from "./NotificationMenu.vue";
+import CommandPalette from './CommandPalette.vue';
+import AiChatWidget from './AiChatWidget.vue';
 
 const page = usePage();
 const currentUrl = computed(() => page.url);
@@ -210,13 +212,18 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
             <!-- Top bar -->
             <header
                 class="h-16 bg-surface border-b border-outline-variant/20 flex items-center justify-between px-4 md:px-6 flex-shrink-0">
+
                 <button @click="mobileOpen = true" class="md:hidden p-2 hover:bg-surface-container-low rounded-lg">
                     <span class="material-symbols-outlined">menu</span>
                 </button>
+                
                 <div class="flex items-center gap-3 ml-auto">
+                    <CommandPalette />
+
                     <div class="p-2 hover:bg-surface-container-low rounded-full transition-colors relative">
                         <NotificationMenu />
                     </div>
+
                     <a href="/dang-xuat" @click.prevent="router.post('/logout')"
                         class="p-2 hover:bg-error-container/20 rounded-full transition-colors text-on-surface-variant hover:text-error"
                         title="Đăng xuất">
@@ -230,5 +237,8 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                 <slot />
             </main>
         </div>
+
+        <!-- Bong bóng chat AI -->
+        <AiChatWidget />
     </div>
 </template>
