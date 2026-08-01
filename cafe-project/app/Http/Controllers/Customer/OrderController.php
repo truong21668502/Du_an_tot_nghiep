@@ -90,9 +90,11 @@ class OrderController extends Controller
             session()->forget('cart_voucher');
             session()->forget('table_id');
 
-            // Bắn event real-time cho staff khi tạo đơn hàng mới
+            // Bắn event real-time cho staff khi tạo đơn hàng mới (Trừ trường hợp Giao hàng + VNPay phải đợi thanh toán xong)
             $order->load('table', 'details.product', 'details.variant', 'payment');
-            broadcast(new OrderCreated($order));
+            if (!($data['order_type'] === 'DELIVERY' && $data['payment_method'] === 'VNPAY')) {
+                broadcast(new OrderCreated($order));
+            }
 
             return $order->load('details', 'payment');
         });

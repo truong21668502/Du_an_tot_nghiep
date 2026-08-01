@@ -18,7 +18,14 @@ class OrderController extends Controller
     public function index()
     {
         $activeOrders = Order::with(['table', 'details.product', 'details.variant', 'payment'])
-            ->whereIn('status', ['PENDING', 'PROCESSING'])
+            ->whereIn('status', ['PENDING', 'PROCESSING', 'READY'])
+            ->where(function ($q) {
+                $q->where('order_type', '!=', 'DELIVERY')
+                  ->orWhereHas('payment', function ($pq) {
+                      $pq->where('payment_method', 'CASH')
+                         ->orWhere('payment_status', 'PAID');
+                  });
+            })
             ->orderBy('created_at', 'asc')
             ->get();
 
@@ -98,7 +105,8 @@ class OrderController extends Controller
 
     public function complete(Order $order)
     {
-        $order->update(['status' => 'COMPLETED']);
+        $newStatus = $order->order_type === 'DELIVERY' ? 'READY' : 'COMPLETED';
+        $order->update(['status' => $newStatus]);
         return redirect()->back();
     }
 

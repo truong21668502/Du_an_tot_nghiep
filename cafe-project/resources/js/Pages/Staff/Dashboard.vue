@@ -78,12 +78,22 @@ const acceptOrder = async (orderId) => {
 
 
 const completeOrder = (orderId) => {
+    const order = orders.value.find(o => o.id === orderId);
     router.patch(route('staff.orders.complete', orderId), {}, {
         preserveScroll: true,
         onSuccess: () => {
-            orders.value = orders.value.filter(o => o.id !== orderId);
-            closeOrderModal();
-            toast.info(`Đơn hàng #${orderId} đã hoàn thành!`);
+            if (order && order.order_type === 'DELIVERY') {
+                order.status = 'READY';
+                if (selectedOrder.value?.id === orderId) {
+                    selectedOrder.value.status = 'READY';
+                }
+                toast.success(`Đơn hàng #${orderId} đã sẵn sàng giao!`);
+                closeOrderModal();
+            } else {
+                orders.value = orders.value.filter(o => o.id !== orderId);
+                closeOrderModal();
+                toast.info(`Đơn hàng #${orderId} đã hoàn thành!`);
+            }
         }
     });
 };
@@ -631,7 +641,7 @@ onUnmounted(() => {
                                     <span
                                         class="material-symbols-outlined text-[12px] text-on-surface-variant">table_restaurant</span>
                                     <span class="text-[12px] text-on-surface-variant">
-                                        {{ order.table ? order.table.table_name : 'Mang đi' }}
+                                        {{ order.table ? order.table.table_name : (order.order_type === 'DELIVERY' ? 'Giao hàng' : 'Mang đi') }}
                                     </span>
                                 </div>
                             </div>
@@ -639,8 +649,8 @@ onUnmounted(() => {
                                 class="text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap flex-shrink-0 border"
                                 :class="order.status === 'PENDING'
                                     ? 'bg-error/10 text-error border-error/20'
-                                    : 'bg-primary/10 text-primary border-primary/20'">
-                                {{ order.status === 'PENDING' ? 'Chờ xử lý' : 'Đang xử lý' }}
+                                    : (order.status === 'READY' ? 'bg-green-500/10 text-green-600 border-green-500/20' : 'bg-primary/10 text-primary border-primary/20')">
+                                {{ order.status === 'PENDING' ? 'Chờ xử lý' : (order.status === 'READY' ? 'Sẵn sàng giao' : 'Đang xử lý') }}
                             </span>
                         </div>
 
@@ -718,7 +728,7 @@ onUnmounted(() => {
                                         class="text-[10px] font-bold uppercase tracking-wider mb-1 text-on-surface-variant">
                                         Vị trí / Khách</p>
                                     <p class="text-[15px] font-bold text-on-surface">
-                                        {{ selectedOrder?.table ? selectedOrder.table.table_name : 'Khách mang đi' }}
+                                        {{ selectedOrder?.table ? selectedOrder.table.table_name : (selectedOrder?.order_type === 'DELIVERY' ? 'Khách giao hàng' : 'Khách mang đi') }}
                                     </p>
                                 </div>
                                 <div class="rounded-xl p-4 border text-right bg-surface border-outline-variant/20">
@@ -732,6 +742,10 @@ onUnmounted(() => {
                                     <span v-else-if="selectedOrder?.status === 'PROCESSING'"
                                         class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                                         <span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>Đang xử lý
+                                    </span>
+                                    <span v-else-if="selectedOrder?.status === 'READY'"
+                                        class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500/70"></span>Sẵn sàng giao
                                     </span>
                                 </div>
                             </div>

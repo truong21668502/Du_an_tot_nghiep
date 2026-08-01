@@ -32,6 +32,7 @@ class Order extends Model
         'final_amount',
         'order_type',
         'status',
+        'source',
         'cancel_reason',
         'note',
         'receiver_name',

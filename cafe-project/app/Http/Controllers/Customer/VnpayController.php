@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Events\OrderCreated;
+use App\Events\OrderPaymentConfirmed;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -76,7 +78,12 @@ class VnpayController extends Controller
                     'payment_time' => now(),
                 ]);
 
-                // $order->update(['status' => 'PROCESSING']);
+                if ($order->order_type === 'DELIVERY') {
+                    $order->load('table', 'details.product', 'details.variant', 'payment');
+                    broadcast(new OrderCreated($order));
+                } else {
+                    broadcast(new OrderPaymentConfirmed($order));
+                }
             });
         }
 

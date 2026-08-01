@@ -65,11 +65,20 @@ const acceptOrder = async (orderId) => {
 };
 
 const completeOrder = (orderId) => {
+    const order = orders.value.find(o => o.id === orderId);
     router.patch(route('staff.orders.complete', orderId), {}, {
         preserveScroll: true,
         onSuccess: () => {
-            orders.value = orders.value.filter(o => o.id !== orderId);
-            closeOrderModal();
+            if (order && order.order_type === 'DELIVERY') {
+                order.status = 'READY';
+                if (selectedOrder.value?.id === orderId) {
+                    selectedOrder.value.status = 'READY';
+                }
+                closeOrderModal();
+            } else {
+                orders.value = orders.value.filter(o => o.id !== orderId);
+                closeOrderModal();
+            }
         }
     });
 };
@@ -288,7 +297,7 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                         </div>
                         <div class="flex-1 min-w-0">
                             <h4 class="text-label-md font-bold text-on-surface truncate">
-                                {{ order.table ? order.table.table_name : 'Mang đi / Giao hàng' }}
+                                {{ order.table ? order.table.table_name : (order.order_type === 'DELIVERY' ? 'Giao hàng' : 'Mang đi') }}
                             </h4>
                             <p class="text-[11px] text-on-surface-variant mt-0.5 uppercase tracking-wider">{{
                                 order.order_type }}</p>
@@ -300,6 +309,10 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                         <span v-else-if="order.status === 'PROCESSING'"
                             class="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                             <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>Đang xử lý
+                        </span>
+                        <span v-else-if="order.status === 'READY'"
+                            class="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500/70"></span>Sẵn sàng giao
                         </span>
                     </div>
 
@@ -358,7 +371,7 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                         class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">
                                         Vị trí / Khách</p>
                                     <p class="text-label-lg font-bold text-on-surface">
-                                        {{ selectedOrder?.table ? selectedOrder.table.table_name : 'Khách mang đi' }}
+                                        {{ selectedOrder?.table ? selectedOrder.table.table_name : (selectedOrder?.order_type === 'DELIVERY' ? 'Khách giao hàng' : 'Khách mang đi') }}
                                     </p>
                                 </div>
                                 <div
@@ -373,6 +386,10 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                     <span v-else-if="selectedOrder?.status === 'PROCESSING'"
                                         class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                                         <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>Đang xử lý
+                                    </span>
+                                    <span v-else-if="selectedOrder?.status === 'READY'"
+                                        class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500/70"></span>Sẵn sàng giao
                                     </span>
                                 </div>
                             </div>
