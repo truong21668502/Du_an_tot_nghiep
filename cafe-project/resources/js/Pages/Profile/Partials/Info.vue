@@ -46,10 +46,10 @@ const handleSubmit = () => {
         <span v-else class="material-symbols-outlined text-4xl text-primary">person</span>
       </div>
       <div>
-        <label class="block mb-2">
+        <!-- <label class="block mb-2">
           <span class="px-4 py-2 bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 rounded-full font-sans text-label-sm cursor-pointer transition-colors">Chọn ảnh</span>
           <input type="file" accept="image/*" class="hidden" @change="handleAvatarChange" />
-        </label>
+        </label> -->
         <button
           v-if="avatarFile"
           @click="handleUploadAvatar"

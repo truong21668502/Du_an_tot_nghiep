@@ -7,7 +7,6 @@ import CartItem from './Cart/Partials/CartItem.vue'
 import CartSummary from './Cart/Partials/CartSummary.vue'
 import VoucherInput from './Cart/Partials/VoucherInput.vue'
 import AnimateOnScroll from '@/Components/Base/AnimateOnScroll.vue'
-import { router } from '@inertiajs/vue3'
 
 defineOptions({ layout: MainLayout })
 
@@ -20,9 +19,11 @@ const initialAppliedVoucher = props.appliedVoucher || null
 const {
   items, loading, errors, voucherCode, voucherDiscount, appliedVoucher,
   subtotal, taxAmount, total, totalItems,
-  updateItem, removeItem, applyVoucher, removeVoucher, clearCart, formatPrice
+  updateItem, removeItem, applyVoucher, removeVoucher, clearCart, formatPrice,
+  applyVoucherFromModal
 } = useCart(initialCart, initialItems, initialVoucherDiscount, initialAppliedVoucher)
 </script>
+
 <template>
   <div class="w-full">
     <div class="max-w-[1280px] mx-auto px-margin-mobile md:px-gutter py-12 md:py-24">
@@ -34,7 +35,9 @@ const {
           </p>
         </div>
       </AnimateOnScroll>
+
       <CartEmpty v-if="items.length === 0" />
+
       <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 space-y-4">
           <AnimateOnScroll
@@ -53,6 +56,7 @@ const {
               @remove="(id) => removeItem(id)"
             />
           </AnimateOnScroll>
+          
           <AnimateOnScroll animation="fade-up" :duration="500" :delay="300">
             <button
               @click="clearCart"
@@ -64,6 +68,7 @@ const {
             </button>
           </AnimateOnScroll>
         </div>
+
         <div class="lg:col-span-1">
           <div class="sticky top-24 space-y-4">
             <AnimateOnScroll animation="fade-left" :duration="700">
@@ -74,10 +79,13 @@ const {
                 :error="errors.voucher"
                 :format-price="formatPrice"
                 :loading="loading"
+                :subtotal="subtotal"
                 @apply="applyVoucher"
                 @remove="removeVoucher"
+                @apply-from-modal="applyVoucherFromModal"
               />
             </AnimateOnScroll>
+            
             <AnimateOnScroll animation="fade-left" :duration="700" :delay="200">
               <CartSummary
                 :subtotal="subtotal"

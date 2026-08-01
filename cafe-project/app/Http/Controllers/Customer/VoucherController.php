@@ -106,4 +106,59 @@ class VoucherController extends Controller
             return response()->json(['message' => 'Lỗi hệ thống, vui lòng thử lại sau.'], 500);
         }
     }
+
+    public function available(Request $request)
+    {
+        $vouchers = CouponUser::with('coupon')
+            ->where('user_id', Auth::id())
+            ->where('is_used', false)
+            ->whereHas('coupon', function ($query) {
+                $query->where('status', 'ACTIVE')
+                    ->where('expiration_date', '>', now());
+            })
+            ->latest()
+            ->get()
+            ->map(function ($voucher) {
+                return [
+                    'id' => $voucher->id,
+                    'coupon_id' => $voucher->coupon_id,
+                    'code' => $voucher->coupon->code,
+                    'discount_type' => $voucher->coupon->discount_type,
+                    'discount_value' => (float) $voucher->coupon->discount_value,
+                    'max_discount_amount' => (float) $voucher->coupon->max_discount_amount,
+                    'min_order_value' => (float) $voucher->coupon->min_order_value,
+                    'expiration_date' => $voucher->coupon->expiration_date->format('d/m/Y H:i'),
+                    'is_expiring_soon' => $voucher->expiration_date 
+                        ? now()->diffInDays($voucher->expiration_date, false) <= 3 && now()->diffInDays($voucher->expiration_date, false) >= 0
+                        : false,
+                    'description' => $this->generateVoucherDescription($voucher->coupon),
+                ];
+            });
+
+        return response()->json([
+            'vouchers' => $vouchers,
+            'count' => $vouchers->count(),
+        ]);
+    }
+
+    /**
+     * Tạo mô tả ngắn gọn cho voucher.
+     */
+    private function generateVoucherDescription($coupon)
+    {
+        if ($coupon->discount_type === 'FIXED') {
+            $desc = "Giảm " . number_format($coupon->discount_value, 0, ',', '.') . "đ";
+        } else {
+            $desc = "Giảm " . $coupon->discount_value . "%";
+            if ($coupon->max_discount_amount) {
+                $desc .= " (tối đa " . number_format($coupon->max_discount_amount, 0, ',', '.') . "đ)";
+            }
+        }
+        
+        if ($coupon->min_order_value > 0) {
+            $desc .= " - Đơn tối thiểu " . number_format($coupon->min_order_value, 0, ',', '.') . "đ";
+        }
+        
+        return $desc;
+    }
 }

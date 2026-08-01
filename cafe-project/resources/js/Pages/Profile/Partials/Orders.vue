@@ -4,6 +4,17 @@ import { Link } from '@inertiajs/vue3'
 import axios from 'axios'
 import ProfileLayout from '@/Layouts/ProfileLayout.vue'
 import { useProfile } from '@/Composables/useProfile'
+import Pagination from '@/Components/Main/Pagination.vue'
+import { router } from '@inertiajs/vue3'
+
+const onPageChange = (page) => {
+    router.visit(route('profile.orders'), {
+        data: { page },
+        preserveScroll: true,
+        preserveState: true,
+    })
+}
+const getVisibleItems = (items) => items.slice(0, 2)
 
 defineOptions({ layout: ProfileLayout })
 
@@ -73,14 +84,17 @@ const closeDetailModal = () => {
         </div>
 
         <div class="space-y-2">
-          <div v-for="item in order.items" :key="item.id" class="flex justify-between text-sm">
-            <span class="font-sans text-body-md text-on-surface">
-              {{ item.product_name }}
-              <span v-if="item.size" class="text-on-surface-variant">({{ item.size }})</span>
-              <span class="text-on-surface-variant"> x{{ item.quantity }}</span>
-            </span>
-            <span class="font-sans text-body-md text-on-surface">{{ formatPrice(item.subtotal) }}</span>
-          </div>
+            <!-- Hiển thị giới hạn 2 món -->
+            <div v-for="item in getVisibleItems(order.items)" :key="item.id" class="flex justify-between text-sm">
+                <span class="font-sans text-body-md text-on-surface">
+                    {{ item.product_name }} x{{ item.quantity }}
+                </span>
+                <span class="font-sans text-body-md text-on-surface">{{ formatPrice(item.subtotal) }}</span>
+            </div>
+            <!-- Hiển thị thông báo nếu còn món ẩn -->
+            <div v-if="order.items.length > 2" class="text-xs text-outline italic">
+                và {{ order.items.length - 2 }} món khác...
+            </div>
         </div>
 
         <div class="flex justify-between items-center pt-3 border-t border-outline-variant/10">
@@ -107,6 +121,13 @@ const closeDetailModal = () => {
           </div>
         </div>
       </div>
+      <Pagination 
+    v-if="orders.last_page > 1"
+    :current-page="orders.current_page"
+    :total-pages="orders.last_page"
+    :total-items="orders.total"
+    @page-change="onPageChange"
+/>
     </div>
 
     <!-- Order Detail Modal -->
