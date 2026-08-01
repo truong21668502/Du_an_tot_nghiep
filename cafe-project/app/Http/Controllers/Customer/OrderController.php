@@ -75,15 +75,38 @@ class OrderController extends Controller
             $this->syncOrderDetails($order, $cart);
             $this->syncPayment($order, $data['payment_method']);
 
-            // THÊM: Cập nhật trạng thái bàn thành OCCUPIED nếu có chọn bàn
-            // if ($data['table_id']) {
-            //     $table = Table::where('id', $data['table_id'])->first();
-            //     if ($table) {
-            //         $table->update(['status' => 'OCCUPIED']);
-            //         // Bắn event real-time cho staff khi cập nhật bàn
-            //         broadcast(new TableStatusUpdated($table));
-            //     }
-            // }
+            if ($couponId && Auth::check()) {
+                // 1. Tăng số lượt đã sử dụng chung của coupon trong bảng coupons
+
+                // 2. Kiểm tra xem mã này đã có trong ví (coupon_user) của user chưa
+                $couponUser = DB::table('coupon_user')
+                    ->where('user_id', Auth::id())
+                    ->where('coupon_id', $couponId)
+                    ->first();
+
+                if ($couponUser) {
+                    // Nếu đã có sẵn trong ví, cập nhật trạng thái thành đã dùng
+                    DB::table('coupon_user')
+                        ->where('id', $couponUser->id)
+                        ->update([
+                            'is_used' => true,
+                            'used_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                } else {
+                    // Nếu user nhập mã trực tiếp (chưa lưu sẵn trong ví), tự động thêm vào bảng coupon_user với trạng thái đã dùng
+                    DB::table('coupon_user')->insert([
+                        'user_id' => Auth::id(),
+                        'coupon_id' => $couponId,
+                        'is_used' => true,
+                        'used_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+                Coupon::where('id', $couponId)->increment('used_count');
+
+            }
 
             // Luôn xóa giỏ hàng sau khi tạo đơn thành công
             $cart->items()->delete();
@@ -99,7 +122,6 @@ class OrderController extends Controller
             return $order->load('details', 'payment');
         });
     }
-
     private function calculateAmounts(Cart $cart): array
     {
         $subtotal = $this->calculateSubtotal($cart);

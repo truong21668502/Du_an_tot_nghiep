@@ -68,7 +68,6 @@ class VoucherController extends Controller
         // Không cho lưu trùng mã đang có trong ví và chưa dùng
         $alreadySaved = CouponUser::where('user_id', $user->id)
             ->where('coupon_id', $coupon->id)
-            ->where('is_used', false)
             ->exists();
 
         if ($alreadySaved) {
