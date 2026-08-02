@@ -40,23 +40,25 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER,ADMIN'])->group(function (
     Route::delete('/favorites/{product}', [FavoriteProductController::class, 'remove'])->name('favorites.remove');
     Route::get('/san-pham-yeu-thich', [FavoriteProductController::class, 'index'])->name('favorites.index');
 
-    Route::prefix('gio-hang')->name('customer.cart.')->group(function () {
-        Route::get('/', [CartController::class, 'index'])->name('index');
-        Route::post('/', [CartController::class, 'add'])->name('add');
 
-        Route::delete('/', [CartController::class, 'clear'])->name('clear');
-        Route::post('/voucher', [CartController::class, 'applyVoucher'])->name('voucher.apply');
-        Route::delete('/voucher', [CartController::class, 'removeVoucher'])->name('voucher.remove');
-
-            Route::patch('/{cartItem}', [CartController::class, 'update'])->name('update');
-        Route::delete('/{cartItem}', [CartController::class, 'remove'])->name('remove');
-    });
     Route::post('/api/vouchers', [VoucherController::class, 'store'])->name('api.vouchers.store');
     Route::get('/api/vouchers/available', [VoucherController::class, 'available'])->name('api.vouchers.available');
-
+    
     Route::post('/reviews',           [ReviewController::class, 'store'])  ->name('reviews.store');
     Route::patch('/reviews/{review}', [ReviewController::class, 'update']) ->name('reviews.update');
     Route::delete('/reviews/{review}',[ReviewController::class, 'destroy'])->name('reviews.destroy');
+
+    Route::prefix('gio-hang')->name('customer.cart.')->group(function () {
+        Route::post('/voucher', [CartController::class, 'applyVoucher'])->name('voucher.apply');
+        Route::delete('/voucher', [CartController::class, 'removeVoucher'])->name('voucher.remove');
+
+        Route::get('/', [CartController::class, 'index'])->name('index');
+        Route::post('/', [CartController::class, 'add'])->name('add');
+        
+        Route::delete('/', [CartController::class, 'clear'])->name('clear');
+        //     Route::patch('/{cartItem}', [CartController::class, 'update'])->name('update');
+        // Route::delete('/{cartItem}', [CartController::class, 'remove'])->name('remove');
+    });
 
     Route::get('/thanh-toan', [CheckoutController::class, 'index'])->name('customer.checkout.index');
 

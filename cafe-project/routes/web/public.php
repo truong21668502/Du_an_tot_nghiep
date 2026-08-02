@@ -13,7 +13,7 @@ use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\CheckoutController;
 use App\Http\Controllers\Customer\OrderController;
 use App\Http\Controllers\Customer\VnpayController;
-
+use App\Http\Controllers\Customer\GuestCartController;
 use App\Http\Controllers\Customer\ChatController;
 
 /*
@@ -33,8 +33,13 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/thuc-don', [ProductController::class, 'index'])->name('customer.menu.index');
 Route::get('/thuc-don/{slug}', [ProductController::class, 'show'])->name('product.show');
 
-//!!! quan trong không rờ lung tung!!!
 Route::get('/ban/{qr_code}', [TableOrderController::class, 'index'])->name('table.order');
+
+Route::prefix('gio-hang')->name('customer.cart.')->group(function () {
+    Route::post('/table', [CartController::class, 'add'])->name('table');
+    Route::patch('/{cartItem}/update', [CartController::class, 'update'])->name('update');
+    Route::delete('/{cartItem}/remove', [CartController::class, 'remove'])->name('remove');
+});
 
 
 Route::post('/orders', [OrderController::class, 'store'])->name('customer.orders.store');
@@ -76,8 +81,7 @@ Route::middleware('auth')->group(function () {
 });
 
 
-// !!!!!!!!!!!!!!! KHÔNG TỰ TIỆN RỜ VÀO QUAN TRỌNG !!!!!!!!!!!!!!!!!!!!!!!!!!
-// Route::post('/chat', [ChatController::class, 'message'])->name('chat.message');
+
 Route::get('/chat-test', function () {
     return Inertia::render('ChatTest');
 });

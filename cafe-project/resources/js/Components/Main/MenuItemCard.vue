@@ -24,6 +24,8 @@ const {
 
 isFavorited.value = props.item.isFavorited || false
 
+const emit = defineEmits(['add-to-cart'])
+
 
 const addingToCart = ref(false)
 const selectedVariant = ref(null)
@@ -80,30 +82,20 @@ const goToDetail = () => {
   })
 }
 const addToCart = () => {
-  addingToCart.value = true
-  const payload = {
-    product_id: props.item.id,
-    quantity: 1,
-  }
-  if (selectedVariant.value) {
-    payload.variant_id = selectedVariant.value.id
-  } else if (hasVariants.value) {
-    payload.variant_id = variants.value[0].id
-  }
-  axios.post(route('customer.cart.add'), payload)
-    .then(response => {
-      addingToCart.value = false
-      toast.success('Đã thêm sản phẩm vào giỏ hàng')
-      router.reload({ preserveScroll: true, preserveState: true, only: ['cartItems'] })
-    })
-    .catch(error => {
-      addingToCart.value = false
-      if (error.response?.data?.message) {
-        toast.error(error.response?.data?.message)
-      } else {
-        toast.error('Có lỗi xảy ra')
-      }
-    })
+    if (addingToCart.value) return
+
+    const payload = {
+        product_id: props.item.id,
+        quantity: 1,
+    }
+
+    if (selectedVariant.value) {
+        payload.variant_id = selectedVariant.value.id
+    } else if (hasVariants.value) {
+        payload.variant_id = variants.value[0].id
+    }
+
+    emit('add-to-cart', payload)
 }
 const toggleVariantDropdown = () => {
   if (hasVariants.value) {
@@ -183,7 +175,7 @@ const handleClickOutside = (event) => {
             </div>
           </Transition>
         </div>
-        <button class="flex-1 py-3 rounded-full border border-secondary text-secondary hover:bg-secondary hover:text-on-secondary font-sans text-label-md transition-colors duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="addingToCart" @click.stop="addToCart">
+        <button class="cursor-pointer flex-1 py-3 rounded-full border border-secondary text-secondary hover:bg-secondary hover:text-on-secondary font-sans text-label-md transition-colors duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="addingToCart" @click.stop="addToCart">
           <span v-if="!addingToCart" class="material-symbols-outlined text-lg">add</span>
           <span v-else class="w-4 h-4 border-2 border-secondary border-t-transparent rounded-full animate-spin"></span>
           {{ addingToCart ? 'Đang thêm...' : 'Thêm vào giỏ' }}

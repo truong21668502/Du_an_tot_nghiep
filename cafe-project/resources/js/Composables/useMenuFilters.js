@@ -1,5 +1,6 @@
 import { ref, computed } from "vue";
 import { router } from "@inertiajs/vue3";
+import { toast } from "vue3-toastify";
 
 export function useMenuFilters(props) {
     const filters = ref({
@@ -116,6 +117,34 @@ export function useMenuFilters(props) {
         }))
     })
 
+    const addingToCart = ref(false)
+
+    const addCustomerCart = (payload) => {
+        addingToCart.value = true
+
+        axios.post(route('customer.cart.add'), payload)
+            .then(() => {
+                toast.success('Đã thêm sản phẩm vào giỏ hàng')
+
+                router.reload({
+                    preserveScroll: true,
+                    preserveState: true,
+                    only: ['cartItems'],
+                })
+            })
+            .catch((error) => {
+                if(error.response?.data?.message === 'Unauthenticated.'){
+                    toast.error('Cần đăng nhập để thêm sản phẩm vào giỏ hàng')
+                } else {
+                    toast.error(error.response?.data?.message ?? 'Có lỗi xảy ra')
+                }
+            })
+            .finally(() => {
+                addingToCart.value = false
+            })
+    }
+    
+
     const loading = computed(() => false);
     const totalPages = computed(() => props.products?.last_page || 1);
     const totalItems = computed(() => props.products?.total || 0);
@@ -135,5 +164,6 @@ export function useMenuFilters(props) {
         setSortBy,
         setPage,
         toggleFilter,
+        addCustomerCart,
     };
 }

@@ -29,6 +29,7 @@ const {
   setSortBy,
   setPage,
   toggleFilter,
+  addCustomerCart,
 } = useMenuFilters(props)
 </script>
 
@@ -57,6 +58,7 @@ const {
         <MenuGrid
           :items="paginatedItems"
           :loading="loading"
+          @add-to-cart="addCustomerCart"
         />
 
         <Pagination
