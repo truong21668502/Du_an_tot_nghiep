@@ -348,22 +348,27 @@ class ImportReceiptController extends Controller
     {
         $validated = $request->validated();
         $initialQty = (float) ($validated['quantity_in_stock'] ?? 0);
+        $initialUnitPrice = (float) ($validated['unit_price'] ?? 0); // thêm field vào Request
 
-        $material = DB::transaction(function () use ($validated, $initialQty) {
+        $material = DB::transaction(function () use ($validated, $initialQty, $initialUnitPrice) {
             $material = Material::create([
                 'material_name' => $validated['material_name'],
                 'base_unit' => $validated['base_unit'],
                 'input_unit' => $validated['input_unit'],
                 'exchange_rate' => $validated['exchange_rate'],
                 'quantity_in_stock' => 0,
-                'shelf_life_after_opening_days' => $validated['shelf_life_after_opening_days'] ?? null, // thêm dòng này
+                'min_stock' => $validated['min_stock'] ?? 0,
+                'max_stock' => $validated['max_stock'] ?? null,
+                'shelf_life_after_opening_days' => $validated['shelf_life_after_opening_days'] ?? null,
             ]);
 
             if ($initialQty > 0) {
+                $this->assertWithinMaxStock($material, $initialQty);
+
                 $receipt = ImportReceipt::create([
                     'user_id' => Auth::id(),
                     'supplier_name' => null,
-                    'total_cost' => 0,
+                    'total_cost' => $initialUnitPrice * ($initialQty / $material->exchange_rate),
                     'note' => 'Tồn kho ban đầu khi tạo nhanh nguyên liệu',
                     'status' => 'active',
                 ]);
@@ -372,9 +377,10 @@ class ImportReceiptController extends Controller
                     'receipt_id' => $receipt->id,
                     'material_id' => $material->id,
                     'quantity' => $initialQty / $material->exchange_rate,
-                    'unit_price' => 0,
+                    'unit_price' => $initialUnitPrice,
                     'stock_change' => $initialQty,
                     'remaining_quantity' => $initialQty,
+                    'expiry_date' => null,
                 ]);
 
                 $material->increment('quantity_in_stock', $initialQty);
@@ -402,7 +408,7 @@ class ImportReceiptController extends Controller
                 'input_unit',
                 'exchange_rate',
                 'quantity_in_stock',
-                'shelf_life_after_opening_days', // thêm field này
+                'shelf_life_after_opening_days',
             ]),
         ]);
     }

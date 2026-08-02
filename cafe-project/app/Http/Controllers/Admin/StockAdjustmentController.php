@@ -154,25 +154,34 @@ class StockAdjustmentController extends Controller
     {
         $remainingToReduce = $qty;
         $rate = $material->exchange_rate ?: 1;
+        $shelfLifeDays = $material->shelf_life_after_opening_days;
 
         $batches = ImportReceiptDetail::query()
             ->join('import_receipts', 'import_receipts.id', '=', 'import_receipt_details.receipt_id')
             ->where('import_receipt_details.material_id', $material->id)
             ->where('import_receipts.status', 'active')
             ->where('import_receipt_details.remaining_quantity', '>', 0)
-            // Lô chưa có hạn (expiry_date null) xếp cuối cùng, không ưu tiên trừ trước
-            ->orderByRaw('import_receipt_details.expiry_date IS NULL, import_receipt_details.expiry_date ASC')
             ->select('import_receipt_details.*')
             ->lockForUpdate()
-            ->get();
+            ->get()
+            ->sortBy(function ($batch) use ($shelfLifeDays) {
+                $effective = $batch->expiry_date;
+
+                if ($batch->opened_at && $shelfLifeDays) {
+                    $openedExpiry = \Carbon\Carbon::parse($batch->opened_at)->addDays($shelfLifeDays);
+                    if (!$effective || $openedExpiry->lt($effective)) {
+                        $effective = $openedExpiry;
+                    }
+                }
+
+                return $effective ? $effective->timestamp : PHP_INT_MAX;
+            });
 
         foreach ($batches as $batch) {
             if ($remainingToReduce <= 0)
                 break;
 
             $deduct = min((float) $batch->remaining_quantity, $remainingToReduce);
-
-            // Dư = 0 nghĩa là đang đứng ở ranh giới chai nguyên -> deduction này mở 1 đơn vị mới
             $remainderBefore = fmod((float) $batch->remaining_quantity, $rate);
             $extra = [];
             if ($remainderBefore == 0.0 && $batch->remaining_quantity > 0) {
@@ -184,7 +193,7 @@ class StockAdjustmentController extends Controller
         }
 
         if ($remainingToReduce > 0.001) {
-            Log::warning("Kiểm kê nguyên liệu #{$material->id}: còn {$remainingToReduce} chưa trừ được vào lô nào — dữ liệu lô có thể đã lệch từ trước.");
+            Log::warning("Kiểm kê nguyên liệu #{$material->id}: còn {$remainingToReduce} chưa trừ được vào lô nào.");
         }
     }
 

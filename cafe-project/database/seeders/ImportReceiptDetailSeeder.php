@@ -15,71 +15,64 @@ class ImportReceiptDetailSeeder extends Seeder
         DB::table('import_receipt_details')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // Mảng dữ liệu gốc giữ nguyên như bạn đã viết (quantity theo input_unit)
-        $rows = [
-            ['receipt_id' => 1, 'material_id' => 3, 'quantity' => 13.00, 'unit_price' => 30000.00, 'created_at' => Carbon::now()->subDays(10)],
-            ['receipt_id' => 1, 'material_id' => 4, 'quantity' => 15.00, 'unit_price' => 42000.00, 'created_at' => Carbon::now()->subDays(10)],
-            ['receipt_id' => 1, 'material_id' => 5, 'quantity' => 4.00, 'unit_price' => 65000.00, 'created_at' => Carbon::now()->subDays(10)],
-            ['receipt_id' => 1, 'material_id' => 8, 'quantity' => 10.00, 'unit_price' => 33000.00, 'created_at' => Carbon::now()->subDays(10)],
-
-            ['receipt_id' => 2, 'material_id' => 1, 'quantity' => 10.00, 'unit_price' => 140000.00, 'created_at' => Carbon::now()->subDays(7)],
-            ['receipt_id' => 2, 'material_id' => 2, 'quantity' => 10.00, 'unit_price' => 180000.00, 'created_at' => Carbon::now()->subDays(7)],
-            ['receipt_id' => 2, 'material_id' => 36, 'quantity' => 1.00, 'unit_price' => 15000.00, 'created_at' => Carbon::now()->subDays(7)],
-
-            ['receipt_id' => 3, 'material_id' => 15, 'quantity' => 15.00, 'unit_price' => 25000.00, 'created_at' => Carbon::now()->subDays(3)],
-            ['receipt_id' => 3, 'material_id' => 16, 'quantity' => 10.00, 'unit_price' => 15000.00, 'created_at' => Carbon::now()->subDays(3)],
-            ['receipt_id' => 3, 'material_id' => 17, 'quantity' => 5.00, 'unit_price' => 20000.00, 'created_at' => Carbon::now()->subDays(3)],
-            ['receipt_id' => 3, 'material_id' => 18, 'quantity' => 5.00, 'unit_price' => 22000.00, 'created_at' => Carbon::now()->subDays(3)],
-            ['receipt_id' => 3, 'material_id' => 19, 'quantity' => 4.00, 'unit_price' => 45000.00, 'created_at' => Carbon::now()->subDays(3)],
-            ['receipt_id' => 3, 'material_id' => 20, 'quantity' => 4.00, 'unit_price' => 40000.00, 'created_at' => Carbon::now()->subDays(3)],
-            ['receipt_id' => 3, 'material_id' => 35, 'quantity' => 5.00, 'unit_price' => 25000.00, 'created_at' => Carbon::now()->subDays(3)],
-
-            ['receipt_id' => 4, 'material_id' => 6, 'quantity' => 10.00, 'unit_price' => 28000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 7, 'quantity' => 5.00, 'unit_price' => 70000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 9, 'quantity' => 1.00, 'unit_price' => 150000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 10, 'quantity' => 1.50, 'unit_price' => 160000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 11, 'quantity' => 5.00, 'unit_price' => 45000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 12, 'quantity' => 2.00, 'unit_price' => 210000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 13, 'quantity' => 2.00, 'unit_price' => 210000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 14, 'quantity' => 2.00, 'unit_price' => 175000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 21, 'quantity' => 2.00, 'unit_price' => 35000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 22, 'quantity' => 5.00, 'unit_price' => 55000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 23, 'quantity' => 3.00, 'unit_price' => 60000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 24, 'quantity' => 2.00, 'unit_price' => 40000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 25, 'quantity' => 5.00, 'unit_price' => 38000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 26, 'quantity' => 2.00, 'unit_price' => 80000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 27, 'quantity' => 50.00, 'unit_price' => 4000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 28, 'quantity' => 2.00, 'unit_price' => 25000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 29, 'quantity' => 4.00, 'unit_price' => 20000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 30, 'quantity' => 4.00, 'unit_price' => 22000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 31, 'quantity' => 2.00, 'unit_price' => 220000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 32, 'quantity' => 2.00, 'unit_price' => 115000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 33, 'quantity' => 4.00, 'unit_price' => 35000.00, 'created_at' => Carbon::now()->subHours(5)],
-            ['receipt_id' => 4, 'material_id' => 34, 'quantity' => 20.00, 'unit_price' => 7000.00, 'created_at' => Carbon::now()->subHours(5)],
+        // ⭐ hạn sử dụng KHI CHƯA MỞ, tính theo số ngày kể từ ngày nhập (created_at của phiếu).
+        // Chỉ set cho nhóm hàng có FIFO/FEFO thực sự ý nghĩa (tươi sống, dễ hỏng theo thời gian).
+        // Nhóm khô/đóng hộp/topping bền (đá, bột, syrup, trân châu, xí muội...) để null vì
+        // hạn dùng dài không phải yếu tố quyết định khi xuất kho.
+        // ⚠️ Số ngày là giả định hợp lý theo thực tế F&B, bạn rà lại theo hạn in trên bao bì thật.
+        $expiryDaysFromImport = [
+            3 => 180, // Sữa đặc (lon kín)
+            4 => 10,  // Sữa tươi thanh trùng
+            5 => 60,  // Whipping cream (hộp tiệt trùng)
+            6 => 180, // Nước cốt dừa đóng hộp
+            8 => 20,  // Sữa chua hũ
+            15 => 14,  // Cam tươi
+            16 => 10,  // Dưa hấu tươi
+            17 => 7,   // Thơm tươi
+            18 => 7,   // Ổi tươi
+            19 => 5,   // Bơ sáp chín cây
+            20 => 7,   // Xoài chín
+            35 => 20,  // Trứng gà tươi
         ];
 
-        // Lấy sẵn exchange_rate của tất cả material liên quan, tránh query lặp trong vòng lặp
-        $materialIds = collect($rows)->pluck('material_id')->unique();
+        // ⭐ Lấy dữ liệu TỪ CHÍNH ImportReceiptSeeder — nguồn duy nhất, không khai báo trùng
+        // để đảm bảo total_cost (đã tính ở receipt) luôn khớp 100% với tổng chi tiết ở đây.
+        $receiptsData = ImportReceiptSeeder::data();
+
+        $materialIds = collect($receiptsData)
+            ->flatMap(fn($r) => $r['items'])
+            ->pluck('material_id')
+            ->unique();
         $exchangeRates = Material::whereIn('id', $materialIds)->pluck('exchange_rate', 'id');
 
-        $now = Carbon::now();
-        $insertData = collect($rows)->map(function ($row) use ($exchangeRates, $now) {
-            $exchangeRate = $exchangeRates[$row['material_id']] ?? 1;
-            $stockChange = round($row['quantity'] * $exchangeRate, 2);
+        $insertData = [];
+        foreach ($receiptsData as $receiptId => $receipt) {
+            $createdAt = $receipt['created_at'];
 
+            foreach ($receipt['items'] as $item) {
+                $exchangeRate = $exchangeRates[$item['material_id']] ?? 1;
+                $stockChange = round($item['quantity'] * $exchangeRate, 2);
 
-            return [
-                'receipt_id' => $row['receipt_id'],
-                'material_id' => $row['material_id'],
-                'quantity' => $row['quantity'],
-                'unit_price' => $row['unit_price'],
-                // ⭐ Quy đổi tự động sang base_unit dựa vào exchange_rate thật của material
-                'stock_change' => round($row['quantity'] * $exchangeRate, 2),
-                'remaining_quantity' => $stockChange,
-                'created_at' => $row['created_at'],
-                'updated_at' => $row['created_at'],
-            ];
-        })->toArray();
+                $days = $expiryDaysFromImport[$item['material_id']] ?? null;
+                $expiryDate = $days !== null
+                    ? Carbon::parse($createdAt)->copy()->addDays($days)->toDateString()
+                    : null;
+
+                $insertData[] = [
+                    'receipt_id' => $receiptId,
+                    'material_id' => $item['material_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    // ⭐ Quy đổi tự động sang base_unit dựa vào exchange_rate thật của material
+                    'stock_change' => $stockChange,
+                    'remaining_quantity' => $stockChange, // Lô mới nhập -> chưa bị trừ, còn nguyên
+                    'expiry_date' => $expiryDate,
+                    'opened_at' => null, // Lô chưa mở, chỉ set khi nhân viên bắt đầu dùng
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
+                ];
+            }
+        }
 
         DB::table('import_receipt_details')->insert($insertData);
     }

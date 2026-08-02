@@ -15,7 +15,11 @@ class StockService
         DB::transaction(function () use ($materialId, $qtyBase, $referenceType, $referenceId, $note) {
             $material = Material::lockForUpdate()->find($materialId);
 
-            if (!$material || (float) $material->quantity_in_stock < $qtyBase) {
+            if (!$material) {
+                throw new \Exception("Không tìm thấy nguyên liệu ID {$materialId}.");
+            }
+
+            if ((float) $material->quantity_in_stock < $qtyBase) {
                 throw new \Exception("Nguyên liệu \"{$material->material_name}\" không đủ tồn kho.");
             }
 
@@ -26,7 +30,8 @@ class StockService
                 ->where('import_receipt_details.material_id', $materialId)
                 ->where('import_receipts.status', 'active')
                 ->where('import_receipt_details.remaining_quantity', '>', 0)
-                ->orderBy('import_receipt_details.created_at')
+                ->where('import_receipt_details.expiry_date', '>=', now()->toDateString())
+                ->orderByRaw('import_receipt_details.expiry_date IS NULL, import_receipt_details.expiry_date ASC')
                 ->select('import_receipt_details.*')
                 ->lockForUpdate()
                 ->get();

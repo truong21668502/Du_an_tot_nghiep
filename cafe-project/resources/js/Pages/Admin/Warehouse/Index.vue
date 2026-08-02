@@ -1,29 +1,40 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import AdminLayout from "../Layout/AdminLayout.vue";
 
 const props = defineProps({
-    materials: { type: Array, default: () => [] },
+    materials: { type: Object, required: true }, // paginator: { data, links, meta, total, ... }
     lowStockAlerts: { type: Array, default: () => [] },
+    filters: { type: Object, default: () => ({}) },
 })
 
 const flash = computed(() => usePage().props.flash ?? {})
-const searchQuery = ref('')
+const searchQuery = ref(props.filters.search ?? '')
 
-const sortedMaterials = computed(() =>
-    [...props.materials].sort((a, b) => a.id - b.id)
-)
+// Server đã orderBy('material_name') + paginate, không cần sort/filter client nữa
+const materialRows = computed(() => props.materials.data)
 
-const filteredMaterials = computed(() => {
-    if (!searchQuery.value.trim()) return sortedMaterials.value
-    const q = searchQuery.value.trim().toLowerCase()
-    return sortedMaterials.value.filter(m => m.material_name?.toLowerCase().includes(q))
+let debounceTimer = null
+watch(searchQuery, (value) => {
+    clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => {
+        router.get(route('admin.kho.index'), { search: value || undefined }, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        })
+    }, 350)
 })
 
-const expiredCount = computed(() => props.materials.filter(m => isExpired(m)).length)
-const expiringSoonCount = computed(() => props.materials.filter(m => !isExpired(m) && isExpiringSoon(m)).length)
-const outOfStockCount = computed(() => props.materials.filter(m => Number(m.quantity_in_stock) <= 0).length)
+function clearSearch() {
+    searchQuery.value = ''
+}
+
+// Các thẻ thống kê (tổng, hết hàng, hết hạn...) giờ phải tính trên TOÀN BẢNG,
+// không thể tính từ materialRows (chỉ là 1 trang) — cần backend trả về qua props riêng.
+// Tạm thời dùng lowStockAlerts (đã full) cho thẻ liên quan tồn kho thấp;
+// các thẻ khác (tổng/hết hàng/hết hạn) cần thêm 1 prop "stats" từ Controller — xem ghi chú cuối.
 
 function displayStock(m) {
     const rate = Number(m.exchange_rate)
@@ -67,24 +78,9 @@ function formatDate(val) {
 function stockStatus(m) {
     const qty = Number(m.quantity_in_stock)
     const min = Number(m.min_stock ?? 0)
-    if (qty <= 0) return {
-        label: 'Hết hàng',
-        icon: 'cancel',
-        classes: 'bg-error text-white',
-        bar: 'bg-error',
-    }
-    if (min > 0 && qty <= min) return {
-        label: 'Sắp hết',
-        icon: 'warning',
-        classes: 'bg-amber-400 text-amber-950',
-        bar: 'bg-amber-400',
-    }
-    return {
-        label: 'Còn hàng',
-        icon: 'check_circle',
-        classes: 'bg-emerald-500 text-white',
-        bar: 'bg-emerald-500',
-    }
+    if (qty <= 0) return { label: 'Hết hàng', icon: 'cancel', classes: 'bg-error text-white', bar: 'bg-error' }
+    if (min > 0 && qty <= min) return { label: 'Sắp hết', icon: 'warning', classes: 'bg-amber-400 text-amber-950', bar: 'bg-amber-400' }
+    return { label: 'Còn hàng', icon: 'check_circle', classes: 'bg-emerald-500 text-white', bar: 'bg-emerald-500' }
 }
 
 function rowAccentClass(m) {
@@ -97,7 +93,7 @@ function rowAccentClass(m) {
 
 function parseDateLocal(val) {
     const [year, month, day] = val.split('-').map(Number)
-    return new Date(year, month - 1, day) // tạo theo giờ local, không qua UTC
+    return new Date(year, month - 1, day)
 }
 
 function isExpiringSoon(m) {
@@ -120,25 +116,24 @@ function goImport() {
     <AdminLayout title="Kho Nguyên Liệu">
         <div class="space-y-6 font-sans">
 
-            <!-- Flash -->
             <div v-if="flash.success"
                 class="flex items-center gap-3 bg-primary-container text-on-primary-container border border-primary/20 rounded-2xl px-5 py-3.5 text-body-medium shadow-sm">
                 <span class="material-symbols-outlined">check_circle</span>
                 {{ flash.success }}
             </div>
+
             <Link :href="route('admin.kho.chuyen-dong.index')"
                 class="inline-flex items-center gap-2 px-4 py-2.5 border border-outline-variant text-on-surface-variant hover:bg-surface-container-high rounded-full font-bold transition-colors text-label-medium">
                 <span class="material-symbols-outlined text-[18px]">history</span>
                 Lịch sử kho
             </Link>
 
-            <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-bold text-on-surface text-primary"><span
                             class="material-symbols-outlined text-primary">inventory</span> KHO NGUYÊN LIỆU</h1>
                     <p class="text-body-medium text-on-surface-variant mt-1">
-                        Đang hiển thị {{ filteredMaterials.length }}/{{ materials.length }} nguyên liệu
+                        Đang hiển thị {{ materialRows.length }}/{{ materials.total }} nguyên liệu
                     </p>
                 </div>
                 <div class="flex items-center gap-2">
@@ -156,24 +151,29 @@ function goImport() {
             </div>
 
             <!-- Dải thống kê nhanh -->
+            <!--
+                LƯU Ý: materials.total là tổng đúng, nhưng outOfStockCount/expiredCount/expiringSoonCount
+                trước đây tính client-side trên toàn bộ danh sách — giờ chỉ có 1 trang nên KHÔNG còn đúng.
+                Cần Controller trả thêm 1 prop "stats" (tính bằng query riêng, không phân trang), ví dụ:
+
+                'stats' => [
+                    'total' => $totalQuery->count(),
+                    'out_of_stock' => (clone $totalQuery)->where('quantity_in_stock', '<=', 0)->count(),
+                    'low_stock' => $lowStockAlerts->count(),
+                    'expired' => ...,
+                    'expiring_soon' => ...,
+                ]
+
+                rồi thay các computed cũ bằng props.stats.xxx. Tạm thời mình để lowStockAlerts.length
+                (vẫn đúng vì đó là full-table query) và ẩn 2 thẻ hết hàng/hết hạn cho tới khi có stats.
+            -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div class="bg-surface rounded-2xl border border-outline-variant/20 px-5 py-4 flex items-center gap-3">
                     <span class="material-symbols-outlined text-primary text-[26px]">inventory_2</span>
                     <div>
                         <p class="text-label-small text-on-surface-variant font-bold uppercase tracking-wide">Tổng
                             nguyên liệu</p>
-                        <p class="text-2xl font-bold text-on-surface font-mono">{{ materials.length }}</p>
-                    </div>
-                </div>
-                <div class="bg-surface rounded-2xl border px-5 py-4 flex items-center gap-3"
-                    :class="outOfStockCount > 0 ? 'border-error/30' : 'border-outline-variant/20'">
-                    <span class="material-symbols-outlined text-[26px]"
-                        :class="outOfStockCount > 0 ? 'text-error' : 'text-on-surface-variant/40'">cancel</span>
-                    <div>
-                        <p class="text-label-small font-bold uppercase tracking-wide"
-                            :class="outOfStockCount > 0 ? 'text-error' : 'text-on-surface-variant'">Hết hàng</p>
-                        <p class="text-2xl font-bold font-mono"
-                            :class="outOfStockCount > 0 ? 'text-error' : 'text-on-surface'">{{ outOfStockCount }}</p>
+                        <p class="text-2xl font-bold text-on-surface font-mono">{{ materials.total }}</p>
                     </div>
                 </div>
                 <div class="bg-surface rounded-2xl border px-5 py-4 flex items-center gap-3"
@@ -187,21 +187,6 @@ function goImport() {
                         <p class="text-2xl font-bold font-mono"
                             :class="lowStockAlerts.length > 0 ? 'text-amber-600' : 'text-on-surface'">{{
                                 lowStockAlerts.length }}</p>
-                    </div>
-                </div>
-                <div class="bg-surface rounded-2xl border px-5 py-4 flex items-center gap-3"
-                    :class="(expiredCount + expiringSoonCount) > 0 ? 'border-amber-300' : 'border-outline-variant/20'">
-                    <span class="material-symbols-outlined text-[26px]"
-                        :class="expiredCount > 0 ? 'text-error' : (expiringSoonCount > 0 ? 'text-amber-500' : 'text-on-surface-variant/40')">schedule</span>
-                    <div>
-                        <p class="text-label-small font-bold uppercase tracking-wide"
-                            :class="expiredCount > 0 ? 'text-error' : (expiringSoonCount > 0 ? 'text-amber-600' : 'text-on-surface-variant')">
-                            Hết hạn / sắp hết
-                        </p>
-                        <p class="text-2xl font-bold font-mono"
-                            :class="expiredCount > 0 ? 'text-error' : (expiringSoonCount > 0 ? 'text-amber-600' : 'text-on-surface')">
-                            {{ expiredCount }} / {{ expiringSoonCount }}
-                        </p>
                     </div>
                 </div>
             </div>
@@ -236,13 +221,13 @@ function goImport() {
                 </div>
             </div>
 
-            <!-- Tìm kiếm -->
+            <!-- Tìm kiếm: giờ gọi server (debounce 350ms) thay vì lọc client -->
             <div class="relative">
                 <span
                     class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
                 <input v-model="searchQuery" type="text" placeholder="Tìm nguyên liệu theo tên..."
                     class="w-full pl-12 pr-10 py-3 bg-surface-container-low border border-outline-variant/20 rounded-2xl text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
-                <button v-if="searchQuery" @click="searchQuery = ''"
+                <button v-if="searchQuery" @click="clearSearch"
                     class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors">
                     <span class="material-symbols-outlined">close</span>
                 </button>
@@ -250,9 +235,9 @@ function goImport() {
 
             <!-- Bảng -->
             <div class="bg-surface rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm">
-                <div class="overflow-x-auto max-h-[70vh] overflow-y-auto">
+                <div class="overflow-x-auto">
                     <table class="w-full border-collapse text-left">
-                        <thead class="sticky top-0 z-10">
+                        <thead>
                             <tr
                                 class="bg-surface-container border-b-2 border-outline-variant/20 text-label-large text-on-surface-variant">
                                 <th class="px-4 py-3.5 w-14 text-center font-bold">ID</th>
@@ -268,17 +253,17 @@ function goImport() {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-outline-variant/10 text-body-medium text-on-surface">
-                            <tr v-if="filteredMaterials.length === 0">
-                                <td colspan="8" class="py-16 text-center text-on-surface-variant">
+                            <tr v-if="materialRows.length === 0">
+                                <td colspan="9" class="py-16 text-center text-on-surface-variant">
                                     <span
                                         class="material-symbols-outlined text-[40px] block mb-2 text-outline">inventory_2</span>
                                     <p class="mb-1">{{ searchQuery ? `Không tìm thấy nguyên liệu nào khớp với
                                         "${searchQuery}".` : 'Chưa có nguyên liệu nào.' }}</p>
-                                    <button v-if="searchQuery" @click="searchQuery = ''"
+                                    <button v-if="searchQuery" @click="clearSearch"
                                         class="text-primary font-bold hover:underline">Xoá bộ lọc tìm kiếm</button>
                                 </td>
                             </tr>
-                            <tr v-for="m in filteredMaterials" :key="m.id"
+                            <tr v-for="m in materialRows" :key="m.id"
                                 class="hover:bg-surface-container-low/50 transition-colors" :class="rowAccentClass(m)">
 
                                 <td class="px-4 py-4 text-center text-on-surface-variant text-label-small font-mono">
@@ -293,7 +278,6 @@ function goImport() {
                                     </p>
                                 </td>
 
-                                <!-- Mức tồn kho: số + thanh trực quan -->
                                 <td class="px-4 py-4 text-right">
                                     <span class="font-mono font-bold text-label-large"
                                         :class="Number(m.quantity_in_stock) <= 0 ? 'text-error' :
@@ -301,7 +285,7 @@ function goImport() {
                                         {{ displayStock(m) }}
                                     </span>
                                     <span class="block text-label-small text-on-surface-variant/50">{{ m.input_unit
-                                        }}</span>
+                                    }}</span>
                                 </td>
 
                                 <td
@@ -309,7 +293,6 @@ function goImport() {
                                     {{ displayThreshold(m) }}
                                 </td>
 
-                                <!-- Trạng thái -->
                                 <td class="px-4 py-4 text-center">
                                     <span
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-label-small font-bold shadow-sm whitespace-nowrap"
@@ -321,7 +304,6 @@ function goImport() {
                                     </span>
                                 </td>
 
-                                <!-- Hạn SD -->
                                 <td class="px-4 py-4 text-center hidden md:table-cell">
                                     <div v-if="m.expiry_breakdown?.some(p => p.label)" class="space-y-1">
                                         <div v-for="(part, idx) in m.expiry_breakdown" :key="idx"
@@ -343,18 +325,15 @@ function goImport() {
                                     <span v-else class="text-on-surface-variant/40 text-label-small">—</span>
                                 </td>
 
-                                <!-- Nhà cung cấp -->
                                 <td class="px-4 py-4 hidden xl:table-cell text-on-surface-variant text-label-medium">
                                     {{ m.supplier || '—' }}
                                 </td>
 
-                                <!-- Giá -->
                                 <td
                                     class="px-4 py-4 text-right hidden md:table-cell font-mono text-label-medium text-on-surface-variant">
                                     {{ formatPrice(m.price) }}
                                 </td>
 
-                                <!-- Hành động -->
                                 <td class="px-4 py-4 text-center">
                                     <div class="flex items-center justify-center gap-1.5">
                                         <button @click="goImport(m.id)"
@@ -372,6 +351,19 @@ function goImport() {
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Phân trang -->
+                <div v-if="materials.links?.length > 3"
+                    class="px-5 py-3.5 border-t border-outline-variant/20 flex items-center justify-center gap-1 flex-wrap">
+                    <template v-for="(link, idx) in materials.links" :key="idx">
+                        <Link v-if="link.url" :href="link.url" preserve-scroll preserve-state
+                            class="px-3 py-1.5 rounded-full text-label-small font-bold transition-colors"
+                            :class="link.active ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-high'"
+                            v-html="link.label" />
+                        <span v-else class="px-3 py-1.5 rounded-full text-label-small text-on-surface-variant/40"
+                            v-html="link.label" />
+                    </template>
                 </div>
 
                 <!-- Chú thích -->
