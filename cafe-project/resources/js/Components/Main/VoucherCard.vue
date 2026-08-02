@@ -79,17 +79,15 @@ const canUse = computed(() => {
 })
 
 const applyVoucher = () => {
-  router.post(
-    '/gio-hang/voucher',
-    {
-      code: props.voucher.code,
+  router.get('/gio-hang', { code: props.voucher.code }, {
+    preserveScroll: true,
+    onSuccess: () => {
+      toast.success('Đã áp dụng voucher')
     },
-    {
-      preserveScroll: true,
-      onSuccess: () => toast.success('Đã áp dụng voucher'),
-      onError: () => toast.error('Không thể áp dụng voucher'),
-    },
-  )
+    onError: () => {
+      toast.error('Không thể áp dụng voucher')
+    }
+  })
 }
 </script>
 

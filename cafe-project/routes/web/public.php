@@ -98,67 +98,6 @@ Route::prefix('chat')->group(function () {
     Route::post('/regenerate-summary', [ChatController::class, 'regenerateSummary'])->name('chat.regenerate-summary');
 });
 
-use Illuminate\Support\Facades\Http;
-
-Route::get('/test-map', function () {
-    // --- TỌA ĐỘ CAO ĐẲNG FPT POLYTECHNIC ĐÀ NẴNG ---
-    $lat = 16.0757867;
-    $lon = 108.1699074;
-    $radius = 5000; // 5km
-
-    $url = 'https://overpass-api.de/api/interpreter';
-
-
-    // CÂU LỆNH TRUY VẤN: Lấy tất cả các thực thể (node, way, relation) có gắn thẻ số nhà trong bán kính 5km
-    $query = '[out:json][timeout:60];(node["addr:housenumber"](around:' . $radius . ',' . $lat . ',' . $lon . ');way["addr:housenumber"](around:' . $radius . ',' . $lat . ',' . $lon . '););out tags;';
-
-    // Gửi request lên hệ thống Overpass API
-    $response = Http::asForm()
-        ->withHeaders([
-            'User-Agent' => 'Laravel-House-Scanner/1.0'
-        ])
-        ->post($url, [
-            'data' => $query
-        ]);
-
-    if ($response->failed()) {
-        return response()->json([
-            'error' => 'Không thể kết nối API', 
-            'details' => $response->body()
-        ], 500);
-    }
-
-    $data = $response->json();
-    $houseList = [];
-
-    if (isset($data['elements'])) {
-        foreach ($data['elements'] as $element) {
-            $tags = $element['tags'] ?? [];
-            $houseNumber = $tags['addr:housenumber'] ?? '';
-            $streetName = $tags['addr:street'] ?? '';
-
-            // Chỉ lấy các bản ghi có đầy đủ cả số nhà và tên đường
-            if (!empty($houseNumber) && !empty($streetName)) {
-                $fullAddress = $houseNumber . ' ' . $streetName;
-                $houseList[] = $fullAddress;
-            }
-        }
-    }
-
-    // Loại bỏ các địa chỉ bị trùng lặp trong tệp dữ liệu
-    $houseList = array_unique($houseList);
-
-    // Sắp xếp danh sách địa chỉ nhà theo thứ tự tự nhiên (1, 2, 10, 100 thay vì 1, 10, 100, 2)
-    sort($houseList, SORT_NATURAL);
-
-    return response()->json([
-        'success' => true,
-        'location' => 'Khu vực quanh Cao đẳng FPT Polytechnic Đà Nẵng',
-        'radius' => '5km',
-        'total_houses_found' => count($houseList),
-        'data' => array_values($houseList)
-    ]);
-});
 
 
 

@@ -63,7 +63,7 @@ class AddToCartRequest extends FormRequest
                 $totalItemQuantity = $newQuantity;
             }
 
-            // Kiểm tra tổng số sản phẩm trong giỏ không vượt quá 40
+            // Kiểm tra tổng số sản phẩm trong giỏ không vượt quá 20
             $currentTotalQuantity = $cart->items()->sum('quantity');
 
             if ($existingItem) {
@@ -72,10 +72,10 @@ class AddToCartRequest extends FormRequest
                 $totalAfterAdd = $currentTotalQuantity + $newQuantity;
             }
 
-            if ($totalAfterAdd > 40) {
+            if ($totalAfterAdd > 20) {
                 $validator->errors()->add(
                     'quantity',
-                    'Tổng số sản phẩm trong giỏ hàng không được vượt quá 40'
+                    'Tổng số sản phẩm trong giỏ hàng không được vượt quá 20'
                 );
             }
         });

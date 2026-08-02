@@ -52,7 +52,7 @@ const heroImages = [
         <!-- ── Có banner: slider ảnh do admin quản lý, dùng chung component Banner ── -->
         <div
     v-if="banners.length"
-    class="relative max-w-[1100px] mx-auto aspect-video"
+    class="relative w-full mx-auto aspect-video"
             role="region"
             aria-roledescription="carousel"
             @mouseenter="isPaused = true"
@@ -69,11 +69,11 @@ const heroImages = [
 
             <template v-if="banners.length > 1">
                 <button @click="prev" aria-label="Banner trước"
-                    class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-surface/80 backdrop-blur flex items-center justify-center text-on-surface hover:bg-surface transition-colors">
+                    class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-surface/80 backdrop-blur flex items-center justify-center text-on-surface hover:bg-surface transition-colors cursor-pointer">
                     <span class="material-symbols-outlined">chevron_left</span>
                 </button>
                 <button @click="next" aria-label="Banner tiếp theo"
-                    class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-surface/80 backdrop-blur flex items-center justify-center text-on-surface hover:bg-surface transition-colors">
+                    class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-surface/80 backdrop-blur flex items-center justify-center text-on-surface hover:bg-surface transition-colors cursor-pointer">
                     <span class="material-symbols-outlined">chevron_right</span>
                 </button>
 

@@ -34,6 +34,38 @@ class CartController extends Controller
 
         $voucherSession = session('cart_voucher');
 
+        if ($request->has('code')) {
+            $code = strtoupper(trim($request->input('code')));
+            $subtotal = $this->calculateSubtotal($cart);
+
+            try {
+                // Tận dụng hàm validate và tính toán có sẵn của bạn
+                $coupon = $this->validateCoupon($code, $subtotal);
+                $discountAmount = $this->calculateDiscount($coupon, $subtotal);
+
+                // Lưu thẳng vào session giỏ hàng
+                session([
+                    'cart_voucher' => [
+                        'id' => $coupon->id,
+                        'code' => $coupon->code,
+                        'discount' => $discountAmount,
+                    ]
+                ]);
+            } catch (VoucherException $e) {
+                // Nếu lỗi, có thể flash lỗi vào session hoặc bỏ qua tùy ý bạn
+                session()->flash('error', $e->getMessage());
+            }
+        }
+
+        $cart->load([
+            'items.product.category',
+            'items.product.images',
+            'items.product.variants',
+            'items.variant',
+        ]);
+
+        $voucherSession = session('cart_voucher');
+
         return inertia('Cart', [
             'cart' => ['id' => $cart->id],
             'cartItems' => $this->transformCartItems($cart),
@@ -333,4 +365,5 @@ class CartController extends Controller
             ];
         });
     }
+
 }

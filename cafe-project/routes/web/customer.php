@@ -51,6 +51,8 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER,ADMIN'])->group(function (
             Route::patch('/{cartItem}', [CartController::class, 'update'])->name('update');
         Route::delete('/{cartItem}', [CartController::class, 'remove'])->name('remove');
     });
+    Route::post('/api/vouchers', [VoucherController::class, 'store'])->name('api.vouchers.store');
+    Route::get('/api/vouchers/available', [VoucherController::class, 'available'])->name('api.vouchers.available');
 
     Route::post('/reviews',           [ReviewController::class, 'store'])  ->name('reviews.store');
     Route::patch('/reviews/{review}', [ReviewController::class, 'update']) ->name('reviews.update');
@@ -58,10 +60,6 @@ Route::middleware(['auth', 'verified', 'role:CUSTOMER,ADMIN'])->group(function (
 
     Route::get('/thanh-toan', [CheckoutController::class, 'index'])->name('customer.checkout.index');
 
-    // Đơn hàng
-    Route::get('/don-hang', function () {
-        return Inertia::render('Orders');
-    })->name('orders');
 
     // voucher
     Route::post('/voucher/saved', [VoucherController::class, 'store'])->name('voucher.saved');

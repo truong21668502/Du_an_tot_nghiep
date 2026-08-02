@@ -126,4 +126,19 @@ class VnpayController extends Controller
         // So sánh an toàn chuỗi
         return $secureHash && hash_equals($expectedHash, $secureHash);
     }
+
+    private function handlePaymentFailed(Order $order)
+        {
+            if ($order->payment && $order->payment->payment_status !== 'PAID') {
+                $order->payment->update([
+                    'payment_status' => 'FAILED',
+                ]);
+            }
+
+            return inertia('Payment/Result', [
+                'status' => 'error',
+                'message' => 'Thanh toán thất bại hoặc đã bị hủy',
+                'order' => $order->only('id', 'final_amount'),
+            ]);
+        }
 }

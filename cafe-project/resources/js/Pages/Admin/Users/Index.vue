@@ -4,6 +4,7 @@ import { router, Link } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
 
 import UserFormModal from "./Components/UserFormModal.vue";
+import UserAddressesModal from "./Components/UserAddressesModal.vue";
 
 const props = defineProps({
     users: { type: Object, required: true },
@@ -13,6 +14,15 @@ const props = defineProps({
 const isModalOpen = ref(false);
 const isEditMode = ref(false);
 const selectedUser = ref(null);
+
+// Khai báo state quản lý Modal địa chỉ
+const isAddressModalOpen = ref(false);
+const selectedUserForAddress = ref(null);
+
+const openAddressModal = (user) => {
+    selectedUserForAddress.value = user;
+    isAddressModalOpen.value = true;
+};
 
 const searchFilters = ref({
     search: props.filters.search || "",
@@ -177,6 +187,7 @@ const deleteUser = (id) => {
                                 <th class="p-4">Giới tính</th>
                                 <th class="p-4">Điểm tích lũy</th>
                                 <th class="p-4">Trạng thái</th>
+                                <th class="p-4">Địa chỉ</th>
                                 <th class="p-4 text-right w-24">Hành động</th>
                             </tr>
                         </thead>
@@ -217,6 +228,14 @@ const deleteUser = (id) => {
                                         ({{ user.status_note }})
                                     </div>
                                 </td>
+                                <td class="px-4 py-3 text-center">
+                                    <button @click="openAddressModal(user)" class="px-3 py-1 bg-surface-container-low/50 hover:bg-surface-container-high rounded-xl text-on-surface-variant text-label-medium transition-colors cursor-pointer">
+                                        <span class="material-symbols-outlined text-[18px]">location_on</span>
+                                        Xem địa chỉ
+                                    </button>
+                                    <UserAddressesModal :isOpen="isAddressModalOpen" :user="selectedUserForAddress" @close="isAddressModalOpen = false" />
+                                </td>
+                                
                                 <td class="px-4 py-3 text-center">
                                     <div v-if="currentTab === 'trash'" class="flex items-center justify-center gap-2">
                                         <button @click="restoreUser(user.id)" class="text-primary hover:text-primary/80 flex items-center gap-0.5 font-bold cursor-pointer" title="Khôi phục tài khoản">

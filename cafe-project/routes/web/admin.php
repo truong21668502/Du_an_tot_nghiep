@@ -25,6 +25,9 @@ use App\Http\Controllers\Admin\ReviewReplyController;
 use App\Http\Controllers\Admin\BannerController;
 
 use App\Http\Controllers\Admin\AdminReviewController;
+use App\Http\Controllers\Admin\AiAnalyticsController;
+
+
 
 
 /*
@@ -106,7 +109,13 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::delete('/danh-gia-san-pham/reply/{replyId}', [AdminReviewController::class, 'destroyReply'])->name('admin-reviews.destroy-reply');
     Route::post('/danh-gia-san-pham/{id}/ai-reply', [AdminReviewController::class, 'generateAiReply'])->name('admin-reviews.ai-reply');
 
+    // Quản lý địa chỉ người dùng
+    Route::put('/nguoi-dung/dia-chi/{id}', [UserController::class, 'updateAddress'])->name('users.updateAddress');
 
+    //Xử lý bong bóng chat AI bên trong trang quản trị
+    Route::get('/ai-strategy', [AiAnalyticsController::class, 'getStrategicAdvice'])->name('ai.strategy');
+    Route::get('/ai-history', [AiAnalyticsController::class, 'getHistory'])->name('ai.history');
+    Route::post('/ai-chat', [AiAnalyticsController::class, 'sendChatMessage'])->name('ai.chat');
 
     // Quản lý đơn hàng
     Route::prefix('don-hang')->name('orders.')->group(function () {

@@ -168,6 +168,36 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
       loading.value = false
     }
   }
+  const applyVoucherFromModal = async (voucher) => {
+  loading.value = true
+  errors.value = {}
+
+  try {
+    const response = await axios.post(route('customer.cart.voucher.apply'), {
+      code: voucher.code,
+      from_wallet: true
+    })
+
+    if (response.data.success) {
+      appliedVoucher.value = response.data.appliedVoucher || null
+      voucherDiscount.value = Number(response.data.voucherDiscount) || 0
+
+      if (appliedVoucher.value) {
+        voucherCode.value = appliedVoucher.value.code || ''
+      }
+
+      toast.success(response.data.message || 'Đã áp dụng voucher')
+    }
+  } catch (err) {
+    const apiErrors = err.response?.data?.errors || {}
+    errors.value = {
+      voucher: apiErrors.code?.[0] || err.response?.data?.message
+    }
+    toast.error(errors.value.voucher || 'Không thể áp dụng voucher')
+  } finally {
+    loading.value = false
+  }
+}
 
   const removeVoucher = async () => {
     loading.value = true
@@ -203,5 +233,6 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
     removeVoucher,
     clearCart,
     formatPrice,
+    applyVoucherFromModal,
   }
 }
