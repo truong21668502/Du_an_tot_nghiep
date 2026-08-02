@@ -76,13 +76,25 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
+        // 1. Kiểm tra mật khẩu cũ có đúng hay không
         if (!Hash::check($request->current_password, $user->password)) {
             return back()->withErrors(['current_password' => 'Mật khẩu hiện tại không chính xác']);
         }
 
-        $user->update(['password' => $request->password]);
+        // 2. Kiểm tra mật khẩu mới có TRÙNG với mật khẩu cũ hay không
+        if (Hash::check($request->password, $user->password)) {
+            return back()->withErrors(['password' => 'Mật khẩu mới không được trùng với mật khẩu hiện tại']);
+        }
+
+        // 3. Mã hóa mật khẩu mới trước khi lưu
+        $user->update([
+            'password' => Hash::make($request->password)
+        ]);
+
         return redirect()->route('profile.password')->with('toast-success', 'Đổi mật khẩu thành công');
     }
+
+
 
     public function updateAvatar(UpdateAvatarRequest $request)
     {

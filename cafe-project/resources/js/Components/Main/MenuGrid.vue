@@ -1,6 +1,7 @@
 <script setup>
 import MenuItemCard from './MenuItemCard.vue'
 
+const emit = defineEmits(['add-to-cart'])
 defineProps({
   items: {
     type: Array,
@@ -36,6 +37,7 @@ defineProps({
         v-for="item in items" 
         :key="item.id" 
         :item="item"
+        @add-to-cart="emit('add-to-cart', $event)"
       />
     </TransitionGroup>
 

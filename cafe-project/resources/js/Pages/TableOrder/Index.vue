@@ -74,21 +74,27 @@ const cartSubtotal = computed(() => cartItems.value.reduce((sum, item) => sum + 
 const cartTotalAmount = computed(() => Math.max(0, cartSubtotal.value - voucherDiscount.value))
 
 // Thêm vào giỏ
-const handleAddToCart = (item, variantId) => {
-  axios.post(route('customer.cart.add'), {
-    product_id: item.id,
-    variant_id: variantId,
-    quantity: 1,
-  })
-  .then(response => {
-    if (response.data.cartItems) {
-      cartItems.value = response.data.cartItems
-    }
-    toast.success(response.data.message || 'Đã thêm vào giỏ hàng')
-  })
-  .catch(error => {
-    toast.error(error.response?.data?.message || 'Có lỗi xảy ra')
-  })
+const addingToCart = ref(false)
+
+const addGuestCart = (payload) => {
+    addingToCart.value = true
+
+    axios.post(route('customer.cart.table'), payload)
+        .then(() => {
+            toast.success('Đã thêm sản phẩm vào giỏ hàng')
+
+            router.reload({
+                preserveScroll: true,
+                preserveState: true,
+                only: ['cartItems'],
+            })
+        })
+        .catch((error) => {
+            toast.error(error.response?.data?.message ?? 'Có lỗi xảy ra')
+        })
+        .finally(() => {
+            addingToCart.value = false
+        })
 }
 
 // Debounce update số lượng
@@ -204,6 +210,7 @@ const handleSubmitOrder = () => {
               v-for="item in paginatedItems"
               :key="item.id"
               :item="item"
+              @add-to-cart="addGuestCart"
             />
           </div>
 

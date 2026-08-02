@@ -226,7 +226,7 @@ class CartController extends Controller
         $token = $request->cookie(self::COOKIE_NAME);
         if (!$token) return;
 
-        $guestCart = Cart::whereNull('user_id')->where('token', $token)->first();
+        $guestCart = Cart::whereNull('user_id')->where('token', $token)->first();   
         if (!$guestCart || $guestCart->id === $userCart->id) return;
 
         foreach ($guestCart->items as $guestItem) {
