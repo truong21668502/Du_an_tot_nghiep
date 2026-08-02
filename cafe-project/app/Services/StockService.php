@@ -30,7 +30,10 @@ class StockService
                 ->where('import_receipt_details.material_id', $materialId)
                 ->where('import_receipts.status', 'active')
                 ->where('import_receipt_details.remaining_quantity', '>', 0)
-                ->where('import_receipt_details.expiry_date', '>=', now()->toDateString())
+                ->where(function ($q) {
+                    $q->whereNull('import_receipt_details.expiry_date')
+                        ->orWhere('import_receipt_details.expiry_date', '>=', now()->toDateString());
+                })
                 ->orderByRaw('import_receipt_details.expiry_date IS NULL, import_receipt_details.expiry_date ASC')
                 ->select('import_receipt_details.*')
                 ->lockForUpdate()
