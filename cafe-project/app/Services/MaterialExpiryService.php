@@ -86,4 +86,56 @@ class MaterialExpiryService
         }
         return $earliest;
     }
+
+    // Thêm vào MaterialExpiryService, giữ nguyên các method cũ (breakdown, openedExpiry, nearestExpiry)
+
+    public function nearestExpiryForMany(array $materialIds): array
+    {
+        $materialIds = array_values(array_unique($materialIds));
+        if (empty($materialIds)) {
+            return [];
+        }
+
+        $materials = Material::query()
+            ->whereIn('id', $materialIds)
+            ->select('id', 'exchange_rate', 'shelf_life_after_opening_days')
+            ->get()
+            ->keyBy('id');
+
+        $batchesByMaterial = ImportReceiptDetail::query()
+            ->join('import_receipts', 'import_receipts.id', '=', 'import_receipt_details.receipt_id')
+            ->whereIn('import_receipt_details.material_id', $materialIds)
+            ->where('import_receipts.status', 'active')
+            ->where('import_receipt_details.remaining_quantity', '>', 0)
+            ->select('import_receipt_details.*')
+            ->get()
+            ->groupBy('material_id');
+
+        $result = [];
+
+        foreach ($materialIds as $materialId) {
+            $material = $materials->get($materialId);
+            if (!$material) {
+                $result[$materialId] = null;
+                continue;
+            }
+
+            $batches = $batchesByMaterial->get($materialId, collect());
+            $earliest = null;
+
+            foreach ($batches as $batch) {
+                foreach ($this->breakdown($batch, $material) as $part) {
+                    if (!$part['expiry_date'])
+                        continue;
+                    if (!$earliest || $part['expiry_date']->lt($earliest)) {
+                        $earliest = $part['expiry_date'];
+                    }
+                }
+            }
+
+            $result[$materialId] = $earliest;
+        }
+
+        return $result;
+    }
 }
