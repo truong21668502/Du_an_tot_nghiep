@@ -26,6 +26,7 @@ Route::middleware(['auth', 'role:STAFF,ADMIN'])->prefix('nhan-vien')->name('staf
     Route::post('/don-hang', [OrderController::class, 'store'])->name('orders.store');
     Route::patch('/don-hang/{order}/accept', [OrderController::class, 'accept'])->name('orders.accept');
     Route::patch('/don-hang/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
+    Route::patch('/don-hang/{order}/giao-hang', [OrderController::class, 'startDelivering'])->name('orders.start-delivering');
     Route::patch('/don-hang/{order}/huy', [OrderController::class, 'cancel'])->name('orders.cancel');
     Route::patch('/don-hang/{order}/xac-nhan-thanh-toan', [OrderController::class, 'confirmPayment'])->name('orders.confirm-payment');
     Route::get('/don-hang/{order}/vnpay-url', [OrderController::class, 'getVnpayUrl'])->name('orders.vnpay-url');
