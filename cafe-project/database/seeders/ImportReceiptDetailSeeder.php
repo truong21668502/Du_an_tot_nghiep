@@ -15,24 +15,24 @@ class ImportReceiptDetailSeeder extends Seeder
         DB::table('import_receipt_details')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // ⭐ hạn sử dụng KHI CHƯA MỞ, tính theo số ngày kể từ ngày nhập (created_at của phiếu).
-        // Chỉ set cho nhóm hàng có FIFO/FEFO thực sự ý nghĩa (tươi sống, dễ hỏng theo thời gian).
-        // Nhóm khô/đóng hộp/topping bền (đá, bột, syrup, trân châu, xí muội...) để null vì
-        // hạn dùng dài không phải yếu tố quyết định khi xuất kho.
-        // ⚠️ Số ngày là giả định hợp lý theo thực tế F&B, bạn rà lại theo hạn in trên bao bì thật.
+        // ⭐ Số ngày hạn sử dụng được TĂNG so với thực tế F&P để đảm bảo mọi expiry_date
+        // rơi vào tháng 9/2026 trở đi (phục vụ test cảnh báo sắp hết hạn / FEFO mà không
+        // bị "hết hạn ngay khi seed"). Thứ tự tương đối giữa các nguyên liệu vẫn giữ nguyên
+        // (cái nào lẽ ra hư nhanh hơn thì vẫn hết hạn sớm hơn trong nhóm tháng 9).
+        // ⚠️ Đây là giá trị test/demo, KHÔNG phản ánh hạn dùng thật ngoài bao bì.
         $expiryDaysFromImport = [
-            3 => 180, // Sữa đặc (lon kín)
-            4 => 10,  // Sữa tươi thanh trùng
-            5 => 60,  // Whipping cream (hộp tiệt trùng)
-            6 => 180, // Nước cốt dừa đóng hộp
-            8 => 20,  // Sữa chua hũ
-            15 => 14,  // Cam tươi
-            16 => 10,  // Dưa hấu tươi
-            17 => 7,   // Thơm tươi
-            18 => 7,   // Ổi tươi
-            19 => 5,   // Bơ sáp chín cây
-            20 => 7,   // Xoài chín
-            35 => 20,  // Trứng gà tươi
+            3 => 180, // Sữa đặc (lon kín)               -> ~Jan 2027 (không đổi)
+            4 => 39,  // Sữa tươi thanh trùng              -> ~01/09
+            5 => 60,  // Whipping cream                    -> ~22/09 (không đổi)
+            6 => 180, // Nước cốt dừa đóng hộp              -> ~Jan 2027 (không đổi)
+            8 => 43,  // Sữa chua hũ                        -> ~05/09
+            15 => 41,  // Cam tươi                           -> ~10/09
+            16 => 37,  // Dưa hấu tươi                       -> ~06/09
+            17 => 34,  // Thơm tươi                          -> ~03/09
+            18 => 33,  // Ổi tươi                            -> ~02/09
+            19 => 32,  // Bơ sáp chín cây                    -> ~01/09
+            20 => 35,  // Xoài chín                          -> ~04/09
+            35 => 29,  // Trứng gà tươi                      -> ~01/09
         ];
 
         // ⭐ Lấy dữ liệu TỪ CHÍNH ImportReceiptSeeder — nguồn duy nhất, không khai báo trùng
@@ -63,11 +63,10 @@ class ImportReceiptDetailSeeder extends Seeder
                     'material_id' => $item['material_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
-                    // ⭐ Quy đổi tự động sang base_unit dựa vào exchange_rate thật của material
                     'stock_change' => $stockChange,
-                    'remaining_quantity' => $stockChange, // Lô mới nhập -> chưa bị trừ, còn nguyên
+                    'remaining_quantity' => $stockChange,
                     'expiry_date' => $expiryDate,
-                    'opened_at' => null, // Lô chưa mở, chỉ set khi nhân viên bắt đầu dùng
+                    'opened_at' => null,
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt,
                 ];
