@@ -111,6 +111,14 @@ class OrderController extends Controller
         return redirect()->back();
     }
 
+    public function startDelivering(Order $order)
+    {
+        if ($order->order_type === 'DELIVERY' && $order->status === 'READY') {
+            $order->update(['status' => 'DELIVERING']);
+        }
+        return redirect()->back();
+    }
+
     public function confirmPayment(Order $order)
     {
         $order->load('payment');

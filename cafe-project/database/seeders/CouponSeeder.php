@@ -17,7 +17,7 @@ class CouponSeeder extends Seeder
 
         DB::table('coupons')->insert([
             [
-                'code' => 'CHAOMUONG',
+                'code' => 'CHAOMUNG',
                 'discount_type' => 'FIXED',
                 'discount_value' => 20000.00, // Giảm 20k
                 'max_discount_amount' => null, // Cố định thì không cần mục này
@@ -30,7 +30,7 @@ class CouponSeeder extends Seeder
                 'updated_at' => Carbon::now(),
             ],
             [
-                'code' => 'SVFOLY',
+                'code' => 'SVFPOLY',
                 'discount_type' => 'PERCENTAGE',
                 'discount_value' => 10.00,           // Giảm 10%
                 'max_discount_amount' => 15000.00,   // Giảm tối đa 15k tránh lỗ vốn

@@ -83,6 +83,16 @@ const completeOrder = (orderId) => {
     });
 };
 
+const startDelivering = (orderId) => {
+    router.patch(route('staff.orders.start-delivering', orderId), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            orders.value = orders.value.filter(o => o.id !== orderId);
+            closeOrderModal();
+        }
+    });
+};
+
 const cancelOrder = (orderId) => {
     if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) {
         router.patch(route('staff.orders.cancel', orderId), {}, {
@@ -474,6 +484,10 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                             <button v-if="selectedOrder?.status === 'PENDING'" @click="cancelOrder(selectedOrder.id)"
                                 class="px-5 py-2 rounded-xl bg-error/10 text-error border border-error/30 font-bold text-label-md hover:bg-error/20 flex items-center gap-2 transition-all">
                                 <span class="material-symbols-outlined text-[18px]">cancel</span> Hủy đơn
+                            </button>
+                            <button v-if="selectedOrder?.status === 'READY' && selectedOrder?.order_type === 'DELIVERY'" @click="startDelivering(selectedOrder.id)"
+                                class="px-5 py-2 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:bg-primary/90 flex items-center gap-2 transition-all shadow-sm">
+                                <span class="material-symbols-outlined text-[18px]">delivery_dining</span> Đưa shipper
                             </button>
                             <button v-if="selectedOrder?.status === 'PENDING'" @click="acceptOrder(selectedOrder.id)"
                                 class="px-6 py-2 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:bg-primary/90 flex items-center gap-2 transition-all shadow-sm">
