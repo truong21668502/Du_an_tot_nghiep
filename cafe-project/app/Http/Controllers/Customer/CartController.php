@@ -25,36 +25,30 @@ class CartController extends Controller
     public function index(Request $request)
     {
         $cart = $this->getOrCreateCart($request);
-        $cart->load([
-            'items.product.category',
-            'items.product.images',
-            'items.product.variants',
-            'items.variant',
-        ]);
-
-        $voucherSession = session('cart_voucher');
 
         if ($request->has('code')) {
             $code = strtoupper(trim($request->input('code')));
             $subtotal = $this->calculateSubtotal($cart);
 
             try {
-                // Tận dụng hàm validate và tính toán có sẵn của bạn
                 $coupon = $this->validateCoupon($code, $subtotal);
                 $discountAmount = $this->calculateDiscount($coupon, $subtotal);
 
-                // Lưu thẳng vào session giỏ hàng
                 session([
                     'cart_voucher' => [
-                        'id' => $coupon->id,
+                        'coupon_id' => $coupon->id,
                         'code' => $coupon->code,
                         'discount' => $discountAmount,
+                        'discount_type' => $coupon->discount_type,
+                        'discount_value' => (float) $coupon->discount_value,
                     ]
                 ]);
             } catch (VoucherException $e) {
-                // Nếu lỗi, có thể flash lỗi vào session hoặc bỏ qua tùy ý bạn
                 session()->flash('error', $e->getMessage());
             }
+        } else {
+            // Cập nhật lại giá trị voucher trong session theo tổng tiền hiện tại
+            $this->recalculateVoucher($cart);
         }
 
         $cart->load([
@@ -81,6 +75,10 @@ class CartController extends Controller
     {
         $cart = $this->getOrCreateCart($request);
         $this->addItem($cart, $request->validated());
+
+        // Tính toán lại voucher dựa trên subtotal mới
+        $voucherSession = $this->recalculateVoucher($cart);
+
         $cart->load([
             'items.product.category',
             'items.product.images',
@@ -91,7 +89,12 @@ class CartController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Đã thêm sản phẩm vào giỏ hàng',
-            'cartItems' => $this->transformCartItems($cart)
+            'cartItems' => $this->transformCartItems($cart),
+            'voucherDiscount' => $voucherSession['discount'] ?? 0,
+            'appliedVoucher' => $voucherSession ? [
+                'code' => $voucherSession['code'],
+                'discount' => $voucherSession['discount'],
+            ] : null,
         ]);
     }
 
@@ -101,6 +104,9 @@ class CartController extends Controller
         abort_if($cartItem->cart_id !== $cart->id, 403);
 
         $cartItem->update($request->validated());
+
+        // Tính toán lại voucher dựa trên subtotal mới
+        $voucherSession = $this->recalculateVoucher($cart);
 
         $cart->load([
             'items.product.category',
@@ -112,7 +118,12 @@ class CartController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Đã cập nhật giỏ hàng',
-            'cartItems' => $this->transformCartItems($cart)
+            'cartItems' => $this->transformCartItems($cart),
+            'voucherDiscount' => $voucherSession['discount'] ?? 0,
+            'appliedVoucher' => $voucherSession ? [
+                'code' => $voucherSession['code'],
+                'discount' => $voucherSession['discount'],
+            ] : null,
         ]);
     }
 
@@ -121,6 +132,9 @@ class CartController extends Controller
         $cart = $this->getOrCreateCart($request);
         abort_if($cartItem->cart_id !== $cart->id, 403);
         $cartItem->delete();
+
+        // Tính toán lại voucher dựa trên subtotal mới
+        $voucherSession = $this->recalculateVoucher($cart);
 
         $cart->load([
             'items.product.category',
@@ -132,7 +146,12 @@ class CartController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Đã xóa sản phẩm khỏi giỏ hàng',
-            'cartItems' => $this->transformCartItems($cart)
+            'cartItems' => $this->transformCartItems($cart),
+            'voucherDiscount' => $voucherSession['discount'] ?? 0,
+            'appliedVoucher' => $voucherSession ? [
+                'code' => $voucherSession['code'],
+                'discount' => $voucherSession['discount'],
+            ] : null,
         ]);
     }
 
@@ -149,6 +168,7 @@ class CartController extends Controller
     {
         $cart = $this->getOrCreateCart($request);
         $subtotal = $this->calculateSubtotal($cart);
+
         if (!Auth::check()) {
             return response()->json([
                 'success' => false,
@@ -196,6 +216,48 @@ class CartController extends Controller
             'appliedVoucher' => null,
             'voucherDiscount' => 0
         ]);
+    }
+
+    /**
+     * Tự động tính lại hoặc hủy voucher trong session khi tổng tiền giỏ hàng thay đổi
+     */
+    private function recalculateVoucher(Cart $cart): ?array
+    {
+        $voucherSession = session('cart_voucher');
+
+        if (!$voucherSession) {
+            return null;
+        }
+
+        $subtotal = $this->calculateSubtotal($cart);
+
+        // Nếu giỏ hàng trống, xóa voucher
+        if ($subtotal <= 0) {
+            session()->forget('cart_voucher');
+            return null;
+        }
+
+        try {
+            // Kiểm tra lại tính hợp lệ của coupon đối với subtotal mới
+            $coupon = $this->validateCoupon($voucherSession['code'], $subtotal);
+            $newDiscount = $this->calculateDiscount($coupon, $subtotal);
+
+            $updatedVoucher = [
+                'coupon_id' => $coupon->id,
+                'code' => $coupon->code,
+                'discount' => $newDiscount,
+                'discount_type' => $coupon->discount_type,
+                'discount_value' => (float) $coupon->discount_value,
+            ];
+
+            session(['cart_voucher' => $updatedVoucher]);
+
+            return $updatedVoucher;
+        } catch (VoucherException $e) {
+            // Nếu subtotal mới không đạt điều kiện (ví dụ: nhỏ hơn min_order_value), tự động xóa voucher
+            session()->forget('cart_voucher');
+            return null;
+        }
     }
 
     private function getOrCreateCart(Request $request): Cart
@@ -365,5 +427,4 @@ class CartController extends Controller
             ];
         });
     }
-
 }

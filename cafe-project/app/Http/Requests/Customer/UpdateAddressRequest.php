@@ -21,6 +21,9 @@ class UpdateAddressRequest extends FormRequest
             'ward' => ['required', 'string', 'max:100'],
             'city' => ['required', 'string', 'max:100'],
             'is_default' => ['nullable', 'boolean'],
+            'latitude'       => ['nullable', 'numeric'],
+            'longitude'      => ['nullable', 'numeric'],
+            'goong_place_id' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -40,6 +43,8 @@ class UpdateAddressRequest extends FormRequest
             'city.max' => 'Tỉnh/Thành phố không được vượt quá 100 ký tự',
             'city.required' => 'Vui lòng chọn Tỉnh/Thành phố.',
             'ward.required' => 'Vui lòng chọn Phường/Xã/Thị trấn.',
+            'latitude.numeric' => 'Vĩ độ phải là định dạng số',
+            'longitude.numeric' => 'Kinh độ phải là định dạng số',
         ];
     }
 }

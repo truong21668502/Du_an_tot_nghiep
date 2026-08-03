@@ -40,6 +40,9 @@ class Order extends Model
         'address_detail',
         'ward',
         'city',
+        'latitude',
+        'longitude', 
+        'goong_place_id',
     ];
 
     /**

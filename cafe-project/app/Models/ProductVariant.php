@@ -55,33 +55,37 @@ class ProductVariant extends Model
         return $this->hasMany(Recipe::class, 'variant_id', 'id');
     }
 
-    public function getAvailableQuantity(): int
+    public function getAvailableQuantity(): int 
     {
+        // Trường hợp 1: Sản phẩm KHÔNG có công thức (Ví dụ: Lon Coca, đồ bán sẵn)
+        if ($this->recipes->isEmpty()) {
+            return $this->status === 'AVAILABLE' ? 99 : 0; 
+        }
+
+        // Trường hợp 2: Sản phẩm CÓ công thức chế biến
         $stockQuantity = PHP_INT_MAX;
+        $hasValidMaterial = false;
 
-        if ($this->recipes->isNotEmpty()) {
-            foreach ($this->recipes as $recipe) {
-                if ($recipe->material && $recipe->quantity_needed > 0) {
-                    $possible = floor(
-                        $recipe->material->quantity_in_stock /
-                        $recipe->quantity_needed
-                    );
+        foreach ($this->recipes as $recipe) {
+            if ($recipe->material && $recipe->quantity_needed > 0) {
+                $hasValidMaterial = true;
+                
+                // Ép kiểu về float để tính toán chính xác số thập phân (kg, lít...)
+                $inStock = (float) $recipe->material->quantity_in_stock;
+                $needed = (float) $recipe->quantity_needed;
 
-                    $stockQuantity = min($stockQuantity, $possible);
-                }
+                $possible = (int) floor($inStock / $needed);
+                $stockQuantity = min($stockQuantity, $possible);
             }
-        } else {
-            $stockQuantity = $this->status === 'AVAILABLE'
-                ? PHP_INT_MAX
-                : 0;
         }
 
-        if ($stockQuantity === PHP_INT_MAX) {
-            $stockQuantity = $this->status === 'AVAILABLE'
-                ? 99
-                : 0;
+        // Nếu có công thức nhưng các công thức đều lỗi/không có nguyên liệu liên kết
+        if (!$hasValidMaterial) {
+            return $this->status === 'AVAILABLE' ? 99 : 0;
         }
 
-        return $stockQuantity;
+        // Trả về số lượng tối đa có thể làm được từ kho nguyên liệu (giới hạn tối đa là 99 để tránh tràn số)
+        return min($stockQuantity, 99); 
     }
+
 }

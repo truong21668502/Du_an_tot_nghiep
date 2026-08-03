@@ -1,9 +1,8 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 import { router } from "@inertiajs/vue3";
 import axios from "axios";
 import ProfileLayout from "@/Layouts/ProfileLayout.vue";
-import BaseButton from "@/Components/Base/BaseButton.vue";
 import AddressFormModal from "./Components/AddressFormModal.vue";
 
 defineOptions({ layout: ProfileLayout });
@@ -14,20 +13,9 @@ defineProps({
 
 const showForm = ref(false);
 const editingAddress = ref(null);
-const wards = ref([]);
 const loading = ref(false);
 const successMessage = ref("");
 const errors = ref({});
-
-onMounted(async () => {
-    try {
-        const res = await fetch("https://provinces.open-api.vn/api/v2/p/48?depth=2");
-        const data = await res.json();
-        wards.value = data.wards || [];
-    } catch (e) {
-        console.error(e);
-    }
-});
 
 const openAdd = () => {
     editingAddress.value = null;
@@ -57,7 +45,8 @@ const handleFormSubmit = async (formData) => {
         if (response.data.success) {
             successMessage.value = response.data.message;
             showForm.value = false;
-            router.reload({ preserveScroll: true, preserveState: true, only: ['addresses'] });
+            // Force reload lại toàn bộ prop addresses để hiển thị tọa độ mới
+            router.reload({ preserveScroll: true, preserveState: false, only: ['addresses'] });
         }
     } catch (e) {
         if (e.response?.status === 422) {
@@ -76,7 +65,7 @@ const handleDelete = async (id) => {
         const response = await axios.delete(`/profile/user-addresses/${id}`);
         if (response.data.success) {
             successMessage.value = response.data.message;
-            router.reload({ preserveScroll: true, preserveState: true, only: ['addresses'] });
+            router.reload({ preserveScroll: true, preserveState: false, only: ['addresses'] });
         }
     } catch (e) {
         console.error(e);
@@ -91,7 +80,7 @@ const setDefaultAddress = async (id) => {
         const response = await axios.put(`/profile/user-addresses/${id}/set-default`);
         if (response.data.success) {
             successMessage.value = response.data.message;
-            router.reload({ preserveScroll: true, preserveState: true, only: ['addresses'] });
+            router.reload({ preserveScroll: true, preserveState: false, only: ['addresses'] });
         }
     } catch (e) {
         console.error(e);
@@ -122,10 +111,10 @@ const setDefaultAddress = async (id) => {
             {{ successMessage }}
         </div>
 
+        <!-- Đã bỏ :wards không cần thiết -->
         <AddressFormModal
             :show="showForm"
             :editing-address="editingAddress"
-            :wards="wards"
             :loading="loading"
             :errors="errors"
             @close="showForm = false"

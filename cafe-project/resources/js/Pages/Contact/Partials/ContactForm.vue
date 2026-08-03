@@ -1,15 +1,14 @@
 ﻿<script setup>
 import { ref } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import axios from 'axios'
 import AnimateOnScroll from '@/Components/Base/AnimateOnScroll.vue'
 import BaseButton from '@/Components/Base/BaseButton.vue'
-import { usePage } from "@inertiajs/vue3"
 
-const data = usePage().props.value
-const error = ref({})
 const isSubmitted = ref(false)
+const isProcessing = ref(false)
+const errors = ref({})
 
-const form = useForm({
+const form = ref({
   name: '',
   email: '',
   phone: '',
@@ -25,16 +24,36 @@ const subjects = [
   'Khác'
 ]
 
-const submitForm = () => {
-  form.post('/contact/send', {
-    preserveScroll: true,
-    onSuccess: () => {
+const submitForm = async () => {
+  isProcessing.value = true
+  errors.value = {}
+  
+  try {
+    const response = await axios.post('/contact/send', form.value)
+    
+    if (response.data.success) {
       isSubmitted.value = true
-    },
-    onError: (errors) => {
-      console.error('Lỗi xử lý từ Laravel:', errors)
+      // Reset form
+      form.value = {
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: ''
+      }
     }
-  })
+  } catch (error) {
+    if (error.response && error.response.status === 422) {
+      // Validation errors from Laravel
+      errors.value = error.response.data.errors
+      console.error('Lỗi validation:', errors.value)
+    } else {
+      console.error('Lỗi xử lý:', error)
+      // Hiển thị thông báo lỗi chung nếu cần
+    }
+  } finally {
+    isProcessing.value = false
+  }
 }
 </script>
 
@@ -69,8 +88,9 @@ const submitForm = () => {
                     required
                     placeholder="Nguyễn Văn A"
                     class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl font-sans text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all duration-300"
+                    :class="{ 'border-error focus:border-error focus:ring-error/20': errors.name }"
                   />
-                  <div v-if="form.errors.name" class="text-error text-sm">{{ form.errors.name }}</div>
+                  <div v-if="errors.name" class="text-error text-sm">{{ errors.name[0] }}</div>
                 </div>
 
                 <div class="space-y-2">
@@ -82,8 +102,9 @@ const submitForm = () => {
                     required
                     placeholder="email@example.com"
                     class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl font-sans text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all duration-300"
+                    :class="{ 'border-error focus:border-error focus:ring-error/20': errors.email }"
                   />
-                  <div v-if="form.errors.email" class="text-error text-sm">{{ form.errors.email }}</div>
+                  <div v-if="errors.email" class="text-error text-sm">{{ errors.email[0] }}</div>
                 </div>
               </div>
 
@@ -106,11 +127,12 @@ const submitForm = () => {
                     v-model="form.subject"
                     required
                     class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl font-sans text-body-md text-on-surface focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all duration-300 cursor-pointer"
+                    :class="{ 'border-error focus:border-error focus:ring-error/20': errors.subject }"
                   >
                     <option value="" disabled>Chọn chủ đề</option>
                     <option v-for="subject in subjects" :key="subject" :value="subject">{{ subject }}</option>
                   </select>
-                  <div v-if="form.errors.subject" class="text-error text-sm">{{ form.errors.subject }}</div>
+                  <div v-if="errors.subject" class="text-error text-sm">{{ errors.subject[0] }}</div>
                 </div>
               </div>
 
@@ -123,18 +145,19 @@ const submitForm = () => {
                   rows="6"
                   placeholder="Nhập nội dung tin nhắn của bạn..."
                   class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl font-sans text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all duration-300 resize-none"
+                  :class="{ 'border-error focus:border-error focus:ring-error/20': errors.message }"
                 ></textarea>
-                <div v-if="form.errors.message" class="text-error text-sm">{{ form.errors.message }}</div>
+                <div v-if="errors.message" class="text-error text-sm">{{ errors.message[0] }}</div>
               </div>
 
               <div class="flex justify-start pt-4">
                 <BaseButton 
                   type="submit" 
                   variant="primary"
-                  :disabled="form.processing"
+                  :disabled="isProcessing"
                 >
-                  <span v-if="form.processing" class="material-symbols-outlined animate-spin text-lg">refresh</span>
-                  {{ form.processing ? 'Đang gửi...' : 'Gửi Tin Nhắn' }}
+                  <span v-if="isProcessing" class="material-symbols-outlined animate-spin text-lg">refresh</span>
+                  {{ isProcessing ? 'Đang gửi...' : 'Gửi Tin Nhắn' }}
                 </BaseButton>
               </div>
             </form>

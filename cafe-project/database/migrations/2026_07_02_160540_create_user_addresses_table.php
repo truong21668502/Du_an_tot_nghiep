@@ -26,6 +26,10 @@ return new class extends Migration
             $table->string('address_detail', 255)->comment('Chi tiết địa chỉ (Số nhà, tên đường,...)');
             $table->string('ward', 100)->nullable()->comment('Phường / Xã');
             $table->string('city', 100)->nullable()->comment('Tỉnh / Thành phố');
+            // --- Bổ sung các trường hỗ trợ Goong Map ---
+            $table->decimal('latitude', 10, 8)->nullable()->comment('Vĩ độ từ Goong Map (VD: 16.054407)');
+            $table->decimal('longitude', 11, 8)->nullable()->comment('Kinh độ từ Goong Map (VD: 108.202167)');
+            $table->string('goong_place_id', 255)->nullable()->comment('Mã địa điểm Place ID của Goong Map');
             
             $table->boolean('is_default')->default(false)->comment('Là địa chỉ mặc định? (0: Không, 1: Có)');
             

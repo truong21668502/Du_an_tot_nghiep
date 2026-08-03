@@ -15,12 +15,16 @@ class StoreAddressRequest extends FormRequest
     {
         return [
             'receiver_name' => ['required', 'string', 'min:2', 'max:100'],
-            // Regex mới: Bắt buộc bắt đầu bằng số 0, theo sau là các đầu số nhà mạng [3|5|7|8|9], và kết thúc bằng 8 chữ số [0-9] (Tổng cộng đúng 10 số)
             'receiver_phone' => ['required', 'string', 'regex:/^0[3|5|7|8|9][0-9]{8}$/'],
             'address_detail' => ['required', 'string', 'min:5', 'max:255'],
-            'ward' => ['required', 'string', 'max:100'],
-            'city' => ['required', 'string', 'max:100'],
-            'is_default' => ['nullable', 'boolean'],
+            'ward'           => ['nullable', 'string', 'max:100'], // Đổi thành nullable để tránh lỗi validation khi Goong không tách ward
+            'city'           => ['nullable', 'string', 'max:100'],
+            'is_default'     => ['nullable', 'boolean'],
+            
+            // --- BỔ SUNG THÊM 3 DÒNG NÀY ---
+            'latitude'       => ['nullable', 'numeric'],
+            'longitude'      => ['nullable', 'numeric'],
+            'goong_place_id' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -37,8 +41,8 @@ class StoreAddressRequest extends FormRequest
             'address_detail.max' => 'Địa chỉ không được vượt quá 255 ký tự',
             'ward.max' => 'Phường/Xã không được vượt quá 100 ký tự',
             'city.max' => 'Tỉnh/Thành phố không được vượt quá 100 ký tự',
-            'city.required' => 'Vui lòng chọn Tỉnh/Thành phố.',
-            'ward.required' => 'Vui lòng chọn Phường/Xã/Thị trấn.',
+            'latitude.numeric' => 'Vĩ độ phải là định dạng số',
+            'longitude.numeric' => 'Kinh độ phải là định dạng số',
         ];
     }
 }

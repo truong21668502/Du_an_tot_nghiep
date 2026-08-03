@@ -214,16 +214,19 @@ public function deleteAddress(UserAddress $address)
         ];
     }
 
-    private function formatAddresses($addresses): array
+private function formatAddresses($addresses): array
     {
         return $addresses->map(fn($a) => [
-            'id' => $a->id,
-            'receiver_name' => $a->receiver_name,
+            'id'             => $a->id,
+            'receiver_name'  => $a->receiver_name,
             'receiver_phone' => $a->receiver_phone,
             'address_detail' => $a->address_detail,
-            'ward' => $a->ward,
-            'city' => $a->city,
-            'is_default' => $a->is_default,
+            'ward'           => $a->ward,
+            'city'           => $a->city,
+            'latitude'       => $a->latitude ? (float) $a->latitude : null,
+            'longitude'      => $a->longitude ? (float) $a->longitude : null,
+            'goong_place_id' => $a->goong_place_id,
+            'is_default'     => (bool) $a->is_default,
         ])->values()->toArray();
     }
 

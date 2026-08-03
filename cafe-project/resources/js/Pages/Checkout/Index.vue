@@ -6,6 +6,7 @@ import MainLayout from '@/Layouts/MainLayout.vue'
 import AnimateOnScroll from '@/Components/Base/AnimateOnScroll.vue'
 import BaseButton from '@/Components/Base/BaseButton.vue'
 import AddressFormModal from '@/Pages/Profile/Partials/Components/AddressFormModal.vue'
+import { SHOP_POS, MAX_DELIVERY_DISTANCE_METERS, calculateShippingFee } from '@/Composables/shipping'
 
 defineOptions({ layout: MainLayout })
 
@@ -15,7 +16,6 @@ const voucher = computed(() => page.props.voucher || null)
 const addresses = computed(() => page.props.addresses || [])
 
 const discountAmount = computed(() => voucher.value?.discount_amount || voucher.value?.discount || 0)
-const finalAmount = computed(() => Math.max(0, subtotal.value - discountAmount.value))
 
 const loading = ref(false)
 const errors = ref({})
@@ -28,6 +28,74 @@ const note = ref('')
 const showAddressModal = ref(false)
 const editingAddress = ref(null)
 const wards = ref([])
+
+// ====== PHÍ GIAO HÀNG (còn thiếu ở bản trước) ======
+const GOONG_API_KEY = import.meta.env.VITE_GOONG_API_KEY
+const shippingFee = ref(0)
+const shippingDistanceText = ref('')
+const shippingDurationText = ref('')
+const isAddressOutOfRange = ref(false)
+const calculatingShipping = ref(false)
+
+const calculateShippingForAddress = async (address) => {
+    if (!address?.latitude || !address?.longitude) {
+        shippingFee.value = 0
+        isAddressOutOfRange.value = false
+        shippingDistanceText.value = ''
+        shippingDurationText.value = ''
+        return
+    }
+
+    calculatingShipping.value = true
+    isAddressOutOfRange.value = false
+
+    try {
+        const url = `https://rsapi.goong.io/Direction?api_key=${GOONG_API_KEY}&origin=${SHOP_POS.lat},${SHOP_POS.lng}&destination=${address.latitude},${address.longitude}&vehicle=car`
+        const res = await fetch(url)
+        const data = await res.json()
+
+        if (!data.routes || data.routes.length === 0) {
+            isAddressOutOfRange.value = true
+            shippingFee.value = 0
+            return
+        }
+
+        const leg = data.routes[0].legs[0]
+        const distanceMeters = leg.distance.value
+        const fee = calculateShippingFee(distanceMeters)
+
+        if (distanceMeters > MAX_DELIVERY_DISTANCE_METERS || fee === null) {
+            isAddressOutOfRange.value = true
+            shippingFee.value = 0
+        } else {
+            shippingFee.value = fee
+            shippingDistanceText.value = leg.distance.text
+            shippingDurationText.value = leg.duration.text
+        }
+    } catch (e) {
+        console.error('Shipping calculation error:', e)
+        isAddressOutOfRange.value = true
+        shippingFee.value = 0
+    } finally {
+        calculatingShipping.value = false
+    }
+}
+
+// Tính lại phí ship mỗi khi đổi địa chỉ đã chọn (kể cả lúc auto-chọn địa chỉ mặc định)
+watch(selectedAddressId, (newId) => {
+    const address = addresses.value.find(a => a.id === newId)
+    if (address) {
+        calculateShippingForAddress(address)
+    } else {
+        shippingFee.value = 0
+        isAddressOutOfRange.value = false
+    }
+})
+
+// finalAmount giờ phải cộng thêm shippingFee
+const finalAmount = computed(() =>
+    Math.max(0, subtotal.value - discountAmount.value + shippingFee.value)
+)
 
 // Tự động chọn địa chỉ mặc định ban đầu
 watch(addresses, (newVal) => {
@@ -60,7 +128,6 @@ const openEditAddress = (addr) => {
     showAddressModal.value = true
 }
 
-// Xử lý lưu hoặc cập nhật địa chỉ từ modal
 const handleAddressSubmit = async (formData) => {
     loading.value = true
     errors.value = {}
@@ -75,13 +142,11 @@ const handleAddressSubmit = async (formData) => {
 
         if (response.data.success) {
             showAddressModal.value = false
-            // Reload lại props addresses từinertia
             router.reload({
                 preserveScroll: true,
                 preserveState: true,
                 only: ['addresses'],
                 onSuccess: () => {
-                    // Nếu là thêm mới, tự động chọn luôn địa chỉ mới tạo (hoặc giữ nguyên nếu đang sửa)
                     if (!editingAddress.value && response.data.data?.id) {
                         selectedAddressId.value = response.data.data.id
                     }
@@ -100,31 +165,33 @@ const handleAddressSubmit = async (formData) => {
 const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 
 const canSubmit = computed(() => {
-  if (loading.value) return false
-  return !!selectedAddressId.value
+    if (loading.value) return false
+    if (!selectedAddressId.value) return false
+    if (isAddressOutOfRange.value) return false
+    return true
 })
 
 const submitOrder = () => {
-  if (!canSubmit.value) return
-  
-  loading.value = true
-  errors.value = {}
-  
-  router.post(route('customer.orders.store'), {
-    order_type: 'DELIVERY',
-    address_id: selectedAddressId.value,
-    payment_method: selectedPaymentMethod.value,
-    note: note.value,
-  }, {
-    preserveScroll: true,
-    onError: (err) => { 
-      errors.value = err
-      loading.value = false
-    },
-    onFinish: () => { 
-      loading.value = false 
-    }
-  })
+    if (!canSubmit.value) return
+
+    loading.value = true
+    errors.value = {}
+
+    router.post(route('customer.orders.store'), {
+        order_type: 'DELIVERY',
+        address_id: selectedAddressId.value,
+        payment_method: selectedPaymentMethod.value,
+        note: note.value,
+    }, {
+        preserveScroll: true,
+        onError: (err) => {
+            errors.value = err
+            loading.value = false
+        },
+        onFinish: () => {
+            loading.value = false
+        }
+    })
 }
 </script>
 
@@ -242,41 +309,88 @@ const submitOrder = () => {
 
         </div>
 
-        <!-- Sidebar -->
-        <div class="lg:col-span-1">
-          <div class="sticky top-24 space-y-4">
-            <AnimateOnScroll animation="fade-left" :duration="700">
-              <div class="bg-surface rounded-2xl border border-outline-variant/20 p-6">
-                <h3 class="font-serif text-headline-sm text-primary mb-4">Đơn hàng</h3>
-                <div class="space-y-2 mb-4">
-                  <div class="flex justify-between">
-                    <span class="font-sans text-body-md text-on-surface-variant">Tạm tính</span>
-                    <span class="font-sans text-body-md text-on-surface">{{ formatPrice(subtotal) }}</span>
-                  </div>
-                  <div v-if="voucher" class="flex justify-between text-secondary">
-                    <span class="font-sans text-body-md">Giảm giá ({{ voucher.code }})</span>
-                    <span class="font-sans text-body-md">-{{ formatPrice(discountAmount) }}</span>
-                  </div>
-                  <hr class="border-outline-variant/20" />
-                  <div class="flex justify-between">
-                    <span class="font-serif text-headline-sm text-primary">Tổng cộng</span>
-                    <span class="font-serif text-headline-sm text-primary">{{ formatPrice(finalAmount) }}</span>
-                  </div>
-                </div>
-                <BaseButton 
-                  variant="primary" 
-                  class="w-full justify-center" 
-                  :disabled="!canSubmit" 
-                  @click="submitOrder"
-                >
-                  <span v-if="loading" class="material-symbols-outlined animate-spin text-lg">refresh</span>
-                  {{ loading ? 'Đang xử lý...' : selectedPaymentMethod === 'BANK_TRANSFER' ? 'Thanh toán VNPay' : 'Đặt món' }}
-                </BaseButton>
-              </div>
-            </AnimateOnScroll>
+<!-- Sidebar -->
+<div class="lg:col-span-1">
+  <div class="sticky top-24 space-y-4">
+    <AnimateOnScroll animation="fade-left" :duration="700">
+      <div class="bg-surface rounded-2xl border border-outline-variant/20 p-6">
+        <h3 class="font-serif text-headline-sm text-primary mb-4">Đơn hàng</h3>
+        
+        <div class="space-y-2 mb-4">
+          <!-- Tạm tính -->
+          <div class="flex justify-between">
+            <span class="font-sans text-body-md text-on-surface-variant">Tạm tính</span>
+            <span class="font-sans text-body-md text-on-surface">{{ formatPrice(subtotal) }}</span>
+          </div>
+          
+          <!-- Giảm giá -->
+          <div v-if="voucher" class="flex justify-between text-secondary">
+            <span class="font-sans text-body-md">Giảm giá ({{ voucher.code }})</span>
+            <span class="font-sans text-body-md">-{{ formatPrice(discountAmount) }}</span>
+          </div>
+          
+          <!-- Phí giao hàng -->
+          <div class="flex justify-between">
+            <span class="font-sans text-body-md text-on-surface-variant">Phí giao hàng</span>
+            <span v-if="calculatingShipping" class="font-sans text-body-md text-on-surface-variant flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm animate-spin">refresh</span>
+              Đang tính...
+            </span>
+            <span v-else-if="!selectedAddressId" class="font-sans text-body-md text-on-surface-variant">--</span>
+            <span v-else-if="isAddressOutOfRange" class="font-sans text-body-md text-error">Không hỗ trợ</span>
+            <span v-else class="font-sans text-body-md text-on-surface">{{ formatPrice(shippingFee) }}</span>
+          </div>
+          
+          <!-- Thông báo ngoài phạm vi -->
+          <p v-if="isAddressOutOfRange && selectedAddressId" class="text-error text-label-sm flex items-start gap-1">
+            <span class="material-symbols-outlined text-sm">error</span>
+            <span>Địa chỉ này vượt quá bán kính giao hàng (tối đa 5km), vui lòng chọn địa chỉ khác.</span>
+          </p>
+          
+          <!-- Khoảng cách và thời gian (hiển thị khi có) -->
+          <div v-if="!isAddressOutOfRange && shippingDistanceText && selectedAddressId" class="space-y-1">
+            <div class="flex justify-between text-label-sm text-on-surface-variant">
+              <span>Khoảng cách</span>
+              <span>{{ shippingDistanceText }}</span>
+            </div>
+            <div v-if="shippingDurationText" class="flex justify-between text-label-sm text-on-surface-variant">
+              <span>Thời gian ước tính</span>
+              <span>{{ shippingDurationText }}</span>
+            </div>
+          </div>
+          
+          <hr class="border-outline-variant/20" />
+          
+          <!-- Tổng cộng -->
+          <div class="flex justify-between">
+            <span class="font-serif text-headline-sm text-primary">Tổng cộng</span>
+            <span class="font-serif text-headline-sm text-primary">{{ formatPrice(finalAmount) }}</span>
           </div>
         </div>
+        
+        <!-- Nút đặt hàng -->
+        <BaseButton 
+          variant="primary" 
+          class="w-full justify-center" 
+          :disabled="!canSubmit" 
+          @click="submitOrder"
+        >
+          <span v-if="loading" class="material-symbols-outlined animate-spin text-lg">refresh</span>
+          {{ loading ? 'Đang xử lý...' : selectedPaymentMethod === 'BANK_TRANSFER' ? 'Thanh toán VNPay' : 'Đặt món' }}
+        </BaseButton>
+        
+        <!-- Thông báo lỗi -->
+        <div v-if="!canSubmit && selectedAddressId && isAddressOutOfRange" class="mt-3 text-error text-label-sm text-center">
+          Vui lòng chọn địa chỉ khác trong phạm vi giao hàng
+        </div>
+        <div v-if="!canSubmit && !selectedAddressId" class="mt-3 text-on-surface-variant text-label-sm text-center">
+          Vui lòng chọn địa chỉ giao hàng
+        </div>
+      </div>
+    </AnimateOnScroll>
+  </div>
+</div>
       </div>
     </div>
   </div>
-</template>``
+</template>

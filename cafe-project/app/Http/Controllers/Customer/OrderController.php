@@ -20,10 +20,18 @@ use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use App\Services\ShippingService;
+
 class OrderController extends Controller
 {
     private const COOKIE_NAME = 'cart_token';
     private const COOKIE_LIFETIME_MINUTES = 60 * 24 * 30;
+    protected $shippingService;
+
+    public function __construct(ShippingService $shippingService)
+    {
+        $this->shippingService = $shippingService;
+    }
 
     public function store(PlaceOrderRequest $request)
     {
@@ -59,7 +67,7 @@ class OrderController extends Controller
 
     // ─── Order Logic ───────────────────────────────────────────
 
-    private function placeOrder(Cart $cart, array $data, Request $request): Order
+private function placeOrder(Cart $cart, array $data, Request $request): Order
     {
         $cart->loadMissing('items.product.variants', 'items.variant');
 
@@ -70,22 +78,21 @@ class OrderController extends Controller
         return DB::transaction(function () use ($cart, $data, $request) {
             [$subtotal, $discountAmount, $couponId] = $this->calculateAmounts($cart);
 
-            $order = $this->createOrder($cart, $data, $subtotal, $discountAmount, $couponId, $request);
+            // Tính phí ship dựa trên địa chỉ đã chọn (nếu là đơn giao hàng)
+            $shippingData = $this->resolveShippingFee($data);
+
+            $order = $this->createOrder($cart, $data, $subtotal, $discountAmount, $couponId, $shippingData);
 
             $this->syncOrderDetails($order, $cart);
             $this->syncPayment($order, $data['payment_method']);
 
             if ($couponId && Auth::check()) {
-                // 1. Tăng số lượt đã sử dụng chung của coupon trong bảng coupons
-
-                // 2. Kiểm tra xem mã này đã có trong ví (coupon_user) của user chưa
                 $couponUser = DB::table('coupon_user')
                     ->where('user_id', Auth::id())
                     ->where('coupon_id', $couponId)
                     ->first();
 
                 if ($couponUser) {
-                    // Nếu đã có sẵn trong ví, cập nhật trạng thái thành đã dùng
                     DB::table('coupon_user')
                         ->where('id', $couponUser->id)
                         ->update([
@@ -94,7 +101,6 @@ class OrderController extends Controller
                             'updated_at' => now(),
                         ]);
                 } else {
-                    // Nếu user nhập mã trực tiếp (chưa lưu sẵn trong ví), tự động thêm vào bảng coupon_user với trạng thái đã dùng
                     DB::table('coupon_user')->insert([
                         'user_id' => Auth::id(),
                         'coupon_id' => $couponId,
@@ -105,23 +111,60 @@ class OrderController extends Controller
                     ]);
                 }
                 Coupon::where('id', $couponId)->increment('used_count');
-
             }
 
-            // Luôn xóa giỏ hàng sau khi tạo đơn thành công
             $cart->items()->delete();
             session()->forget('cart_voucher');
             session()->forget('table_id');
 
-            // Bắn event real-time cho staff khi tạo đơn hàng mới (Trừ trường hợp Giao hàng + VNPay phải đợi thanh toán xong)
             $order->load('table', 'details.product', 'details.variant', 'payment');
-            if (!($data['order_type'] === 'DELIVERY' && $data['payment_method'] === 'VNPAY')) {
+            if ($data['order_type'] !== 'DELIVERY' || $data['payment_method'] !== 'VNPAY') {
                 broadcast(new OrderCreated($order));
             }
+
 
             return $order->load('details', 'payment');
         });
     }
+
+    /**
+     * Xác định phí ship + địa chỉ giao hàng dựa trên address_id trong request.
+     * Ném CartException nếu địa chỉ không hợp lệ hoặc vượt bán kính giao hàng.
+     */
+    private function resolveShippingFee(array $data): array
+    {
+        if (($data['order_type'] ?? null) !== 'DELIVERY') {
+            return ['fee' => 0.0, 'address' => null];
+        }
+
+        if (empty($data['address_id'])) {
+            throw new CartException('Vui lòng chọn địa chỉ giao hàng');
+        }
+
+        $address = UserAddress::find($data['address_id']);
+
+        if (!$address || !$address->latitude || !$address->longitude) {
+            throw new CartException('Địa chỉ giao hàng không hợp lệ, vui lòng chọn lại');
+        }
+
+        $distanceMeters = $this->shippingService->getDistanceMeters(
+            (float) $address->latitude,
+            (float) $address->longitude
+        );
+
+        if ($distanceMeters === null) {
+            throw new CartException('Không thể tính khoảng cách giao hàng, vui lòng thử lại');
+        }
+
+        $fee = $this->shippingService->calculateFee($distanceMeters);
+
+        if ($fee === null || $distanceMeters > ShippingService::MAX_DISTANCE_METERS) {
+            throw new CartException('Địa chỉ giao hàng vượt quá bán kính hỗ trợ (5km)');
+        }
+
+        return ['fee' => $fee, 'address' => $address];
+    }
+
     private function calculateAmounts(Cart $cart): array
     {
         $subtotal = $this->calculateSubtotal($cart);
@@ -142,13 +185,21 @@ class OrderController extends Controller
         return [$subtotal, $discountAmount, $couponId];
     }
 
-    private function createOrder(Cart $cart, array $data, float $subtotal, float $discountAmount, ?int $couponId, Request $request): Order
-    {
+    private function createOrder(
+        Cart $cart,
+        array $data,
+        float $subtotal,
+        float $discountAmount,
+        ?int $couponId,
+        array $shippingData
+    ): Order {
         $tableId = null;
 
         if ($data['order_type'] === 'DINE_IN') {
             $tableId = $data['table_id'] ?? session('table_id');
         }
+
+        $shippingFee = $shippingData['fee'] ?? 0.0;
 
         $orderData = [
             'user_id' => Auth::id(),
@@ -157,28 +208,28 @@ class OrderController extends Controller
             'coupon_id' => $couponId,
             'total_amount' => $subtotal,
             'discount_amount' => $discountAmount,
-            'final_amount' => $subtotal - $discountAmount,
+            'shipping_fee' => $shippingFee,
+            'final_amount' => $subtotal - $discountAmount + $shippingFee,
             'order_type' => $data['order_type'],
             'status' => 'PENDING',
             'source' => 'CUSTOMER',
             'note' => $data['note'] ?? null,
         ];
 
-        // Nếu là DELIVERY, copy thông tin từ user_addresses sang order
-        if ($data['order_type'] === 'DELIVERY' && !empty($data['address_id'])) {
-            $address = UserAddress::find($data['address_id']);
-            if ($address) {
-                $orderData['receiver_name'] = $address->receiver_name;
-                $orderData['receiver_phone'] = $address->receiver_phone;
-                $orderData['address_detail'] = $address->address_detail;
-                $orderData['ward'] = $address->ward;
-                $orderData['city'] = $address->city;
-            }
+        $address = $shippingData['address'] ?? null;
+        if ($data['order_type'] === 'DELIVERY' && $address) {
+            $orderData['receiver_name'] = $address->receiver_name;
+            $orderData['receiver_phone'] = $address->receiver_phone;
+            $orderData['address_detail'] = $address->address_detail;
+            $orderData['ward'] = $address->ward;
+            $orderData['city'] = $address->city;
+            $orderData['latitude'] = $address->latitude;
+            $orderData['longitude'] = $address->longitude;
+            $orderData['goong_place_id'] = $address->goong_place_id;
         }
 
         return Order::create($orderData);
     }
-
     private function syncOrderDetails(Order $order, Cart $cart): void
     {
         foreach ($cart->items as $item) {

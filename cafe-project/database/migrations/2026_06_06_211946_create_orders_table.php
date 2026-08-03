@@ -38,6 +38,11 @@ return new class extends Migration
             $table->string('address_detail', 255)->comment('Chi tiết địa chỉ (Số nhà, tên đường,...)')->nullable();
             $table->string('ward', 100)->nullable()->comment('Phường / Xã')->nullable();
             $table->string('city', 100)->nullable()->comment('Tỉnh / Thành phố')->nullable();
+
+            // --- Bổ sung các trường hỗ trợ Goong Map ---
+            $table->decimal('latitude', 10, 8)->nullable()->comment('Vĩ độ từ Goong Map (VD: 16.054407)');
+            $table->decimal('longitude', 11, 8)->nullable()->comment('Kinh độ từ Goong Map (VD: 108.202167)');
+            $table->string('goong_place_id', 255)->nullable()->comment('Mã địa điểm Place ID của Goong Map');
             
             // Khóa ngoại liên kết tới mã giảm giá (Nếu có áp dụng)
             $table->foreignId('coupon_id')
@@ -51,6 +56,7 @@ return new class extends Migration
             $table->decimal('total_amount', 10, 2)->comment('Tổng tiền ban đầu của các món ăn (Chưa giảm giá)');
             $table->decimal('discount_amount', 10, 2)->default(0.00)->comment('Số tiền được giảm trừ từ coupon');
             $table->decimal('final_amount', 10, 2)->comment('Số tiền cuối cùng khách phải thanh toán (total - discount)');
+            $table->decimal('shipping_fee', 10, 2)->default(0.00)->comment('Phí vận chuyển (chỉ áp dụng cho đơn DELIVERY)');
 
             $table->string('note', 255)->nullable()->comment('Ghi chú của khách hàng');
                 

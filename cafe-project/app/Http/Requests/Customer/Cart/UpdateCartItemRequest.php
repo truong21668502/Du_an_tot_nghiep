@@ -46,11 +46,11 @@ class UpdateCartItemRequest extends FormRequest
             // Tổng mới sau khi cập nhật
             $totalAfterUpdate = $currentTotalQuantity - $currentItemQuantity + $newQuantity;
 
-            if ($totalAfterUpdate > 40) {
-                $maxCanAdd = 40 - ($currentTotalQuantity - $currentItemQuantity);
+            if ($totalAfterUpdate > 20) {
+                $maxCanAdd = 20 - ($currentTotalQuantity - $currentItemQuantity);
                 $validator->errors()->add(
                     'quantity',
-                    'Tổng số sản phẩm trong giỏ hàng không được vượt quá 40. Bạn có thể cập nhật tối đa ' . $maxCanAdd . ' sản phẩm cho mặt hàng này.'
+                    'Tổng số sản phẩm trong giỏ hàng không được vượt quá 20. Bạn có thể cập nhật tối đa ' . $maxCanAdd . ' sản phẩm cho mặt hàng này.'
                 );
             }
         });

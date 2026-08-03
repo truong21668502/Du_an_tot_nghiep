@@ -26,7 +26,7 @@ class CheckoutController extends Controller
         if (Auth::check()) {
             $addresses = UserAddress::where('user_id', Auth::id())
                 ->orderBy('is_default', 'desc')
-                ->get(['id', 'receiver_name', 'receiver_phone', 'address_detail', 'ward', 'city', 'is_default']);
+                ->get();
         }
 
         return inertia('Checkout/Index', [

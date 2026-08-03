@@ -57,6 +57,13 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
       const response = await axios.patch(route('customer.cart.update', itemId), { quantity })
       if (response.data.success) {
         items.value = response.data.cartItems || []
+        
+        // CẬP NHẬT LẠI VOUCHER TỪ RESPONSE SERVER
+        voucherDiscount.value = Number(response.data.voucherDiscount) || 0
+        appliedVoucher.value = response.data.appliedVoucher || null
+        if (!appliedVoucher.value) {
+          voucherCode.value = ''
+        }
       }
     } catch (err) {
       const apiErrors = err.response?.data?.errors || {}
@@ -66,8 +73,6 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
       } else {
         toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật giỏ hàng')
       }
-      
-      // Nếu lỗi (ví dụ: quá số lượng tồn kho), giao diện tự động đồng bộ lại từ server props nếu cần
     } finally {
       loading.value = false
     }
@@ -84,7 +89,7 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
       targetItem.subtotal = Number(targetItem.variant?.price || targetItem.product?.price || 0) * quantity
     }
 
-    // BƯỚC 2: Trì hoãn gọi API . Nếu tiếp tục nhấn, thời gian sẽ được tính lại từ đầu
+    // BƯỚC 2: Trì hoãn gọi API. Nếu tiếp tục nhấn, thời gian sẽ được tính lại từ đầu
     const debouncedUpdate = debounce(itemId, sendUpdateApi, 300)
     debouncedUpdate(itemId, quantity)
   }
@@ -102,6 +107,14 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
       const response = await axios.delete(route('customer.cart.remove', itemId))
       if (response.data.success) {
         items.value = response.data.cartItems || []
+        
+        // CẬP NHẬT LẠI VOUCHER TỪ RESPONSE SERVER
+        voucherDiscount.value = Number(response.data.voucherDiscount) || 0
+        appliedVoucher.value = response.data.appliedVoucher || null
+        if (!appliedVoucher.value) {
+          voucherCode.value = ''
+        }
+
         toast.success(response.data.message || 'Đã xóa sản phẩm khỏi giỏ hàng')
       }
     } catch (err) {
@@ -168,36 +181,37 @@ export function useCart(initialCart, initialItems, initialVoucherDiscount = 0, i
       loading.value = false
     }
   }
+
   const applyVoucherFromModal = async (voucher) => {
-  loading.value = true
-  errors.value = {}
+    loading.value = true
+    errors.value = {}
 
-  try {
-    const response = await axios.post(route('customer.cart.voucher.apply'), {
-      code: voucher.code,
-      from_wallet: true
-    })
+    try {
+      const response = await axios.post(route('customer.cart.voucher.apply'), {
+        code: voucher.code,
+        from_wallet: true
+      })
 
-    if (response.data.success) {
-      appliedVoucher.value = response.data.appliedVoucher || null
-      voucherDiscount.value = Number(response.data.voucherDiscount) || 0
+      if (response.data.success) {
+        appliedVoucher.value = response.data.appliedVoucher || null
+        voucherDiscount.value = Number(response.data.voucherDiscount) || 0
 
-      if (appliedVoucher.value) {
-        voucherCode.value = appliedVoucher.value.code || ''
+        if (appliedVoucher.value) {
+          voucherCode.value = appliedVoucher.value.code || ''
+        }
+
+        toast.success(response.data.message || 'Đã áp dụng voucher')
       }
-
-      toast.success(response.data.message || 'Đã áp dụng voucher')
+    } catch (err) {
+      const apiErrors = err.response?.data?.errors || {}
+      errors.value = {
+        voucher: apiErrors.code?.[0] || err.response?.data?.message
+      }
+      toast.error(errors.value.voucher || 'Không thể áp dụng voucher')
+    } finally {
+      loading.value = false
     }
-  } catch (err) {
-    const apiErrors = err.response?.data?.errors || {}
-    errors.value = {
-      voucher: apiErrors.code?.[0] || err.response?.data?.message
-    }
-    toast.error(errors.value.voucher || 'Không thể áp dụng voucher')
-  } finally {
-    loading.value = false
   }
-}
 
   const removeVoucher = async () => {
     loading.value = true
