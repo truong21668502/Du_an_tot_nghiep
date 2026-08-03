@@ -20,7 +20,7 @@ class CouponUserSeeder extends Seeder
             // 👤 Người dùng ID = 1 sở hữu 3 mã khác nhau
             [
                 'user_id'     => 6,
-                'coupon_id'   => 1, // Mã CHAOMUONG (Giảm 20k)
+                'coupon_id'   => 1, // Mã CHAOMUNG (Giảm 20k)
                 'is_used'     => false, // Chưa dùng
                 'used_at'     => null,
                 'created_at'  => Carbon::now(),
@@ -28,7 +28,7 @@ class CouponUserSeeder extends Seeder
             ],
             [
                 'user_id'     => 7,
-                'coupon_id'   => 2, // Mã SVFOLY (Giảm 10%)
+                'coupon_id'   => 2, // Mã SVFPOLY (Giảm 10%)
                 'is_used'     => false, // Chưa dùng
                 'used_at'     => null,
                 'created_at'  => Carbon::now(),
