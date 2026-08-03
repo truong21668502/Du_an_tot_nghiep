@@ -238,6 +238,7 @@ private function formatAddresses($addresses): array
             'status' => $order->status,
             'total_amount' => (float) $order->total_amount,
             'discount_amount' => (float) $order->discount_amount,
+            'shipping_fee' => (float) $order->shipping_fee,
             'final_amount' => (float) $order->final_amount,
             'note' => $order->note,
             'cancel_reason' => $order->cancel_reason,

@@ -211,14 +211,21 @@ const closeDetailModal = () => {
                   <span class="text-on-surface-variant">Tạm tính</span>
                   <span class="text-on-surface">{{ formatPrice(selectedOrder.total_amount) }}</span>
                 </div>
+
+                <div class="flex justify-between text-sm">
+                  <span class="text-on-surface-variant">Phí ship</span>
+                  <span class="text-on-surface-variant">{{ selectedOrder.shipping_fee ?? 0 }}</span>
+                </div>
                 <div v-if="selectedOrder.discount_amount > 0" class="flex justify-between text-sm">
                   <span class="text-secondary">Giảm giá</span>
                   <span class="text-secondary">-{{ formatPrice(selectedOrder.discount_amount) }}</span>
                 </div>
+                
                 <div v-if="selectedOrder.coupon" class="flex justify-between text-sm">
                   <span class="text-on-surface-variant">Mã giảm giá</span>
                   <span class="text-on-surface-variant">{{ selectedOrder.coupon.code }}</span>
                 </div>
+    
                 <div class="flex justify-between font-semibold pt-2 border-t border-outline-variant/20">
                   <span class="font-serif text-headline-sm text-primary">Tổng thanh toán</span>
                   <span class="font-serif text-headline-sm text-primary">{{ formatPrice(selectedOrder.final_amount) }}</span>

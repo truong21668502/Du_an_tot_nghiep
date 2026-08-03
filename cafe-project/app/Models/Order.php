@@ -30,6 +30,7 @@ class Order extends Model
         'total_amount',
         'discount_amount',
         'final_amount',
+        'shipping_fee',
         'order_type',
         'status',
         'source',
