@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Link, usePage, router } from '@inertiajs/vue3'
 import { toast } from "vue3-toastify";
 import 'vue3-toastify/dist/index.css';
+import axios from 'axios';
 
 const isMobileMenuOpen = ref(false)
 const currentUrl = computed(() => usePage().url)
@@ -65,10 +66,27 @@ onUnmounted(() => {
 
 // ================= logic tạo đơn mới toàn cục (pos) =================
 const page = usePage();
-const products = computed(() => page.props.globalProducts || []);
-const tables = computed(() => page.props.globalTables || []);
+const products = ref([]);
+const tables = ref([]);
+const isLoadingCreateData = ref(false);
 
 const isCreateModalOpen = ref(false);
+
+const openCreateModal = async () => {
+    isCreateModalOpen.value = true;
+    if (products.value.length === 0) {
+        isLoadingCreateData.value = true;
+        try {
+            const { data } = await axios.get(route('staff.orders.create-data'));
+            products.value = data.products;
+            tables.value = data.tables;
+        } catch (e) {
+            toast.error('Không thể tải dữ liệu sản phẩm & bàn!');
+        } finally {
+            isLoadingCreateData.value = false;
+        }
+    }
+};
 
 const newOrderForm = ref({
     order_type: 'TAKE_AWAY',
@@ -166,7 +184,7 @@ const submitNewOrder = () => {
             </div>
 
             <div class="px-4 mb-6">
-                <button @click="isCreateModalOpen = true" class="w-full bg-primary text-on-primary py-3.5 rounded-xl font-bold text-label-sm shadow-md hover:bg-primary/90 flex items-center justify-center gap-2 transition-all uppercase tracking-wider">
+                <button @click="openCreateModal" class="w-full bg-primary text-on-primary py-3.5 rounded-xl font-bold text-label-sm shadow-md hover:bg-primary/90 flex items-center justify-center gap-2 transition-all uppercase tracking-wider">
                     <span class="material-symbols-outlined text-[20px]">add_circle</span>
                     Tạo đơn mới
                 </button>

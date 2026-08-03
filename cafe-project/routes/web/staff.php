@@ -22,6 +22,7 @@ Route::middleware(['auth', 'role:STAFF,ADMIN'])->prefix('nhan-vien')->name('staf
 
     // Route quản lý đơn hàng
     Route::get('/don-hang', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/don-hang/du-lieu-tao-don', [OrderController::class, 'createData'])->name('orders.create-data');
     Route::post('/don-hang', [OrderController::class, 'store'])->name('orders.store');
     Route::patch('/don-hang/{order}/accept', [OrderController::class, 'accept'])->name('orders.accept');
     Route::patch('/don-hang/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');

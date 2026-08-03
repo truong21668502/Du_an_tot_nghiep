@@ -48,9 +48,6 @@ class HandleInertiaRequests extends Middleware
                 'toast-error' => fn () => $request->session()->get('toast-error'),
                 'toast-warning' => fn () => $request->session()->get('toast-warning'),
             ],
-
-            'globalProducts' => fn () => \App\Models\Product::where('is_active', 'Đang bán')->with('variants')->get(),
-            'globalTables' => fn () => \App\Models\Table::orderBy('id', 'asc')->get(),
         ];
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\Table;
 use App\Events\OrderCreated;
 use App\Events\TableStatusUpdated;
@@ -21,10 +22,10 @@ class OrderController extends Controller
             ->whereIn('status', ['PENDING', 'PROCESSING', 'READY'])
             ->where(function ($q) {
                 $q->where('order_type', '!=', 'DELIVERY')
-                  ->orWhereHas('payment', function ($pq) {
-                      $pq->where('payment_method', 'CASH')
-                         ->orWhere('payment_status', 'PAID');
-                  });
+                    ->orWhereHas('payment', function ($pq) {
+                        $pq->where('payment_method', 'CASH')
+                            ->orWhere('payment_status', 'PAID');
+                    });
             })
             ->orderBy('created_at', 'asc')
             ->get();
@@ -207,5 +208,13 @@ class OrderController extends Controller
         broadcast(new OrderCancelled($order));
 
         return redirect()->back();
+    }
+
+    public function createData()
+    {
+        return response()->json([
+            'products' => Product::where('is_active', 'Đang bán')->with('variants')->get(),
+            'tables' => Table::orderBy('id', 'asc')->get(),
+        ]);
     }
 }
