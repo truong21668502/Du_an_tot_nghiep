@@ -34,3 +34,8 @@ Schedule::call(function () {
         });
     }
 })->everyMinute();
+
+Schedule::command('stock:write-off-expired')
+    ->dailyAt('00:05')
+    ->withoutOverlapping()
+    ->onOneServer();
