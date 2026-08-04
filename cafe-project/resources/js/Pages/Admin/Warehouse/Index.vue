@@ -66,7 +66,10 @@ function displayThreshold(m) {
 
 function formatPrice(val) {
     if (!val) return '—'
-    return Number(val).toLocaleString('vi-VN') + '₫'
+    return Number(val).toLocaleString('vi-VN', {
+        maximumFractionDigits: 0,
+        minimumFractionDigits: 0,
+    }) + '₫'
 }
 
 function formatDate(val) {
@@ -78,9 +81,22 @@ function formatDate(val) {
 function stockStatus(m) {
     const qty = Number(m.quantity_in_stock)
     const min = Number(m.min_stock ?? 0)
-    if (qty <= 0) return { label: 'Hết hàng', icon: 'cancel', classes: 'bg-error text-white', bar: 'bg-error' }
-    if (min > 0 && qty <= min) return { label: 'Sắp hết', icon: 'warning', classes: 'bg-amber-400 text-amber-950', bar: 'bg-amber-400' }
-    return { label: 'Còn hàng', icon: 'check_circle', classes: 'bg-emerald-500 text-white', bar: 'bg-emerald-500' }
+    const expired = isExpired(m)
+    const expiringSoon = isExpiringSoon(m)
+
+    if (qty <= 0) {
+        return { label: 'Hết hàng', icon: 'cancel', classes: 'bg-error text-white', pulse: true, severity: 'danger' }
+    }
+    if (expired) {
+        return { label: 'Hết hạn', icon: 'event_busy', classes: 'bg-error text-white', pulse: true, severity: 'danger' }
+    }
+    if (min > 0 && qty <= min) {
+        return { label: 'Sắp hết', icon: 'warning', classes: 'bg-amber-400 text-amber-950', pulse: true, severity: 'warning' }
+    }
+    if (expiringSoon) {
+        return { label: 'Sắp hết hạn', icon: 'schedule', classes: 'bg-amber-400 text-amber-950', pulse: true, severity: 'warning' }
+    }
+    return { label: 'Còn hàng', icon: 'check_circle', classes: 'bg-emerald-500 text-white', pulse: false, severity: null }
 }
 
 function rowAccentClass(m) {
@@ -273,7 +289,7 @@ function goImport() {
                                 <td class="px-4 py-4">
                                     <p class="font-bold text-on-surface leading-snug">{{ m.material_name }}</p>
                                     <p class="text-label-small text-on-surface-variant/60 font-mono mt-0.5">
-                                        1 {{ m.input_unit }} = {{ Number(m.exchange_rate).toLocaleString('vi-VN') }}
+                                        1 {{ m.input_unit }} ≈ {{ Number(m.exchange_rate).toLocaleString('vi-VN') }}
                                         {{ m.base_unit }}
                                     </p>
                                 </td>
@@ -285,7 +301,7 @@ function goImport() {
                                         {{ displayStock(m) }}
                                     </span>
                                     <span class="block text-label-small text-on-surface-variant/50">{{ m.input_unit
-                                    }}</span>
+                                        }}</span>
                                 </td>
 
                                 <td
@@ -296,7 +312,10 @@ function goImport() {
                                 <td class="px-4 py-4 text-center">
                                     <span
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-label-small font-bold shadow-sm whitespace-nowrap"
-                                        :class="stockStatus(m).classes">
+                                        :class="[
+                                            stockStatus(m).classes,
+                                            stockStatus(m).pulse ? `status-blink pulse-${stockStatus(m).severity}` : ''
+                                        ]">
                                         <span class="material-symbols-outlined text-[15px] leading-none">
                                             {{ stockStatus(m).icon }}
                                         </span>
@@ -305,7 +324,7 @@ function goImport() {
                                 </td>
 
                                 <td class="px-4 py-4 text-center hidden md:table-cell">
-                                    <div v-if="m.expiry_breakdown?.some(p => p.label)" class="space-y-1">
+                                    <div v-if="(m.expiry_breakdown?.length ?? 0) > 1" class="space-y-1">
                                         <div v-for="(part, idx) in m.expiry_breakdown" :key="idx"
                                             class="text-label-small font-mono leading-tight"
                                             :class="isExpired({ expiry_date: part.expiry_date }) ? 'text-error font-bold' : (isExpiringSoon({ expiry_date: part.expiry_date }) ? 'text-amber-600 font-bold' : 'text-on-surface-variant')">
@@ -388,3 +407,33 @@ function goImport() {
         </div>
     </AdminLayout>
 </template>
+
+<style scoped>
+@keyframes status-blink {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 var(--pulse-color, rgba(239, 68, 68, 0.55));
+    }
+
+    50% {
+        transform: scale(1.06);
+        box-shadow: 0 0 0 6px var(--pulse-color, rgba(239, 68, 68, 0));
+    }
+}
+
+.status-blink {
+    animation: status-blink 1s ease-in-out infinite;
+    position: relative;
+}
+
+/* Màu ring theo mức độ nghiêm trọng */
+.status-blink.pulse-danger {
+    --pulse-color: rgba(239, 68, 68, 0.55);
+}
+
+.status-blink.pulse-warning {
+    --pulse-color: rgba(245, 158, 11, 0.55);
+}
+</style>

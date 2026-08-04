@@ -42,6 +42,14 @@ class NotificationController extends Controller
     }
 
     /**
+     * Format số lượng: bỏ số 0 thừa sau dấu thập phân (2000.00 -> 2000, 1500.50 -> 1500.5).
+     */
+    private function formatQty($value): string
+    {
+        return rtrim(rtrim(number_format((float) $value, 2, '.', ''), '0'), '.');
+    }
+
+    /**
      * 1. Cảnh báo tồn kho: hết hàng hoặc dưới ngưỡng min_stock.
      */
     private function buildStockNotifications(): array
@@ -63,7 +71,7 @@ class NotificationController extends Controller
             'id' => 'stock_' . $item->id,
             'type' => 'danger',
             'title' => 'Cảnh báo tồn kho',
-            'message' => "Nguyên liệu '{$item->material_name}' chỉ còn {$item->quantity_in_stock} {$item->base_unit} trong kho.",
+            'message' => "Nguyên liệu '{$item->material_name}' chỉ còn " . $this->formatQty($item->quantity_in_stock) . " {$item->base_unit} trong kho.",
             'link' => '/quan-tri/kho',
             'time' => 'Mới nhất',
         ])->all();
@@ -154,7 +162,10 @@ class NotificationController extends Controller
                 continue;
             }
 
-            if ($nearest->lt($today)) {
+            // Chuẩn hoá về đầu ngày để so sánh/diff không dính giờ:phút:giây
+            $nearestDate = $nearest->copy()->startOfDay();
+
+            if ($nearestDate->lt($today)) {
                 $notifications[] = [
                     'id' => 'expired_' . $material->id,
                     'type' => 'danger',
@@ -163,15 +174,15 @@ class NotificationController extends Controller
                     'link' => '/quan-tri/kho',
                     'time' => 'Cần xử lý ngay',
                 ];
-            } elseif ($nearest->lte($threshold)) {
-                $daysLeft = $today->diffInDays($nearest);
+            } elseif ($nearestDate->lte($threshold)) {
+                $daysLeft = (int) $today->diffInDays($nearestDate);
                 $notifications[] = [
                     'id' => 'expiring_' . $material->id,
                     'type' => 'warning',
                     'title' => 'Nguyên liệu sắp hết hạn',
                     'message' => "'{$material->material_name}' còn {$daysLeft} ngày là hết hạn.",
                     'link' => '/quan-tri/kho',
-                    'time' => $nearest->format('d/m/Y'),
+                    'time' => $nearestDate->format('d/m/Y'),
                 ];
             }
         }

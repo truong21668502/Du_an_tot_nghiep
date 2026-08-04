@@ -306,6 +306,14 @@ async function submitNewMaterial() {
                                                     <span class="font-mono">{{ formatNum(stockAfter(item)) }} {{
                                                         getMaterial(item.material_id).input_unit }}</span>
                                                 </p>
+                                                <p v-if="getMaterial(item.material_id).shelf_life_after_opening_days"
+                                                    class="text-body-small text-on-surface-variant flex items-center gap-1">
+                                                    <span class="material-symbols-outlined text-[15px]">schedule</span>
+                                                    HSD sau khi mở:
+                                                    <span class="font-mono font-bold text-on-surface">{{
+                                                        getMaterial(item.material_id).shelf_life_after_opening_days }}
+                                                        ngày</span>
+                                                </p>
                                             </div>
 
                                             <span v-if="form.errors[`items.${index}.material_id`]"

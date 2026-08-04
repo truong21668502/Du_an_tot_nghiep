@@ -153,7 +153,18 @@ class ImportReceiptController extends Controller
                 ->with('toast-error', 'Phiếu này đã bị huỷ, không thể sửa.');
         }
 
-        $importReceipt->load('details');
+        $importReceipt->load(['details.material:id,material_name,base_unit,input_unit']);
+
+        // Đánh dấu dòng nào đã bị tiêu thụ 1 phần (không cho sửa nếu có bất kỳ dòng nào locked)
+        $hasLockedLine = false;
+        $importReceipt->details->each(function ($detail) use (&$hasLockedLine) {
+            $isLocked = bccomp((string) $detail->remaining_quantity, (string) $detail->stock_change, 2) !== 0;
+            $detail->is_locked = $isLocked;
+            $detail->consumed_quantity = round($detail->stock_change - $detail->remaining_quantity, 2);
+            if ($isLocked) {
+                $hasLockedLine = true;
+            }
+        });
 
         $materials = Material::select(
             'id',
@@ -168,6 +179,7 @@ class ImportReceiptController extends Controller
         return Inertia::render('Admin/Warehouse/ImportEdit', [
             'receipt' => $importReceipt,
             'materials' => $materials,
+            'canEdit' => !$hasLockedLine,
         ]);
     }
 

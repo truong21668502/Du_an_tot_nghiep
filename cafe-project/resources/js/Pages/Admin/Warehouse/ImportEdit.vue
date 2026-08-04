@@ -7,6 +7,7 @@ import AdminLayout from "../Layout/AdminLayout.vue";
 const props = defineProps({
     receipt: { type: Object, required: true },
     materials: { type: Array, default: () => [] },
+    canEdit: { type: Boolean, default: true },
 })
 
 const materialsList = ref([...props.materials])
@@ -21,6 +22,14 @@ props.receipt.details.forEach(d => {
         baselineStock[d.material_id] -= Number(d.stock_change)
     }
 })
+
+function isLineLocked(index) {
+    return props.receipt.details[index]?.is_locked ?? false
+}
+
+function consumedQty(index) {
+    return props.receipt.details[index]?.consumed_quantity ?? 0
+}
 
 function getBaseline(materialId) {
     return baselineStock[materialId] ?? getMaterial(materialId)?.quantity_in_stock ?? 0
@@ -51,10 +60,12 @@ function getOtherSelectedIds(currentIndex) {
 }
 
 function addItem() {
-    form.items.push({ material_id: '', quantity: '', unit_price: '', expiry_date: '', })
+    if (!props.canEdit) return
+    form.items.push({ material_id: '', quantity: '', unit_price: '', expiry_date: '' })
 }
 
 function removeItem(index) {
+    if (!props.canEdit) return
     form.items.splice(index, 1)
 }
 
@@ -80,6 +91,7 @@ function formatNum(val) {
 }
 
 function submit() {
+    if (!props.canEdit) return
     form.put(route('admin.kho.nhap.update', props.receipt.id))
 }
 
@@ -87,7 +99,10 @@ function submit() {
 const addMaterialTargetIndex = ref(null)
 
 function onMaterialSelectChange(index, event) {
-    if (event.target.value === '__new__') {
+    if (!props.canEdit) return
+    const value = event.target.value
+
+    if (value === '__new__') {
         form.items[index].material_id = ''
         openAddMaterialModal(index)
     }
@@ -98,12 +113,12 @@ const savingMaterial = ref(false)
 const materialErrors = ref({})
 
 const newMaterialForm = reactive({
-    material_name: '', base_unit: '', input_unit: '', exchange_rate: '', quantity_in_stock: '',
+    material_name: '', base_unit: '', input_unit: '', exchange_rate: '', quantity_in_stock: '', shelf_life_after_opening_days: '',
 })
 
 function openAddMaterialModal(index) {
     addMaterialTargetIndex.value = index
-    Object.assign(newMaterialForm, { material_name: '', base_unit: '', input_unit: '', exchange_rate: '', quantity_in_stock: '' })
+    Object.assign(newMaterialForm, { material_name: '', base_unit: '', input_unit: '', exchange_rate: '', quantity_in_stock: '', shelf_life_after_opening_days: '' })
     materialErrors.value = {}
     showAddMaterialModal.value = true
 }
@@ -123,6 +138,7 @@ async function submitNewMaterial() {
             input_unit: newMaterialForm.input_unit,
             exchange_rate: newMaterialForm.exchange_rate,
             quantity_in_stock: newMaterialForm.quantity_in_stock || 0,
+            shelf_life_after_opening_days: newMaterialForm.shelf_life_after_opening_days || null,
         })
         const newMaterial = res.data.material
         materialsList.value.push(newMaterial)
@@ -182,7 +198,20 @@ async function submitNewMaterial() {
                 <p class="pt-1">Khi lưu, hệ thống sẽ hoàn lại tồn kho theo phiếu cũ rồi áp lại theo dữ liệu mới.</p>
             </div>
 
-            <div class="bg-surface w-full rounded-3xl border border-outline-variant/15 shadow-sm p-6 space-y-6">
+            <div v-if="!canEdit"
+                class="bg-error-container/50 border border-error/30 text-on-error-container text-body-medium rounded-2xl p-4 flex items-start gap-3">
+                <span class="w-8 h-8 rounded-full bg-error/15 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-error text-[18px]">block</span>
+                </span>
+                <p class="pt-1">
+                    Phiếu này có nguyên liệu đã được sử dụng một phần, không thể sửa.
+                    Vui lòng tạo <b>phiếu kiểm kê</b> để điều chỉnh, hoặc tạo <b>phiếu nhập bổ sung</b> mới thay vì sửa
+                    phiếu này.
+                </p>
+            </div>
+
+            <div class="bg-surface w-full rounded-3xl border border-outline-variant/15 shadow-sm p-6 space-y-6"
+                :class="{ 'opacity-75 pointer-events-none select-none': !canEdit }">
 
                 <!-- Bước 1 -->
                 <div class="space-y-4">
@@ -198,9 +227,9 @@ async function submitNewMaterial() {
                         class="bg-surface-container-low p-5 rounded-2xl border border-outline-variant/15 grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div class="flex flex-col gap-1.5">
                             <label class="text-label-medium text-on-surface-variant font-bold">Nhà cung cấp *</label>
-                            <input v-model="form.supplier_name" type="text"
+                            <input v-model="form.supplier_name" type="text" :disabled="!canEdit"
                                 placeholder="VD: Anh Hùng Coffee, Vinamilk..."
-                                class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium" />
+                                class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-surface-container-high" />
                             <span v-if="form.errors.supplier_name"
                                 class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                 <span class="material-symbols-outlined text-sm">error</span>{{ form.errors.supplier_name
@@ -209,8 +238,9 @@ async function submitNewMaterial() {
                         </div>
                         <div class="flex flex-col gap-1.5">
                             <label class="text-label-medium text-on-surface-variant font-bold">Ghi chú</label>
-                            <input v-model="form.note" type="text" placeholder="Ghi chú thêm (tuỳ chọn)"
-                                class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium" />
+                            <input v-model="form.note" type="text" :disabled="!canEdit"
+                                placeholder="Ghi chú thêm (tuỳ chọn)"
+                                class="px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-surface-container-high" />
                         </div>
                     </div>
                 </div>
@@ -229,8 +259,8 @@ async function submitNewMaterial() {
                                 {{ form.items.length }}
                             </span>
                         </div>
-                        <button type="button" @click="addItem"
-                            class="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-container text-on-primary-container hover:bg-primary-container/80 rounded-full font-bold text-label-medium transition-colors duration-200 cursor-pointer shrink-0">
+                        <button type="button" @click="addItem" :disabled="!canEdit"
+                            class="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-container text-on-primary-container hover:bg-primary-container/80 rounded-full font-bold text-label-medium transition-colors duration-200 cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
                             <span class="material-symbols-outlined text-sm">add</span> Thêm dòng
                         </button>
                     </div>
@@ -239,8 +269,8 @@ async function submitNewMaterial() {
                         class="flex flex-col items-center justify-center gap-2 text-center py-14 border-2 border-dashed border-outline-variant/30 rounded-2xl text-on-surface-variant bg-surface-container-low/40">
                         <span class="material-symbols-outlined text-3xl text-outline-variant">inventory_2</span>
                         <p class="text-body-medium">Chưa có dòng nào trong phiếu nhập.</p>
-                        <button type="button" @click="addItem"
-                            class="text-primary font-bold text-body-medium hover:underline cursor-pointer">
+                        <button type="button" @click="addItem" :disabled="!canEdit"
+                            class="text-primary font-bold text-body-medium hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                             + Thêm dòng đầu tiên
                         </button>
                     </div>
@@ -253,7 +283,8 @@ async function submitNewMaterial() {
                         enter-from-class="opacity-0 -translate-y-1"
                         leave-active-class="transition duration-150 ease-in absolute" leave-to-class="opacity-0">
                         <div v-for="(item, index) in form.items" :key="index"
-                            class="relative bg-surface rounded-2xl border border-outline-variant/15 hover:border-primary/25 hover:shadow-md shadow-sm transition-all duration-200 overflow-hidden">
+                            class="relative bg-surface rounded-2xl border border-outline-variant/15 hover:border-primary/25 hover:shadow-md shadow-sm transition-all duration-200 overflow-hidden"
+                            :class="{ 'ring-1 ring-error/30 bg-error-container/5': isLineLocked(index) }">
 
                             <div class="flex flex-col lg:flex-row">
 
@@ -269,9 +300,9 @@ async function submitNewMaterial() {
                                         <div class="flex-1 min-w-0 space-y-1.5">
                                             <label class="text-label-medium text-on-surface-variant font-bold">Nguyên
                                                 liệu</label>
-                                            <select v-model="item.material_id"
+                                            <select v-model="item.material_id" :disabled="!canEdit"
                                                 @change="onMaterialSelectChange(index, $event)"
-                                                class="w-full px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low outline-none text-body-medium focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 cursor-pointer">
+                                                class="w-full px-4 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low outline-none text-body-medium focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
                                                 <option value="">-- Chọn nguyên liệu --</option>
                                                 <option v-for="m in materialsList" :key="m.id" :value="m.id"
                                                     :disabled="getOtherSelectedIds(index).includes(m.id)">
@@ -282,6 +313,14 @@ async function submitNewMaterial() {
                                                     + Thêm nguyên liệu mới...
                                                 </option>
                                             </select>
+                                            <div v-if="isLineLocked(index)"
+                                                class="flex items-center gap-1.5 bg-error-container/40 border border-error/20 rounded-lg px-3 py-1.5 mt-1.5 text-body-small text-on-error-container">
+                                                <span
+                                                    class="material-symbols-outlined text-error text-[15px]">lock</span>
+                                                Đã sử dụng {{ formatNum(consumedQty(index)) }} {{
+                                                    getMaterial(item.material_id)?.base_unit }} — dòng này bị khoá, không
+                                                thể sửa.
+                                            </div>
 
                                             <div v-if="getMaterial(item.material_id)"
                                                 class="flex flex-wrap items-center gap-x-4 gap-y-1 bg-tertiary/5 border border-tertiary/15 rounded-lg px-3 py-2 mt-1.5">
@@ -301,6 +340,14 @@ async function submitNewMaterial() {
                                                     Sau khi lưu:
                                                     <span class="font-mono">{{ formatNum(stockAfter(item)) }} {{
                                                         getMaterial(item.material_id).base_unit }}</span>
+                                                </p>
+                                                <p v-if="getMaterial(item.material_id).shelf_life_after_opening_days"
+                                                    class="text-body-small text-on-surface-variant flex items-center gap-1">
+                                                    <span class="material-symbols-outlined text-[15px]">schedule</span>
+                                                    HSD sau khi mở:
+                                                    <span class="font-mono font-bold text-on-surface">{{
+                                                        getMaterial(item.material_id).shelf_life_after_opening_days }}
+                                                        ngày</span>
                                                 </p>
                                             </div>
 
@@ -323,8 +370,8 @@ async function submitNewMaterial() {
                                                 </span>
                                             </label>
                                             <input v-model="item.quantity" type="number" min="0.01" step="0.01"
-                                                placeholder="0"
-                                                class="px-3.5 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium font-mono" />
+                                                placeholder="0" :disabled="!canEdit"
+                                                class="px-3.5 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium font-mono disabled:opacity-60 disabled:cursor-not-allowed" />
                                             <span v-if="form.errors[`items.${index}.quantity`]"
                                                 class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                                 <span class="material-symbols-outlined text-sm">error</span>{{
@@ -336,8 +383,8 @@ async function submitNewMaterial() {
                                             <label class="text-label-medium text-on-surface-variant font-bold">Đơn giá
                                                 (₫)</label>
                                             <input v-model="item.unit_price" type="number" min="0" step="1000"
-                                                placeholder="0"
-                                                class="px-3.5 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium font-mono" />
+                                                placeholder="0" :disabled="!canEdit"
+                                                class="px-3.5 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium font-mono disabled:opacity-60 disabled:cursor-not-allowed" />
                                             <span v-if="form.errors[`items.${index}.unit_price`]"
                                                 class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                                 <span class="material-symbols-outlined text-sm">error</span>{{
@@ -348,8 +395,8 @@ async function submitNewMaterial() {
                                         <div class="flex flex-col gap-1.5">
                                             <label class="text-label-medium text-on-surface-variant font-bold">Hạn
                                                 SD</label>
-                                            <input v-model="item.expiry_date" type="date"
-                                                class="px-3.5 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium" />
+                                            <input v-model="item.expiry_date" type="date" :disabled="!canEdit"
+                                                class="px-3.5 py-2.5 rounded-xl border border-outline-variant/60 bg-surface-container-low focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all duration-200 text-body-medium disabled:opacity-60 disabled:cursor-not-allowed" />
                                             <span v-if="form.errors[`items.${index}.expiry_date`]"
                                                 class="text-body-small text-error flex items-center gap-0.5 mt-1">
                                                 <span class="material-symbols-outlined text-sm">error</span>
@@ -377,7 +424,8 @@ async function submitNewMaterial() {
                                         </p>
                                     </div>
                                     <button type="button" @click="removeItem(index)" title="Xoá dòng này"
-                                        class="inline-flex items-center justify-center gap-1.5 lg:w-full p-2 lg:px-3 lg:py-2 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-full lg:rounded-xl transition-colors duration-200 cursor-pointer shrink-0">
+                                        :disabled="!canEdit"
+                                        class="inline-flex items-center justify-center gap-1.5 lg:w-full p-2 lg:px-3 lg:py-2 text-on-surface-variant hover:text-error hover:bg-error-container/30 rounded-full lg:rounded-xl transition-colors duration-200 cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
                                         <span class="material-symbols-outlined text-[19px]">delete</span>
                                         <span class="hidden lg:inline text-label-medium font-bold">Xoá dòng</span>
                                     </button>
@@ -405,11 +453,13 @@ async function submitNewMaterial() {
                             {{ formatNum(grandTotal) }}₫
                         </p>
                     </div>
-                    <button type="button" @click="submit" :disabled="form.processing"
+                    <button type="button" @click="submit" :disabled="form.processing || !canEdit"
+                        :title="!canEdit ? 'Phiếu có nguyên liệu đã dùng, không thể lưu' : ''"
                         class="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 bg-primary text-on-primary rounded-full shadow-sm shadow-primary/20 hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 font-bold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-sm shrink-0 whitespace-nowrap">
                         <span v-if="form.processing" class="material-symbols-outlined animate-spin">sync</span>
+                        <span v-else-if="!canEdit" class="material-symbols-outlined">lock</span>
                         <span v-else class="material-symbols-outlined">save</span>
-                        {{ form.processing ? 'Đang lưu...' : 'Lưu thay đổi' }}
+                        {{ form.processing ? 'Đang lưu...' : (!canEdit ? 'Không thể lưu' : 'Lưu thay đổi') }}
                     </button>
                 </div>
             </div>
@@ -502,6 +552,20 @@ async function submitNewMaterial() {
                             <input v-model="newMaterialForm.quantity_in_stock" type="number" min="0" step="0.01"
                                 placeholder="0"
                                 class="w-full border border-outline-variant/60 bg-surface rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 font-mono" />
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-label-medium text-on-surface-variant font-bold flex items-center gap-1">
+                                Hạn dùng sau khi mở (ngày)
+                                <span class="text-body-small text-on-surface-variant/70 font-normal">(tuỳ chọn)</span>
+                            </label>
+                            <input v-model="newMaterialForm.shelf_life_after_opening_days" type="number" min="1"
+                                step="1" placeholder="VD: 3 — để trống nếu không áp dụng (nguyên liệu khô, mua rời...)"
+                                class="w-full border border-outline-variant/60 bg-surface rounded-xl px-4 py-2.5 text-body-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 font-mono" />
+                            <p v-if="materialErrors.shelf_life_after_opening_days"
+                                class="text-body-small text-error flex items-center gap-0.5 mt-1">
+                                <span class="material-symbols-outlined text-sm">error</span>{{
+                                    materialErrors.shelf_life_after_opening_days[0] }}
+                            </p>
                         </div>
                     </div>
 
