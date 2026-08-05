@@ -19,6 +19,7 @@ class OrderController extends Controller
             ->with([
                 'table:id,table_name,area',
                 'user:id,full_name,phone_number',
+                'coupon:id,code,discount_type,discount_value',
                 'payment',
                 'details.product:id,product_name,image_url',
                 'details.variant:id,size,price',
@@ -118,10 +119,7 @@ class OrderController extends Controller
                 return ['error' => 'Không thể hủy đơn đang giao hàng.'];
             }
 
-            if ($validated['status'] === 'COMPLETED') {
-                // KHÔNG trừ kho ở đây nữa — kho đã được trừ từng món
-                // ngay khi barista hoàn thành ở BaristaController::updateStatus().
-                // Ở đây chỉ kiểm tra xem tất cả món đã pha xong (hoặc đã bị huỷ) chưa.
+            if ($validated['status'] === 'READY' || $validated['status'] === 'COMPLETED') {
                 $order->loadMissing('details');
 
                 $notReady = $order->details
@@ -130,8 +128,9 @@ class OrderController extends Controller
 
                 if ($notReady->isNotEmpty()) {
                     $names = $notReady->pluck('product.product_name')->filter()->implode(', ');
+                    $actionLabel = $validated['status'] === 'READY' ? 'chuyển sang sẵn sàng' : 'hoàn tất đơn';
                     return [
-                        'error' => "Còn món chưa pha chế xong, không thể hoàn tất đơn"
+                        'error' => "Còn món chưa pha chế xong, không thể {$actionLabel}"
                             . ($names ? ": {$names}" : '.'),
                     ];
                 }
@@ -146,6 +145,7 @@ class OrderController extends Controller
             return [
                 'order' => $order->fresh([
                     'table',
+                    'coupon',
                     'payment',
                     'details.product',
                     'details.variant',
