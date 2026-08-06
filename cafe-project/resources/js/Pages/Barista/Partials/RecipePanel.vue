@@ -82,7 +82,7 @@ const btnConfig = {
                                 <span class="text-[13px] text-on-surface font-medium">{{ recipe.material?.material_name }}</span>
                             </div>
                             <span class="text-[13px] font-bold text-primary">
-                                {{ recipe.quantity_needed }} <span class="text-[11px] font-normal text-on-surface-variant">{{ recipe.material?.base_unit }}</span>
+                                <span class="text-[12px] font-normal text-on-surface-variant/60">≈</span> {{ recipe.quantity_needed }} <span class="text-[11px] font-normal text-on-surface-variant">{{ recipe.material?.base_unit }}</span>
                             </span>
                         </li>
                     </ul>

@@ -458,11 +458,61 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                     formatCurrency(selectedOrder?.final_amount) }}</p>
                             </div>
 
-                            <div
-                                class="flex justify-between items-center p-4 bg-primary/5 rounded-xl border border-primary/15">
-                                <span class="text-body-md text-on-surface-variant font-medium">Tổng thanh toán:</span>
-                                <span class="text-headline-sm text-primary font-bold">{{
-                                    formatCurrency(selectedOrder?.final_amount) }}</span>
+                            <!-- Breakdown cho DELIVERY + CASH: nhân viên chỉ thu tiền đơn, shipper thu tiền ship -->
+                            <div v-if="selectedOrder?.order_type === 'DELIVERY' && selectedOrder?.payment?.payment_method === 'CASH'"
+                                class="rounded-xl border border-outline-variant/20 overflow-hidden">
+                                <div class="bg-surface-container-low px-4 py-2 border-b border-outline-variant/20">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Chi tiết thanh toán</span>
+                                </div>
+                                <div class="p-4 space-y-2.5">
+                                    <div class="flex justify-between items-center text-[13px]">
+                                        <span class="text-on-surface-variant">Tiền hàng</span>
+                                        <span class="font-medium text-on-surface">{{ formatCurrency(selectedOrder?.total_amount) }}</span>
+                                    </div>
+                                    <div v-if="selectedOrder?.discount_amount > 0" class="flex justify-between items-center text-[13px]">
+                                        <span class="text-on-surface-variant">Giảm giá</span>
+                                        <span class="font-medium text-green-600">-{{ formatCurrency(selectedOrder?.discount_amount) }}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-[13px]">
+                                        <span class="flex items-center gap-1.5 text-on-surface-variant">
+                                            <span class="material-symbols-outlined text-[14px]">delivery_dining</span>
+                                            Phí ship (shipper thu)
+                                        </span>
+                                        <span class="font-medium text-on-surface-variant">{{ formatCurrency(selectedOrder?.shipping_fee ?? 0) }}</span>
+                                    </div>
+                                    <div class="border-t border-outline-variant/20 pt-2.5 mt-1">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-[13px] font-bold text-on-surface">Nhân viên thu:</span>
+                                            <span class="text-[18px] font-bold text-primary">
+                                                {{ formatCurrency((selectedOrder?.total_amount ?? 0) - (selectedOrder?.discount_amount ?? 0)) }}
+                                            </span>
+                                        </div>
+                                        <p class="text-[11px] text-on-surface-variant/70 mt-1">
+                                            Khách sẽ trả thêm {{ formatCurrency(selectedOrder?.shipping_fee ?? 0) }} phí ship cho shipper
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tổng thanh toán thông thường (không phải DELIVERY+CASH) -->
+                            <div v-else class="space-y-3">
+                                <!-- Thông báo DELIVERY + VNPAY đã thanh toán: đưa tiền ship cho shipper -->
+                                <div v-if="selectedOrder?.order_type === 'DELIVERY' && selectedOrder?.payment?.payment_method !== 'CASH' && (selectedOrder?.shipping_fee ?? 0) > 0"
+                                    class="flex items-start gap-3 p-3.5 rounded-xl bg-amber-500/8 border border-amber-500/25">
+                                    <span class="material-symbols-outlined text-[18px] text-amber-600 mt-0.5 flex-shrink-0">wallet</span>
+                                    <div>
+                                        <p class="text-[11px] font-bold uppercase tracking-wider text-amber-700 mb-0.5">Lưu ý phí ship</p>
+                                        <p class="text-[12px] text-amber-800">
+                                            Khách đã thanh toán online toàn bộ.<br>
+                                            Nhân viên cần đưa <span class="font-bold">{{ formatCurrency(selectedOrder?.shipping_fee ?? 0) }}</span> tiền ship cho shipper.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center p-4 bg-primary/5 rounded-xl border border-primary/15">
+                                    <span class="text-body-md text-on-surface-variant font-medium">Tổng thanh toán:</span>
+                                    <span class="text-headline-sm text-primary font-bold">{{
+                                        formatCurrency(selectedOrder?.final_amount) }}</span>
+                                </div>
                             </div>
                         </div>
 
@@ -476,10 +526,12 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                 @click="confirmPayment(selectedOrder.id)"
                                 class="px-5 py-2 rounded-xl bg-emerald-600/10 text-emerald-700 border border-emerald-600/30 font-bold text-label-md hover:bg-emerald-600/20 flex items-center gap-2 transition-all">
                                 <span class="material-symbols-outlined text-[18px]">payments</span>
-                                {{
-                                    selectedOrder?.payment?.payment_method === 'CASH'
-                                        ? 'Thu tiền mặt' : 'Xác nhận đã thanh toán'
-                                }}
+                                <span v-if="selectedOrder?.payment?.payment_method === 'CASH' && selectedOrder?.order_type === 'DELIVERY'">
+                                    Thu {{ formatCurrency((selectedOrder?.total_amount ?? 0) - (selectedOrder?.discount_amount ?? 0)) }}
+                                </span>
+                                <span v-else>
+                                    {{ selectedOrder?.payment?.payment_method === 'CASH' ? 'Thu tiền mặt' : 'Xác nhận đã thanh toán' }}
+                                </span>
                             </button>
                             <button v-if="selectedOrder?.status === 'PENDING'" @click="cancelOrder(selectedOrder.id)"
                                 class="px-5 py-2 rounded-xl bg-error/10 text-error border border-error/30 font-bold text-label-md hover:bg-error/20 flex items-center gap-2 transition-all">
