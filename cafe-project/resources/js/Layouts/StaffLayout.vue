@@ -64,7 +64,7 @@ onUnmounted(() => {
     clearInterval(timeInterval)
 })
 
-// ================= logic tạo đơn mới toàn cục (pos) =================
+// Logic tạo đơn mới toàn cục (pos)
 const page = usePage();
 const products = ref([]);
 const tables = ref([]);
@@ -93,10 +93,11 @@ const newOrderForm = ref({
     table_id: '',
     payment_method: 'CASH',
     payment_status: 'PENDING',
+    note: '',
     items: []
 });
 
-const currentItem = ref({ product: null, variant: null, quantity: 1, note: '' });
+const currentItem = ref({ product: null, variant: null, quantity: 1, extra_ingredients: [] });
 
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
@@ -107,15 +108,21 @@ const addItemToOrder = () => {
         toast.error("Vui lòng chọn đủ món và kích cỡ (size)!");
         return;
     }
-    if (currentItem.value.note && currentItem.value.note.length > 255) {
-        toast.error("Ghi chú quá dài (tối đa 255 ký tự)!");
-        return;
+
+    // Build the note from extra_ingredients
+    let generatedNote = '';
+    if (currentItem.value.extra_ingredients && currentItem.value.extra_ingredients.length > 0) {
+        const extras = currentItem.value.extra_ingredients.map(recipe => {
+            return `${recipe.material?.material_name} (${recipe.quantity_needed}${recipe.material?.base_unit})`;
+        });
+        generatedNote = `Thêm: ${extras.join(', ')}`;
     }
-    // gộp món nếu trùng hoàn toàn sản phẩm, size và ghi chú
+
+    // gộp món nếu trùng hoàn toàn sản phẩm, size và ghi chú (ingredients)
     const existingIndex = newOrderForm.value.items.findIndex(i => 
         i.product_id === currentItem.value.product.id && 
         i.variant_id === currentItem.value.variant.id && 
-        i.note === currentItem.value.note
+        i.note === generatedNote
     );
 
     if (existingIndex !== -1) {
@@ -128,11 +135,20 @@ const addItemToOrder = () => {
             size: currentItem.value.variant.size,
             price: currentItem.value.variant.price,
             quantity: currentItem.value.quantity,
-            note: currentItem.value.note
+            note: generatedNote
         });
     }
     // reset form nhỏ sau khi thêm
-    currentItem.value = { product: null, variant: null, quantity: 1, note: '' };
+    currentItem.value = { product: null, variant: null, quantity: 1, extra_ingredients: [] };
+};
+
+const updateItemQuantity = (index, delta) => {
+    const item = newOrderForm.value.items[index];
+    if (item.quantity + delta > 0) {
+        item.quantity += delta;
+    } else {
+        removeItemFromOrder(index);
+    }
 };
 
 const removeItemFromOrder = (index) => {
@@ -158,7 +174,7 @@ const submitNewOrder = () => {
         preserveScroll: true,
         onSuccess: () => {
             isCreateModalOpen.value = false;
-            newOrderForm.value = { order_type: 'TAKE_AWAY', table_id: '', payment_method: 'CASH', payment_status: 'PENDING', items: [] };
+            newOrderForm.value = { order_type: 'TAKE_AWAY', table_id: '', payment_method: 'CASH', payment_status: 'PENDING', note: '', items: [] };
             toast.success("Tạo đơn thành công!");
         },
         onError: (errors) => {
@@ -218,7 +234,7 @@ const submitNewOrder = () => {
 
         <div class="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden">
 
-            <!-- ===== TOPBAR ===== -->
+            <!-- Topbar -->
             <header class="h-16 bg-surface/90 backdrop-blur-md border-b border-outline-variant/20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
 
                 <!-- Left: Mobile menu + Datetime -->
@@ -353,7 +369,7 @@ const submitNewOrder = () => {
                                             </option>
                                         </select>
 
-                                        <div class="flex gap-3">
+                                        <div class="flex gap-3 mt-3">
                                             <select v-model="currentItem.variant" class="flex-1 rounded-lg border-outline-variant/50 bg-surface-container-lowest text-body-md focus:ring-primary focus:border-primary py-2.5" :disabled="!currentItem.product">
                                                 <option :value="null" disabled>Chọn size</option>
                                                 <option v-for="v in currentItem.product?.variants || []" :key="v.id" :value="v">
@@ -363,7 +379,16 @@ const submitNewOrder = () => {
                                             <input type="number" v-model="currentItem.quantity" min="1" title="Số lượng" class="w-20 rounded-lg border-outline-variant/50 bg-surface-container-lowest text-center text-body-md focus:ring-primary focus:border-primary py-2.5">
                                         </div>
 
-                                        <input type="text" v-model="currentItem.note" placeholder="Ghi chú (ví dụ: ít đá, nhiều sữa...)" class="w-full rounded-lg border-outline-variant/50 bg-surface-container-lowest text-body-md focus:ring-primary focus:border-primary py-2.5 placeholder:text-sm">
+                                        <!-- Nguyên liệu thêm (lấy từ công thức) -->
+                                        <div v-if="currentItem.variant?.recipes?.length" class="mt-3">
+                                            <label class="text-[12px] font-bold text-on-surface-variant mb-2 block uppercase tracking-wider">Thêm nguyên liệu (Ghi chú)</label>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <label v-for="recipe in currentItem.variant.recipes" :key="recipe.id" class="flex items-center gap-2 text-[12px] bg-surface-container-lowest p-2 rounded-lg border border-outline-variant/30 cursor-pointer hover:bg-surface-container-low transition-colors">
+                                                    <input type="checkbox" v-model="currentItem.extra_ingredients" :value="recipe" class="rounded text-primary focus:ring-primary border-outline-variant">
+                                                    <span class="truncate">{{ recipe.material?.material_name }}</span>
+                                                </label>
+                                            </div>
+                                        </div>
 
                                         <button @click="addItemToOrder" class="w-full bg-secondary-container text-on-secondary-container py-3 rounded-lg font-bold hover:bg-secondary-container/80 transition-colors flex items-center justify-center gap-2 mt-2">
                                             <span class="material-symbols-outlined text-[20px]">add_shopping_cart</span>
@@ -382,22 +407,35 @@ const submitNewOrder = () => {
                                         Hóa đơn trống
                                     </div>
                                     
-                                    <div v-for="(item, index) in newOrderForm.items" :key="index" class="flex justify-between items-center gap-3 bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/20 hover:border-primary/30 transition-colors">
-                                        <div class="flex-1">
-                                            <p class="font-bold text-on-surface text-[15px]">
-                                                {{ item.product_name }} 
-                                                <span class="text-primary ml-1 text-sm">x{{ item.quantity }}</span>
-                                            </p>
-                                            <p class="text-[12px] text-on-surface-variant mt-0.5">Size {{ item.size }} • {{ formatCurrency(item.price) }}</p>
-                                            <p v-if="item.note" class="text-[11px] italic text-tertiary mt-1">"{{ item.note }}"</p>
+                                    <div v-for="(item, index) in newOrderForm.items" :key="index" class="flex flex-col gap-2 bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/20 hover:border-primary/30 transition-colors">
+                                        <div class="flex justify-between items-start gap-3">
+                                            <div class="flex-1">
+                                                <p class="font-bold text-on-surface text-[14px]">
+                                                    {{ item.product_name }} 
+                                                </p>
+                                                <p class="text-[12px] text-on-surface-variant mt-0.5">Size {{ item.size }} • {{ formatCurrency(item.price) }}</p>
+                                                <p v-if="item.note" class="text-[11px] italic text-tertiary mt-1">"{{ item.note }}"</p>
+                                            </div>
+                                            <!-- Nút +/- -->
+                                            <div class="flex items-center gap-1 bg-surface-container-low rounded-lg border border-outline-variant/30 p-1">
+                                                <button @click="updateItemQuantity(index, -1)" class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant transition-colors" title="Giảm">
+                                                    <span class="material-symbols-outlined text-[16px]">remove</span>
+                                                </button>
+                                                <span class="w-6 text-center text-[13px] font-bold">{{ item.quantity }}</span>
+                                                <button @click="updateItemQuantity(index, 1)" class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant transition-colors" title="Tăng">
+                                                    <span class="material-symbols-outlined text-[16px]">add</span>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <button @click="removeItemFromOrder(index)" class="text-error hover:bg-error-container p-2 rounded-full transition-colors flex" title="Xóa món">
-                                            <span class="material-symbols-outlined text-[18px]">delete</span>
-                                        </button>
                                     </div>
                                 </div>
 
                                 <div class="mt-4 pt-4 border-t border-outline-variant/30">
+                                    <div class="mb-3">
+                                        <label class="block text-[10px] font-bold text-on-surface-variant mb-1 uppercase tracking-wider">Ghi chú tổng cho đơn</label>
+                                        <textarea v-model="newOrderForm.note" rows="2" placeholder="Nhập ghi chú cho toàn bộ đơn hàng..." class="w-full rounded-lg border-outline-variant/50 bg-surface-container-lowest text-sm py-2 px-3 focus:ring-primary focus:border-primary placeholder:italic resize-none"></textarea>
+                                    </div>
+
                                     <div class="flex justify-between items-center mb-4 bg-primary-container/20 p-3 rounded-lg border border-primary/20">
                                         <span class="font-bold text-on-surface">Tổng thanh toán:</span>
                                         <span class="text-headline-sm font-bold text-primary">{{ formatCurrency(newOrderTotal) }}</span>

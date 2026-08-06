@@ -33,6 +33,8 @@ class TableStatusUpdated implements ShouldBroadcastNow
         return [
             'id' => $this->table->id,
             'status' => $this->table->status,
+            'capacity' => $this->table->capacity,
+            'parent_table_id' => $this->table->parent_table_id,
         ];
     }
 }

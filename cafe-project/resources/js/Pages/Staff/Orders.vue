@@ -123,7 +123,7 @@ const confirmPayment = (orderId) => {
     }
 }
 
-// ===== ECHO (giữ nguyên, không xóa dù chưa xác nhận hoạt động) =====
+// Echo (giữ nguyên, không xóa dù chưa xác nhận hoạt động)
 onMounted(() => {
     if (window.Echo) {
         window.Echo.channel('staff-orders')
@@ -179,7 +179,7 @@ onMounted(() => {
     }
 });
 
-// ===== POLLING — phương án chắc chắn hoạt động, không phụ thuộc Echo/Reverb =====
+// Polling — phương án chắc chắn hoạt động, không phụ thuộc echo/reverb
 let pollInterval = null;
 
 onMounted(() => {

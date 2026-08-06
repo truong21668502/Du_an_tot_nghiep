@@ -53,7 +53,7 @@ const btnConfig = {
         <!-- Body -->
         <div class="flex-1 overflow-y-auto p-5 space-y-4 hide-scrollbar">
 
-            <!-- Lưu ý từ khách -->
+            <!-- Lưu ý từ khách (từng món) -->
             <div v-if="detail.note"
                 class="flex items-start gap-3 p-3.5 rounded-xl bg-error/5 border border-error/15">
                 <span class="material-symbols-outlined text-[18px] text-error mt-0.5" style="font-variation-settings:'FILL' 1">campaign</span>

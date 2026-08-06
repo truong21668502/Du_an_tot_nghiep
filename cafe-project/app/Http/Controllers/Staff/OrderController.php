@@ -42,6 +42,7 @@ class OrderController extends Controller
             'items' => 'required|array|min:1',
             'items.*.note' => 'nullable|string|max:255',
             'total_amount' => 'required|numeric',
+            'note' => 'nullable|string'
         ]);
 
         // Tạo đơn hàng
@@ -53,6 +54,7 @@ class OrderController extends Controller
             'total_amount' => $request->total_amount,
             'final_amount' => $request->total_amount,
             'discount_amount' => 0,
+            'note' => $request->note,
         ]);
 
         // Tạo chi tiết món
@@ -221,7 +223,7 @@ class OrderController extends Controller
     public function createData()
     {
         return response()->json([
-            'products' => Product::where('is_active', 'Đang bán')->with('variants')->get(),
+            'products' => Product::where('is_active', 'Đang bán')->with(['variants.recipes.material'])->get(),
             'tables' => Table::orderBy('id', 'asc')->get(),
         ]);
     }

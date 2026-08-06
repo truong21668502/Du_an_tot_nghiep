@@ -22,6 +22,7 @@ class Table extends Model
         'capacity',
         'qr_code',
         'status',
+        'parent_table_id',
     ];
 
     /**

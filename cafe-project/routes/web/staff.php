@@ -34,6 +34,8 @@ Route::middleware(['auth', 'role:STAFF,ADMIN'])->prefix('nhan-vien')->name('staf
     // Route quản lý bàn (Sơ đồ mặt bằng)
     Route::get('/so-do-ban', [TableController::class, 'index'])->name('tables.index');
     Route::patch('/so-do-ban/{table}/trang-thai', [TableController::class, 'updateStatus'])->name('tables.update-status');
+    Route::post('/so-do-ban/{fromTable}/gop-vao/{toTable}', [TableController::class, 'mergeTable'])->name('tables.merge');
+    Route::patch('/so-do-ban/{table}/tach-ban', [TableController::class, 'unmergeTable'])->name('tables.unmerge');
 
     // Route test tạo đơn hàng giả và bắn event real-time
     Route::get('/test-tao-don', function () {
@@ -46,19 +48,10 @@ Route::middleware(['auth', 'role:STAFF,ADMIN'])->prefix('nhan-vien')->name('staf
             'status' => 'PENDING', 
         ]);
 
-        $order->orderDetails()->create([
-            'product_id' => 2, 
-            'variant_id' => 3, 
-            'quantity' => 1, 
-            'unit_price' => 20000
-        ]);
-
-        if ($order->table_id) {
-            $table = Table::find($order->table_id);
-            if ($table && $table->status === 'EMPTY') {
-                $table->update(['status' => 'OCCUPIED']);
-                broadcast(new TableStatusUpdated($table));
-            }
+        $table = Table::find(1);
+        if ($table) {
+            $table->update(['status' => 'OCCUPIED']);
+            broadcast(new TableStatusUpdated($table));
         }
 
         $order->load(['table', 'orderDetails.product']);
