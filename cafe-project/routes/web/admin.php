@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\BannerController;
 
 use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\AiAnalyticsController;
+use App\Http\Controllers\Admin\SettingController;
 
 
 
@@ -197,6 +198,9 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::delete('banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
     Route::get('banners/{banner}/chinh-sua', [BannerController::class, 'edit'])->name('banners.edit');
     Route::get('banners/tao-moi', [BannerController::class, 'create'])->name('banners.create');
+
+    Route::get('/cai-dat', [SettingController::class, 'index'])->name('settings.index');
+    Route::post('/cai-dat', [SettingController::class, 'update'])->name('settings.update');
 
 
 });

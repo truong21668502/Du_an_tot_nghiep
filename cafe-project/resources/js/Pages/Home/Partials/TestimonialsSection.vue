@@ -27,6 +27,7 @@ const testimonials = [
 </script>
 
 <template>
+  
   <section class="py-24 px-margin-mobile md:px-gutter bg-surface-container-low/40 border-t border-outline-variant/10">
     <div class="max-w-[1280px] mx-auto">
       
@@ -78,7 +79,15 @@ const testimonials = [
 </template>
 
 <style scoped>
-.font-fill {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+
+
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 1,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
 }
+
 </style>

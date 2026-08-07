@@ -13,7 +13,7 @@ use App\Events\OrderCancelled;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-
+use App\Events\OrderReadyForDelivery;
 class OrderController extends Controller
 {
     public function index()
@@ -108,8 +108,18 @@ class OrderController extends Controller
     {
         $newStatus = $order->order_type === 'DELIVERY' ? 'READY' : 'COMPLETED';
         $order->update(['status' => $newStatus]);
+
+        // Nếu là đơn giao hàng và vừa chuyển sang READY, broadcast cho shipper
+        if ($order->order_type === 'DELIVERY' && $newStatus === 'READY') {
+            broadcast(new OrderReadyForDelivery($order));
+        }
+
+        // Vẫn broadcast cập nhật trạng thái chung (cho staff, barista, customer)
+        broadcast(new \App\Events\OrderStatusUpdated($order));
+
         return redirect()->back();
     }
+
 
     public function startDelivering(Order $order)
     {

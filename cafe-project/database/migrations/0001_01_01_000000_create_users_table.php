@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('email', 100)->unique()->nullable()->comment('Email của người dùng');
             $table->string('password', 255)->comment('Mật khẩu tài khoản (đã mã hóa)');
             
-            $table->enum('role', ['ADMIN', 'STAFF', 'BARISTA', 'CUSTOMER'])
+            $table->enum('role', ['ADMIN', 'STAFF', 'BARISTA', 'CUSTOMER', 'SHIPPER'])
                 ->default('CUSTOMER')
                 ->comment('Vai trò/Phân quyền trong hệ thống');
                 

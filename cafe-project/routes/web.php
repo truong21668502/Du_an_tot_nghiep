@@ -29,6 +29,8 @@ require __DIR__ . '/web/staff.php';
 // Barista Routes - Yêu cầu đăng nhập với role BARISTA
 require __DIR__ . '/web/barista.php';
 
+require __DIR__ . '/web/shipper.php';
+
 // API Routes
 require __DIR__ . '/web/api.php';
 

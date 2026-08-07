@@ -32,6 +32,13 @@ return new class extends Migration
                 ->constrained('tables')
                 ->onDelete('restrict')
                 ->comment('Mã bàn ăn (Khóa ngoại, NULL nếu mang đi hoặc giao hàng)');
+            
+            $table->foreignId('shipper_id')->nullable()->constrained('users')->nullOnDelete()->after('status');
+
+            $table->string('delivery_photo')->nullable()->comment('Ảnh xác nhận đã giao hàng')->after('shipper_id');
+            $table->string('delivery_photo_public_id')->nullable()->comment('Public ID trên Cloudinary để xoá ảnh')->after('delivery_photo');
+            $table->decimal('distance', 5, 2)->nullable()->comment('Khoảng cách giao hàng (km)')->after('delivery_photo');
+            $table->integer('duration')->nullable()->comment('Thời gian dự kiến (phút)')->after('distance');
 
             $table->string('receiver_name', 100)->comment('Tên người nhận hàng')->nullable();
             $table->string('receiver_phone', 15)->comment('Số điện thoại người nhận')->nullable();

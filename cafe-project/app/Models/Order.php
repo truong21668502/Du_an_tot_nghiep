@@ -44,6 +44,8 @@ class Order extends Model
         'latitude',
         'longitude', 
         'goong_place_id',
+        'distance',
+        'duration',
     ];
 
     /**
@@ -58,6 +60,8 @@ class Order extends Model
         'final_amount' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'distance' => 'decimal:2',
+        'duration' => 'integer',
     ];
 
     protected $appends = ['barista_progress'];
