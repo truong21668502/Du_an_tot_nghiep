@@ -1,11 +1,28 @@
+
+
 <template>
   <div class="fixed bottom-5 right-5 z-50">
-    <!-- Nút bong bóng chat -->
-    <button @click="toggleChat" class="bg-primary hover:bg-primary-dark text-white p-4 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105">
-        <!-- Icon chatbot -->
-        <span class="text-xl">🤖</span>
-        <span v-if="!isOpen" class="text-sm mb-4">💬</span>
+    <div class="fixed bottom-5 right-5 z-50 flex items-center gap-3">
+    
+    <!-- 💬 BONG BÓNG CHỮ THÔNG BÁO (HIỆN LÂU LÂU MỘT LẦN HOẶC HIỆN LIÊN TỤC) -->
+    <transition name="fade">
+      <div v-if="showTooltip" class="bg-white text-gray-800 text-xs font-medium px-3 py-2 rounded-xl shadow-lg border border-gray-200 flex items-center gap-2 relative animate-bounce">
+        <span>✨ Trợ lý AI thông minh</span>
+        <!-- Nút nhỏ tắt tooltip nếu người dùng không muốn thấy -->
+        <button @click.stop="showTooltip = false" class="text-gray-400 hover:text-gray-600 text-xs font-bold">✕</button>
+        <!-- Mũi tên trỏ sang phải -->
+        <div class="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-white border-r border-t border-gray-200 rotate-45"></div>
+      </div>
+    </transition>
+
+    <!-- NÚT BONG BÓNG CHAT CHÍNH -->
+    <button 
+      @click="toggleChat" 
+      class="bg-primary hover:bg-primary-dark w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-transform hover:scale-105 cursor-pointer relative overflow-hidden border-2 border-white"
+    >
+      <img src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1783821381/logo_chatbox_cf_yyythk.jpg" alt="Trợ lý" class="w-full h-full object-cover" />
     </button>
+  </div>
 
     <!-- Khung cửa sổ chat -->
     <div v-if="isOpen" class="absolute bottom-16 right-0 w-[420px] max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col h-[620px] overflow-hidden">
@@ -75,7 +92,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue';
+import { ref, nextTick, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 import { marked } from 'marked';
 
@@ -162,4 +179,31 @@ const sendMessage = async () => {
     scrollToBottom();
   }
 };
+
+//phần tooltip gợi ý hiện lâu lâu một lần
+const showTooltip = ref(false);
+let tooltipInterval = null;
+
+// Thiết lập hiệu ứng lâu lâu lại hiện lên
+onMounted(() => {
+  // Lần đầu tiên hiện sau 3 giây khi vào trang
+  setTimeout(() => {
+    showTooltip.value = true;
+    // Tự ẩn sau 5 giây
+    setTimeout(() => { showTooltip.value = false; }, 5000);
+  }, 3000);
+
+  // Cứ mỗi 30 giây lại tự động hiện lên một lần để thu hút chú ý
+  tooltipInterval = setInterval(() => {
+    showTooltip.value = true;
+    setTimeout(() => {
+      showTooltip.value = false;
+    }, 5000); // Hiển thị trong 5 giây rồi tắt
+  }, 30000); 
+});
+
+// Xóa bộ đếm khi đóng component để tránh rò rỉ bộ nhớ
+onUnmounted(() => {
+  if (tooltipInterval) clearInterval(tooltipInterval);
+});
 </script>

@@ -127,6 +127,30 @@ const progressPercentage = computed(() => {
     return p.total ? Math.round((p.done / p.total) * 100) : 0;
 });
 
+/* ---------------- VOUCHER ---------------- */
+
+const coupon = computed(() => props.order?.coupon ?? null);
+
+const discountAmount = computed(() => Number(props.order?.discount_amount ?? 0));
+
+const couponDiscountText = computed(() => {
+    const c = coupon.value;
+    if (!c) return "";
+    return c.discount_type === "PERCENTAGE"
+        ? `Giảm ${Number(c.discount_value)}%`
+        : `Giảm ${formatMoney(c.discount_value)}`;
+});
+
+/* ---------------- SHIPPING ---------------- */
+
+const isDelivery = computed(() => props.order?.order_type === "DELIVERY");
+
+const shippingFee = computed(() => Number(props.order?.shipping_fee ?? 0));
+
+const hasBreakdown = computed(() =>
+    Boolean(coupon.value) || (isDelivery.value && shippingFee.value > 0),
+);
+
 /* ---------------- ACTIONS ---------------- */
 
 const getNextActions = (order) => {
@@ -140,8 +164,9 @@ const getNextActions = (order) => {
     }
 
     if (order.status === "PROCESSING") {
+        const canComplete = order.barista_progress?.is_complete ?? true;
         return [
-            { label: "Sẵn sàng", value: "READY", icon: "task_alt" },
+            { label: "Sẵn sàng", value: "READY", icon: "task_alt", disabled: !canComplete },
             { label: "Hủy đơn", value: "CANCELLED", icon: "cancel" },
         ];
     }
@@ -300,7 +325,8 @@ const close = () => emit("close");
                                     </div>
                                 </div>
 
-                                <div
+                                <!-- Bàn (chỉ hiển thị ý nghĩa khi không phải DELIVERY) -->
+                                <div v-if="!isDelivery"
                                     class="flex min-w-0 items-center gap-3 rounded-2xl border border-outline-variant/20 bg-surface px-4 py-3">
                                     <div
                                         class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-container text-on-primary-container">
@@ -312,6 +338,22 @@ const close = () => emit("close");
                                             Bàn</p>
                                         <p class="mt-0.5 font-sans text-body-small font-bold text-on-surface">{{
                                             order.table?.table_name ?? "Không có bàn" }}</p>
+                                    </div>
+                                </div>
+
+                                <!-- Phí giao hàng: thay thế vị trí "Bàn" khi order_type là DELIVERY -->
+                                <div v-else
+                                    class="flex min-w-0 items-center gap-3 rounded-2xl border border-outline-variant/20 bg-surface px-4 py-3">
+                                    <div
+                                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary-container text-on-secondary-container">
+                                        <span class="material-symbols-outlined">local_shipping</span>
+                                    </div>
+                                    <div>
+                                        <p
+                                            class="font-sans text-label-medium font-semibold uppercase tracking-wide text-on-surface-variant">
+                                            Phí giao hàng</p>
+                                        <p class="mt-0.5 font-sans text-body-small font-bold text-on-surface">{{
+                                            formatMoney(shippingFee) }}</p>
                                     </div>
                                 </div>
 
@@ -349,6 +391,57 @@ const close = () => emit("close");
                                             {{ paymentStatusLabel[order.payment?.payment_status] ?? "Chưa thanh toán" }}
                                         </p>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Địa chỉ giao hàng (chỉ khi DELIVERY và có dữ liệu) -->
+                            <div v-if="isDelivery && (order.address_detail || order.receiver_name)"
+                                class="mb-4 flex items-start gap-3 rounded-2xl border border-outline-variant/20 bg-surface px-4 py-3">
+                                <div
+                                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-tertiary-container text-on-tertiary-container">
+                                    <span class="material-symbols-outlined">location_on</span>
+                                </div>
+                                <div class="min-w-0">
+                                    <p
+                                        class="font-sans text-label-medium font-semibold uppercase tracking-wide text-on-surface-variant">
+                                        Giao đến</p>
+                                    <p class="mt-0.5 font-sans text-body-small font-bold text-on-surface">
+                                        {{ order.receiver_name ?? order.user?.full_name ?? "—" }}
+                                        <span v-if="order.receiver_phone" class="font-normal text-on-surface-variant">
+                                            · {{ order.receiver_phone }}</span>
+                                    </p>
+                                    <p class="mt-0.5 font-sans text-body-small text-on-surface-variant">
+                                        {{ [order.address_detail, order.ward, order.city].filter(Boolean).join(", ")
+                                            || "—" }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- VOUCHER -->
+                            <div v-if="coupon"
+                                class="mb-4 flex items-center justify-between rounded-2xl border border-primary/20 bg-primary-container/40 px-4 py-3">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary">
+                                        <span class="material-symbols-outlined text-[18px]">local_offer</span>
+                                    </div>
+                                    <div>
+                                        <p class="font-sans text-body-small font-black text-on-primary-container">
+                                            {{ coupon.code }}
+                                        </p>
+                                        <p class="font-sans text-body-small text-on-surface-variant">
+                                            {{ couponDiscountText }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p
+                                        class="font-sans text-label-medium font-semibold uppercase tracking-wide text-on-surface-variant">
+                                        Đã giảm
+                                    </p>
+                                    <p class="font-mono text-body-medium font-black text-primary">
+                                        -{{ formatMoney(discountAmount) }}
+                                    </p>
                                 </div>
                             </div>
 
@@ -426,7 +519,7 @@ const close = () => emit("close");
                                                     <span class="material-symbols-outlined text-[13px]">{{
                                                         getBaristaIcon(detail.barista_status) }}</span>
                                                     {{ baristaStatusLabel[detail.barista_status] ??
-                                                    detail.barista_status }}
+                                                        detail.barista_status }}
                                                 </span>
                                             </td>
                                         </tr>
@@ -461,8 +554,29 @@ const close = () => emit("close");
                             class="flex shrink-0 flex-col gap-3 border-t border-outline-variant/20 bg-surface-container-low px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <p class="font-sans text-body-small text-on-surface-variant">Tổng thanh toán</p>
-                                <p class="font-mono text-headline-md font-black text-on-surface">{{
-                                    formatMoney(order.final_amount) }}</p>
+
+                                <div v-if="hasBreakdown" class="mb-1 space-y-0.5">
+                                    <div
+                                        class="flex items-center gap-2 font-mono text-body-small text-on-surface-variant">
+                                        <span>Tạm tính:</span>
+                                        <span>{{ formatMoney(order.total_amount) }}</span>
+                                    </div>
+                                    <div v-if="coupon"
+                                        class="flex items-center gap-2 font-mono text-body-small font-bold text-primary">
+                                        <span class="font-normal text-on-surface-variant">Giảm giá ({{ coupon.code
+                                            }}):</span>
+                                        <span>-{{ formatMoney(discountAmount) }}</span>
+                                    </div>
+                                    <div v-if="isDelivery && shippingFee > 0"
+                                        class="flex items-center gap-2 font-mono text-body-small text-on-surface-variant">
+                                        <span>Phí giao hàng:</span>
+                                        <span>+{{ formatMoney(shippingFee) }}</span>
+                                    </div>
+                                </div>
+
+                                <p class="font-mono text-headline-md font-black text-on-surface">
+                                    {{ formatMoney(order.final_amount) }}
+                                </p>
                             </div>
 
                             <div class="flex flex-wrap gap-2">

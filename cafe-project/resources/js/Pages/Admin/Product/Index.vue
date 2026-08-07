@@ -48,9 +48,9 @@ const openEditModal = (product) => {
     isFormModalOpen.value = true;
 };
 
-// Thao tác xóa sản phẩm
+// Cập nhật hàm XÓA MỀM sản phẩm
 const deleteProduct = (id, name) => {
-    if (confirm(`Bạn có chắc muốn xóa sản phẩm "${name}"?`)) {
+    if (confirm(`Bạn có chắc muốn chuyển sản phẩm "${name}" vào thùng rác?`)) {
         router.delete(`/quan-tri/san-pham/${id}`);
     }
 };
@@ -62,7 +62,7 @@ const openVariantModal = (product) => {
     isVariantModalOpen.value = true;
 };
 
-// Điều khiển Modal xem Ảnh phụ & Hàm làm mới cục bộ dữ liệu khi upload/delete ảnh
+// Điều khiển Modal xem Ảnh phụ
 const openImageModal = (product) => {
     imageModalProduct.value = product;
     isImageModalOpen.value = true;
@@ -75,7 +75,6 @@ const refreshProductData = (productId) => {
     }
 };
 
-// Hàm định dạng ngày giờ thân thiện để Admin dễ giám sát
 const formatDateTime = (dateStr) => {
     if (!dateStr) return "---";
     const d = new Date(dateStr);
@@ -96,12 +95,33 @@ const formatDateTime = (dateStr) => {
         <div class="space-y-6 relative">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl"><span class="material-symbols-outlined text-primary">coffee</span> QUẢN LÝ SẢN PHẨM</h1>
+                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">coffee</span> 
+                        QUẢN LÝ SẢN PHẨM
+                    </h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">Danh sách đồ uống tại Nắng Coffee.</p>
                 </div>
-                <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 rounded-full cursor-pointer">
-                    <span class="material-symbols-outlined text-md">add</span>Thêm sản phẩm
-                </button>
+
+                <div class="flex items-center gap-3 self-start sm:self-center">
+                    <!-- Nút sang Màn hình Thùng Rác -->
+                    <Link
+                        href="/quan-tri/san-pham/thung-rac"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-sans text-label-large rounded-full shadow-sm transition-all duration-200 cursor-pointer text-red-600 hover:text-red-700"
+                    >
+                        <span class="material-symbols-outlined text-md">delete_sweep</span>
+                        Thùng rác
+                    </Link>
+
+                    <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 rounded-full cursor-pointer font-sans text-label-large">
+                        <span class="material-symbols-outlined text-md">add</span>Thêm sản phẩm
+                    </button>
+                </div>
+            </div>
+
+            <!-- Flash notification -->
+            <div v-if="$page.props.flash?.message" class="p-4 bg-primary-container/20 border border-primary/20 text-on-primary-container rounded-xl font-sans text-body-medium flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">check_circle</span>
+                {{ $page.props.flash.message }}
             </div>
 
             <ProductFilters :categories="categories" :filters="filters" @change="handleFilterChange" />
@@ -110,24 +130,23 @@ const formatDateTime = (dateStr) => {
                 <div class="overflow-x-auto">
                     <table class="w-full text-center border-collapse">
                         <thead>
-                            <tr class="bg-surface-container border-2 border-outline-variant/20 font-sans text-label-large text-on-surface-variant">
+                            <tr class="bg-surface-container border-b border-outline-variant/20 font-sans text-label-large text-on-surface-variant">
                                 <th class="p-4 w-16 text-center">Ảnh</th>
-                                <th class="p-4">Tên sản phẩm</th>
+                                <th class="p-4 text-left">Tên sản phẩm</th>
                                 <th class="p-4 hidden lg:table-cell">Danh mục</th>
                                 <th class="p-4 hidden md:table-cell">Biến thể</th>
                                 <th class="p-4 hidden md:table-cell">Ảnh phụ</th>
                                 <th class="p-4 text-center">Trạng thái</th>
-                                <th class="p-4 text-right w-44">Hành động</th>
+                                <th class="p-4 text-right w-32">Hành động</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-outline-variant/10 font-sans text-body-medium text-on-surface">
                             <tr v-for="product in products.data" :key="product.id" class="hover:bg-surface-container-low/50 transition-colors">
-                                <td class="p-4 text-center">
-                                    <img :src="product.image_url || 'https://placehold.co/100x100?text=No+Image'" class="w-20 h-12 rounded object-cover mx-auto" />
+                                <td class="text-center">
+                                    <img :src="product.image_url || 'https://placehold.co/100x100?text=No+Image'" class="w-[100px] h-[75px] object-contain border border-outline-variant/20" />
                                 </td>
                                 <td class="p-4 text-left">
                                     <div class="relative group inline-block cursor-help">
-                                        
                                         <div class="font-bold text-primary hover:text-primary-dark transition-colors">
                                             {{ product.product_name }}
                                         </div>
@@ -135,7 +154,7 @@ const formatDateTime = (dateStr) => {
                                             {{ product.slug }}
                                         </div>
                                     
-                                        <div class="absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col gap-1 px-3 py-2 bg-neutral-900 text-neutral-100 font-mono text-[11px] rounded-xl shadow-lg z-50 whitespace-nowrap pointer-events-none transition-all animate-fade-in">
+                                        <div class="absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col gap-1 px-3 py-2 bg-neutral-900 text-neutral-100 font-mono text-[11px] rounded-xl shadow-lg z-50 whitespace-nowrap pointer-events-none transition-all">
                                             <div class="flex items-center gap-1.5">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
                                                 <span class="text-neutral-400 select-none">Tạo lúc:</span> 
@@ -148,7 +167,6 @@ const formatDateTime = (dateStr) => {
                                             </div>
                                             <div class="absolute top-full left-4 border-4 border-transparent border-t-neutral-900"></div>
                                         </div>
-                                    
                                     </div>
                                 </td>
                                 <td class="p-4 hidden lg:table-cell">
@@ -162,7 +180,7 @@ const formatDateTime = (dateStr) => {
                                         <span>{{ product.variants?.length || 0 }} Size</span>
                                     </button>
                                 </td>
-                                <td class="p-4 text-center">
+                                <td class="p-4 text-center hidden md:table-cell">
                                     <button @click="openImageModal(product)" class="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container-high text-on-surface-variant rounded-full text-label-medium cursor-pointer">
                                         <span class="material-symbols-outlined text-md">imagesmode</span>
                                         <span>{{ product.images ? product.images.length : 0 }} Ảnh</span>
@@ -175,21 +193,27 @@ const formatDateTime = (dateStr) => {
                                 </td>
 
                                 <td class="p-4 text-right">
-                                    <div class="flex items-center justify-end gap-0.5">
-                                        <button @click="openEditModal(product)" class="p-2 hover:bg-surface-container-high text-on-surface-variant hover:text-primary rounded-full transition-colors cursor-pointer">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button @click="openEditModal(product)" class="p-2 hover:bg-surface-container-high text-on-surface-variant hover:text-primary rounded-full transition-colors cursor-pointer" title="Chỉnh sửa">
                                             <span class="material-symbols-outlined text-xl">edit</span>
                                         </button>
-                                        <button @click="deleteProduct(product.id, product.product_name)" class="p-2 hover:bg-error-container/20 text-on-surface-variant hover:text-error rounded-full transition-colors cursor-pointer">
+                                        <button @click="deleteProduct(product.id, product.product_name)" class="p-2 hover:bg-error-container/20 text-on-surface-variant hover:text-error rounded-full transition-colors cursor-pointer" title="Chuyển vào thùng rác">
                                             <span class="material-symbols-outlined text-xl">delete</span>
                                         </button>
                                     </div>
+                                </td>
+                            </tr>
+                            <tr v-if="products.data.length === 0">
+                                <td colspan="7" class="p-8 text-center text-on-surface-variant">
+                                    <span class="material-symbols-outlined text-4xl text-outline mb-2 block">coffee_maker</span>
+                                    Chưa có sản phẩm nào.
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <div class="flex items-left justify-center gap-1 mt-6 mb-3 font-sans">
+                <div class="flex items-center justify-center gap-1 mt-6 mb-3 font-sans">
                     <Component
                         :is="link.url ? Link : 'span'"
                         v-for="(link, index) in products.links"

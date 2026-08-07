@@ -80,4 +80,39 @@ class CategoryController extends Controller
 
         return redirect()->back()->with('toast-success', 'Xóa danh mục thành công!');
     }
+
+    /**
+     * Hiển thị danh sách danh mục đã xóa (Trash)
+     */
+    public function trash()
+    {
+        $categories = Category::onlyTrashed()->paginate(10);
+        return Inertia::render('Admin/Category/Trash', [
+            'categories' => $categories
+        ]);
+    }
+
+    /**
+     * Khôi phục danh mục đã xóa
+     */
+
+    public function restore($id)
+    {
+        $category = Category::onlyTrashed()->findOrFail($id);
+        $category->restore();
+
+        return back()->with('toast-success', 'Đã khôi phục danh mục thành công.');
+    }
+
+    /**
+     * Xóa vĩnh viễn danh mục
+     */
+
+    public function forceDelete($id)
+    {
+        $category = Category::onlyTrashed()->findOrFail($id);
+        $category->forceDelete();
+
+        return back()->with('toast-success', 'Đã xóa vĩnh viễn danh mục.');
+    }
 }

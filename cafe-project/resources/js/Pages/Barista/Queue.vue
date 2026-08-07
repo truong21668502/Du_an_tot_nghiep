@@ -10,18 +10,18 @@ import QueueCard from './Partials/QueueCard.vue';
 import RecipePanel from './Partials/RecipePanel.vue';
 import StatsBar from './Partials/StatsBar.vue';
 
-// ===== Props từ Controller =====
+// Props từ controller
 const props = defineProps({
     initialQueue: { type: Array, default: () => [] },
     todayDone: { type: Number, default: 0 },
 });
 
-// ===== State =====
+// State
 const queue = ref(props.initialQueue || []);
 const doneSoFar = ref(props.todayDone || 0);
 const selected = ref(null); // món đang chọn để xem công thức
 
-// ===== Computed stats =====
+// Tính toán
 const pendingCount = computed(() => queue.value.filter(d => d.barista_status === 'PENDING').length);
 const preparingCount = computed(() => queue.value.filter(d => d.barista_status === 'PREPARING').length);
 
@@ -53,14 +53,14 @@ const groupedOrders = computed(() => {
     return arr;
 });
 
-// ===== Chọn món =====
+// Chọn món
 const selectDetail = (detail) => {
     selected.value = selected.value?.id === detail.id ? null : detail;
 };
 
 const closePanel = () => { selected.value = null; };
 
-// ===== Quản lý trạng thái mở/đóng (Dropdown) của từng đơn =====
+// Quản lý trạng thái mở/đóng (dropdown) của từng đơn
 const expandedOrders = ref({}); // object map order_id -> boolean
 
 const isOrderExpanded = (orderId) => {
@@ -72,7 +72,7 @@ const toggleOrder = (orderId) => {
     expandedOrders.value[orderId] = !isOrderExpanded(orderId);
 };
 
-// ===== Cập nhật trạng thái (PENDING → PREPARING → COMPLETED) =====
+// Cập nhật trạng thái (pending → preparing → completed)
 const advanceStatus = async (detail) => {
     try {
         const res = await axios.patch(route('barista.detail.update-status', detail.id));
@@ -117,7 +117,7 @@ const advanceStatus = async (detail) => {
     }
 };
 
-// ===== Real-time: lắng nghe đơn mới + cập nhật trạng thái =====
+// Real-time: lắng nghe đơn mới + cập nhật trạng thái
 onMounted(() => {
     if (!window.Echo) return;
 
@@ -168,7 +168,7 @@ onUnmounted(() => {
 
         <div class="p-4 md:p-8 w-full">
 
-            <!-- ===== Header ===== -->
+            <!-- Header -->
             <div class="mb-6 flex items-end justify-between gap-4 flex-wrap">
                 <div>
                     <div class="flex items-center gap-2 mb-1.5">
@@ -192,12 +192,12 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <!-- ===== Stats Bar ===== -->
+            <!-- Stats bar -->
             <div class="mb-6">
                 <StatsBar :pending-count="pendingCount" :preparing-count="preparingCount" :today-done="doneSoFar" />
             </div>
 
-            <!-- ===== Layout: Queue + Recipe Panel ===== -->
+            <!-- Layout: queue + recipe panel -->
             <div class="flex gap-5 items-start">
 
                 <!-- Danh sách Đơn hàng -->
@@ -231,14 +231,18 @@ onUnmounted(() => {
                                         <h3 class="text-[15px] font-bold text-on-surface flex items-center gap-1.5">
                                             Đơn #{{ group.order.id }} — {{ group.order.table?.table_name || 'Mang đi' }}
                                             <span v-if="group.details.some(d => d.barista_status === 'PENDING')" 
-                                                  class="material-symbols-outlined text-error text-[18px] animate-wiggle"
-                                                  title="Có món mới chờ pha">
+                                                    class="material-symbols-outlined text-error text-[18px] animate-wiggle"
+                                                    title="Có món mới chờ pha">
                                                 notifications_active
                                             </span>
                                         </h3>
                                         <p class="text-[12px] text-on-surface-variant mt-0.5">{{ new
                                             Date(group.order.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit',
                                             minute: '2-digit' }) }} • {{ group.details.length }} món</p>
+                                        <div v-if="group.order.note" class="mt-1.5 flex items-start gap-1 text-primary bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
+                                            <span class="material-symbols-outlined text-[14px] mt-0.5">sticky_note_2</span>
+                                            <span class="text-[12px] italic font-medium">Ghi chú: {{ group.order.note }}</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[12px] font-bold">

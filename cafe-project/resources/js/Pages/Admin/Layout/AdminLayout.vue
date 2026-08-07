@@ -122,6 +122,32 @@ const menuGroups = [
     }
 ];
 
+
+// 1. Xác định buổi, câu chào và icon theo giờ thực tế
+const timeContext = computed(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+        return { greeting: 'Chào buổi sáng', icon: '☀️' };
+    } else if (hour >= 12 && hour < 18) {
+        return { greeting: 'Chào buổi chiều', icon: '🌇' }; // Chiều hoàng hôn
+    } else {
+        return { greeting: 'Chào buổi tối', icon: '🌙' }; // Đêm trăng sao
+    }
+});
+
+// 2. Định dạng ngày tháng tiếng Việt (Cập nhật chuẩn năm 2026)
+const getCurrentDate = () => {
+    const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+    return new Date().toLocaleDateString('vi-VN', options);
+};
+
+// 3. Chuỗi hiển thị hoàn chỉnh cho Header
+const adminGreeting = computed(() => {
+    const adminName = user.value?.name || 'Admin';
+    const dateStr = getCurrentDate();
+    return `${timeContext.value.greeting} ${adminName}, Hôm nay là ${dateStr}`;
+});
+
 const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
 </script>
 
@@ -156,6 +182,25 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                 </button>
             </div>
 
+            
+            <!-- User -->
+            <div v-if="user" class="border-t border-outline-variant/20 p-3 flex-shrink-0">
+                <div class="flex items-center gap-3 px-2" :class="collapsed ? 'justify-center' : ''">
+                    <div
+                        class="w-9 h-9 rounded-full bg-primary-container/30 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-primary">person</span>
+                    </div>
+                    <div v-if="!collapsed" class="flex-1 min-w-0">
+                        <p class="font-sans text-label-sm text-on-surface truncate">
+                            {{ user.name }}
+                        </p>
+                        <p class="font-sans text-label-sm text-outline truncate">
+                            {{ user.email }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Nav -->
             <nav class="flex-1 py-4 px-3 space-y-6">
                 <div v-for="group in menuGroups" :key="group.label" class="space-y-1">
@@ -187,24 +232,6 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                     <span v-if="!collapsed">{{ link.label }}</span>
                 </a>
             </div>
-
-            <!-- User -->
-            <div v-if="user" class="border-t border-outline-variant/20 p-3 flex-shrink-0">
-                <div class="flex items-center gap-3 px-2" :class="collapsed ? 'justify-center' : ''">
-                    <div
-                        class="w-9 h-9 rounded-full bg-primary-container/30 flex items-center justify-center flex-shrink-0">
-                        <span class="material-symbols-outlined text-primary">person</span>
-                    </div>
-                    <div v-if="!collapsed" class="flex-1 min-w-0">
-                        <p class="font-sans text-label-sm text-on-surface truncate">
-                            {{ user.name }}
-                        </p>
-                        <p class="font-sans text-label-sm text-outline truncate">
-                            {{ user.email }}
-                        </p>
-                    </div>
-                </div>
-            </div>
         </aside>
 
         <!-- Main -->
@@ -216,6 +243,12 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                 <button @click="mobileOpen = true" class="md:hidden p-2 hover:bg-surface-container-low rounded-lg">
                     <span class="material-symbols-outlined">menu</span>
                 </button>
+
+                <!-- 🌟 LỜI CHÀO ĐỘNG KÈM ICON THAY ĐỔI THEO GIỜ Ở GIỮA -->
+                <div class="hidden lg:flex items-center gap-2 text-sm font-medium text-on-surface-variant select-none text-lg">
+                    <span class="text-lg animate-pulse">{{ timeContext.icon }}</span>
+                    <span class="font-bold text-primary text-lg">{{ adminGreeting }}</span>
+                </div>
                 
                 <div class="flex items-center gap-3 ml-auto">
                     <CommandPalette />

@@ -58,7 +58,7 @@ const props = defineProps({
 <template>
     <div class="flex h-screen overflow-hidden bg-background text-on-background antialiased">
 
-        <!-- ===== SIDEBAR (Desktop) — giống hệt StaffLayout ===== -->
+        <!-- Sidebar (desktop) — giống hệt stafflayout -->
         <aside
             class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-surface-container-low shadow-soft py-6 z-40 border-r border-outline-variant/30">
 
@@ -109,10 +109,10 @@ const props = defineProps({
             </div>
         </aside>
 
-        <!-- ===== RIGHT: Main area (topbar + content) ===== -->
+        <!-- Right: main area (topbar + content) -->
         <div class="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden">
 
-            <!-- ===== TOPBAR — giống hệt StaffLayout ===== -->
+            <!-- Topbar — giống hệt stafflayout -->
             <header
                 class="h-16 bg-surface/90 backdrop-blur-md border-b border-outline-variant/20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
 
@@ -182,7 +182,7 @@ const props = defineProps({
                 </div>
             </Transition>
 
-            <!-- ===== PAGE CONTENT ===== -->
+            <!-- Page content -->
             <main class="flex-1 overflow-y-auto">
                 <slot />
             </main>

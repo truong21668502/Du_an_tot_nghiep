@@ -8,6 +8,7 @@ use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\Coupon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -60,6 +61,8 @@ class AiAnalyticsController extends Controller
                     DB::RAW('SUM(quantity) as total_sold'),
                     DB::RAW('SUM(quantity * unit_price) as total_revenue')
                 )->groupBy('product_id')->with('product:id,product_name')->orderByDesc('total_sold')->limit(5)->get(),
+            
+            'counpons' => Coupon::get(),
         ];
 
         // Gọi Gemini Service xử lý phân tích (kèm giới hạn token ngắn gọn)
@@ -75,6 +78,9 @@ class AiAnalyticsController extends Controller
         // Cập nhật lại thông tin phiên chat
         $conversation->increment('message_count', 2);
         $conversation->update(['last_activity_at' => now()]);
+
+        // Tự động xóa bớt tin nhắn cũ nếu vượt quá ngưỡng cho phép
+        $this->autoDeleteOldMessages();
 
         return response()->json([
             'success' => true,
@@ -119,7 +125,8 @@ class AiAnalyticsController extends Controller
             'total_orders' => Order::count(),
             'total_revenue' => Order::where('status', 'COMPLETED')->sum('final_amount'),
             'peak_hours' => Order::select(DB::RAW('HOUR(created_at) as hour'), DB::RAW('COUNT(*) as total'))->groupBy('hour')->get(),
-            'top_products' => OrderDetail::select('product_id', DB::RAW('SUM(quantity) as total'))->groupBy('product_id')->with('product:id,product_name')->limit(3)->get()
+            'top_products' => OrderDetail::select('product_id', DB::RAW('SUM(quantity) as total'))->groupBy('product_id')->with('product:id,product_name')->limit(3)->get(),
+            'counpons' => Coupon::get(),
         ];
 
         // Gọi AI xử lý kèm lịch sử chat
@@ -134,6 +141,9 @@ class AiAnalyticsController extends Controller
 
         $conversation->increment('message_count', 2);
         $conversation->update(['last_activity_at' => now()]);
+
+        // Tự động xóa bớt tin nhắn cũ nếu vượt quá ngưỡng cho phép
+        $this->autoDeleteOldMessages();
 
         return response()->json([
             'success' => true,
@@ -156,5 +166,32 @@ class AiAnalyticsController extends Controller
             'success' => true,
             'messages' => $messages
         ]);
+    }
+
+    /**
+    * Tự động xóa bớt tin nhắn cũ nếu vượt quá ngưỡng cho phép
+    */
+    public function autoDeleteOldMessages()
+    {
+        $maxMessages = 100; // Giới hạn số lượng tin nhắn tối đa
+        $userId = Auth::id();
+
+        $conversation = ChatConversation::where('user_id', $userId)->first();
+
+        if ($conversation) {
+            $messageCount = $conversation->messages()->count();
+
+            if ($messageCount > $maxMessages) {
+                // Xóa các tin nhắn cũ nhất để giữ lại số lượng tối đa
+                $messagesToDelete = $conversation->messages()
+                    ->orderBy('created_at', 'asc')
+                    ->limit($messageCount - $maxMessages)
+                    ->get();
+
+                foreach ($messagesToDelete as $message) {
+                    $message->delete();
+                }
+            }
+        }
     }
 }

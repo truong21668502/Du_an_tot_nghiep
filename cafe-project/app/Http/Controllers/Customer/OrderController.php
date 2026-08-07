@@ -118,10 +118,18 @@ private function placeOrder(Cart $cart, array $data, Request $request): Order
             session()->forget('table_id');
 
             $order->load('table', 'details.product', 'details.variant', 'payment');
+            
+            if ($order->table_id) {
+                $table = \App\Models\Table::find($order->table_id);
+                if ($table) {
+                    $table->update(['status' => 'OCCUPIED']);
+                    broadcast(new TableStatusUpdated($table));
+                }
+            }
+
             if ($data['order_type'] !== 'DELIVERY' || $data['payment_method'] !== 'VNPAY') {
                 broadcast(new OrderCreated($order));
             }
-
 
             return $order->load('details', 'payment');
         });

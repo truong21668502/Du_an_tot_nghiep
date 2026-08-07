@@ -62,6 +62,33 @@ class CouponController extends Controller
         }
 
         $coupon->delete();
-        return redirect()->back()->with('toast-success', 'Xóa mã giảm giá thành công!');
+        return redirect()->back()->with('toast-success', 'Đã đưa mã giảm giá vào thùng rác!');
+    }
+
+    public function trash()
+    {
+        $coupons = Coupon::onlyTrashed()
+            ->latest('deleted_at')
+            ->paginate(10);
+
+        return Inertia::render('Admin/Coupons/Trash', [
+            'coupons' => $coupons
+        ]);
+    }
+
+    public function restore($id)
+    {
+        $coupon = Coupon::onlyTrashed()->findOrFail($id);
+        $coupon->restore();
+
+        return back()->with('toast-success', 'Khôi phục mã giảm giá thành công.');
+    }
+
+    public function forceDelete($id)
+    {
+        $coupon = Coupon::onlyTrashed()->findOrFail($id);
+        $coupon->forceDelete(); // Xóa vĩnh viễn khỏi DB
+
+        return back()->with('toast-success', 'Đã xóa vĩnh viễn mã giảm giá khỏi hệ thống.');
     }
 }

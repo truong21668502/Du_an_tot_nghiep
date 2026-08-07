@@ -120,7 +120,7 @@ onUnmounted(() => {
         <!-- Ô Input / Nút trigger ở Header Admin (Bấm vào hoặc dùng Ctrl+K) -->
         <button 
             @click="openPalette"
-            class="group relative flex items-center justify-between w-80 sm:w-80 px-3 py-2 text-[12px] text-on-surface-variant hover:text-primary bg-surface-container-high/80 hover:bg-surface-container-lowest rounded-full border border-primary/30 hover:border-primary shadow-xs hover:shadow-md transition-all duration-300"
+            class="group relative flex items-center justify-between w-80 sm:w-80 px-3 py-2 text-[12px] text-on-surface-variant hover:text-primary bg-surface-container-high/80 hover:bg-surface-container-lowest rounded-full border border-primary/30 hover:border-primary shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer"
         >
             <!-- Hiệu ứng viền phát sáng nhấp nháy nhẹ (Pulse Glow) thu hút ánh nhìn -->
             <span class="absolute -inset-0.5 rounded-full bg-primary/20 animate-pulse group-hover:hidden"></span>

@@ -38,6 +38,8 @@ return new class extends Migration
                 ->default('ACTIVE')
                 ->comment('Trạng thái hoạt động của mã');
 
+            $table->softDeletes();
+
             // Thời gian tạo và cập nhật tự động
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();

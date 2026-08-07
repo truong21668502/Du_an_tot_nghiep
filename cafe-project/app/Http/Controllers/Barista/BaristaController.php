@@ -38,20 +38,56 @@ class BaristaController extends Controller
     /**
      * Lịch sử pha chế trong ngày hôm nay
      */
-    public function history()
+    public function history(Request $request)
     {
-        $history = OrderDetail::with([
+        $search = $request->input('search');
+
+        $historyQuery = OrderDetail::with([
             'order.table',
             'product',
             'variant',
         ])
         ->where('barista_status', 'COMPLETED')
-        ->whereDate('updated_at', today())
-        ->orderBy('updated_at', 'desc')
-        ->get();
+        ->whereDate('updated_at', today());
+
+        if ($search) {
+            $historyQuery->where(function ($q) use ($search) {
+                // Tìm theo tên món
+                $q->whereHas('product', function ($productQ) use ($search) {
+                    $productQ->where('product_name', 'LIKE', "%{$search}%");
+                })
+                // Tìm theo mã đơn
+                ->orWhere('order_id', 'LIKE', "%{$search}%")
+                // Tìm theo tên bàn
+                ->orWhereHas('order.table', function ($tableQ) use ($search) {
+                    $tableQ->where('table_name', 'LIKE', "%{$search}%");
+                })
+                // Tìm theo ghi chú
+                ->orWhere('note', 'LIKE', "%{$search}%");
+
+                // Tìm theo mang đi / giao hàng
+                $searchLower = mb_strtolower(trim($search), 'UTF-8');
+                $types = [];
+                if (str_contains($searchLower, 'mang') || str_contains($searchLower, 'take')) {
+                    $types[] = 'TAKE_AWAY';
+                }
+                if (str_contains($searchLower, 'giao') || str_contains($searchLower, 'ship') || str_contains($searchLower, 'deli')) {
+                    $types[] = 'DELIVERY';
+                }
+                
+                if (!empty($types)) {
+                    $q->orWhereHas('order', function($orderQ) use ($types) {
+                        $orderQ->whereIn('order_type', $types);
+                    });
+                }
+            });
+        }
+
+        $history = $historyQuery->orderBy('updated_at', 'desc')->paginate(10)->withQueryString();
 
         return Inertia::render('Barista/History', [
             'history' => $history,
+            'filters' => $request->only('search'),
         ]);
     }
 

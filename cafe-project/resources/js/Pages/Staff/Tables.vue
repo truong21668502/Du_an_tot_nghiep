@@ -26,6 +26,73 @@ const closeTableModal = () => {
     setTimeout(() => selectedTable.value = null, 300);
 };
 
+const draggedTable = ref(null);
+const targetTable = ref(null);
+const showMergeConfirm = ref(false);
+
+const handleDragStart = (e, table) => {
+    draggedTable.value = table;
+    e.dataTransfer.effectAllowed = 'move';
+};
+
+const handleDrop = (e, table) => {
+    if (draggedTable.value && draggedTable.value.id !== table.id) {
+        targetTable.value = table;
+        showMergeConfirm.value = true;
+    }
+};
+
+const cancelMerge = () => {
+    showMergeConfirm.value = false;
+    draggedTable.value = null;
+    targetTable.value = null;
+};
+
+const confirmMerge = () => {
+    if (draggedTable.value && targetTable.value) {
+        router.post(route('staff.tables.merge', {
+            fromTable: draggedTable.value.id,
+            toTable: targetTable.value.id
+        }), {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(`Đã gộp ${draggedTable.value.table_name} vào ${targetTable.value.table_name}`);
+                cancelMerge();
+            },
+            onError: () => {
+                toast.error('Có lỗi xảy ra khi gộp bàn');
+                cancelMerge();
+            }
+        });
+    }
+};
+
+const unmergeTable = (table) => {
+    const canUnmerge = !table.orders || table.orders.every(o => 
+        o.status === 'CANCELLED' || 
+        (o.status === 'COMPLETED' && o.payment?.payment_status === 'PAID')
+    );
+
+    if (!canUnmerge) {
+        toast.warning('Bàn đang có đơn chưa hoàn thành hoặc chưa thanh toán, không thể tách!');
+        return;
+    }
+
+    if (confirm(`Bạn có chắc chắn muốn tách bàn ${table.table_name} trở lại như cũ?`)) {
+        router.patch(route('staff.tables.unmerge', table.id), {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(`Đã tách bàn ${table.table_name} thành công`);
+                closeTableModal();
+            },
+            onError: (errors) => {
+                if (errors.error) toast.error(errors.error);
+                else toast.error('Lỗi khi tách bàn');
+            }
+        });
+    }
+};
+
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 };
@@ -132,13 +199,19 @@ const getGroupedOrderDetails = (ordersList) => {
     return Object.values(grouped);
 };
 
+const isTableParent = (table) => {
+    return tables.value.some(t => t.parent_table_id === table.id);
+};
+
 const groupedTables = computed(() => {
-    return tables.value.reduce((acc, table) => {
-        const area = table.area || 'Khu vực khác';
-        if (!acc[area]) acc[area] = [];
-        acc[area].push(table);
-        return acc;
-    }, {});
+    return tables.value
+        .filter(t => t.parent_table_id === null)
+        .reduce((acc, table) => {
+            const area = table.area || 'Khu vực khác';
+            if (!acc[area]) acc[area] = [];
+            acc[area].push(table);
+            return acc;
+        }, {});
 });
 
 const totalTables = computed(() => tables.value.length);
@@ -183,9 +256,13 @@ onMounted(() => {
                 const index = tables.value.findIndex(t => t.id === e.id);
                 if (index !== -1) {
                     tables.value[index].status = e.status;
+                    tables.value[index].capacity = e.capacity;
+                    tables.value[index].parent_table_id = e.parent_table_id;
                     if (e.status === 'EMPTY') tables.value[index].orders = [];
                     if (isTableModalOpen.value && selectedTable.value?.id === e.id) {
                         selectedTable.value.status = e.status;
+                        selectedTable.value.capacity = e.capacity;
+                        selectedTable.value.parent_table_id = e.parent_table_id;
                     }
                 }
             });
@@ -235,7 +312,7 @@ onUnmounted(() => {
             <div class="flex items-center gap-2 pb-1 flex-wrap">
                 <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low border border-outline-variant/20 text-[13px] font-medium text-on-surface-variant">
                     <span class="material-symbols-outlined text-[17px] text-on-surface-variant/60">table_restaurant</span>
-                    <span>Tổng: <strong class="text-on-surface">{{ totalTables }}</strong></span>
+                    <span>Tổng: <strong class="text-on-surface">{{ tables.filter(t => t.parent_table_id === null).length }}</strong></span>
                 </div>
                 <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary/8 border border-primary/20 text-[13px] font-medium text-primary">
                     <span class="w-2 h-2 rounded-full bg-primary"></span>
@@ -290,9 +367,14 @@ onUnmounted(() => {
                         <!-- Tables grid -->
                         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                             <button v-for="table in areaTables" :key="table.id"
+                                draggable="true"
+                                @dragstart="handleDragStart($event, table)"
+                                @dragover.prevent
+                                @drop="handleDrop($event, table)"
                                 @click="openTableModal(table)"
-                                class="relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                                class="relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-md cursor-grab active:cursor-grabbing"
                                 :class="[
+                                    isTableParent(table) ? 'col-span-2 row-span-2' : '',
                                     table.status === 'OCCUPIED' 
                                         ? (tableHasPendingOrder(table) 
                                             ? 'bg-error/5 border-error/40 shadow-sm' 
@@ -317,6 +399,12 @@ onUnmounted(() => {
                                     :class="table.status === 'OCCUPIED' ? (tableHasPendingOrder(table) ? 'text-error' : 'text-on-surface') : 'text-on-surface-variant'">
                                     {{ table.table_name }}
                                 </span>
+
+                                <!-- Capacity indicator based on standard (4) or merged -->
+                                <div class="flex items-center justify-center gap-1 mt-1 text-[11px] text-on-surface-variant/70">
+                                    <span class="material-symbols-outlined text-[12px]">group</span>
+                                    {{ table.capacity }}
+                                </div>
 
                                 <!-- Chairs -->
                                 <div class="flex flex-wrap justify-center gap-0.5 mb-2 px-2">
@@ -359,7 +447,7 @@ onUnmounted(() => {
             </div>
         </div>
 
-        <!-- ===== TABLE DETAIL MODAL ===== -->
+        <!-- Table detail modal -->
         <Transition name="fade">
             <div v-if="isTableModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeTableModal"></div>
@@ -466,6 +554,10 @@ onUnmounted(() => {
 
                             <!-- Action buttons -->
                             <div class="space-y-2.5">
+                                <button v-if="isTableParent(selectedTable)" @click="unmergeTable(selectedTable)"
+                                    class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-error text-error font-bold text-label-md hover:bg-error-container/30 transition-all shadow-sm">
+                                    <span class="material-symbols-outlined text-[18px]">call_split</span> Tách bàn về như cũ
+                                </button>
                                 <button v-if="selectedTable?.status === 'OCCUPIED' && selectedTable?.orders && selectedTable.orders.length > 0"
                                     @click="printBill(selectedTable)"
                                     class="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-bold text-label-md hover:bg-surface-container-highest transition-all">
@@ -519,6 +611,32 @@ onUnmounted(() => {
                 </Transition>
             </div>
         </Transition>
+
+        <!-- Merge Confirm Modal -->
+        <Transition name="fade">
+            <div v-if="showMergeConfirm" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-inverse-surface/60 backdrop-blur-sm" @click="cancelMerge"></div>
+                <Transition name="slide-up">
+                    <div v-if="showMergeConfirm" class="relative bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-center p-6 border-2 border-primary/20">
+                        <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="material-symbols-outlined text-primary text-[32px]">merge</span>
+                        </div>
+                        <h3 class="text-title-lg font-bold text-on-surface mb-2">Gộp bàn?</h3>
+                        <p class="text-body-md text-on-surface-variant mb-6">
+                            Bạn có chắc chắn muốn gộp <strong>{{ draggedTable?.table_name }}</strong> vào <strong>{{ targetTable?.table_name }}</strong>?
+                        </p>
+                        <div class="flex gap-3">
+                            <button @click="cancelMerge" class="flex-1 py-2.5 rounded-xl border border-outline-variant/50 font-bold text-on-surface-variant hover:bg-surface-container transition-colors">
+                                Hủy
+                            </button>
+                            <button @click="confirmMerge" class="flex-1 py-2.5 rounded-xl bg-primary text-on-primary font-bold shadow-sm hover:bg-primary/90 transition-colors">
+                                Xác nhận
+                            </button>
+                        </div>
+                    </div>
+                </Transition>
+            </div>
+        </Transition>
     </StaffLayout>
 </template>
 
@@ -548,7 +666,7 @@ onUnmounted(() => {
     display: none;
 }
 
-/* ===== FLOOR PLAN ===== */
+/* Floor plan */
 .floor-plan-wrap {
     position: relative;
 }
