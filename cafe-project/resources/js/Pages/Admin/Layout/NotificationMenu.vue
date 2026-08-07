@@ -36,7 +36,7 @@ onMounted(() => {
     // Chuyển tham số isInterval = true để KÊU NHẮC LẠI nếu vẫn còn thông báo chưa đọc
     const interval = setInterval(() => {
         fetchNotifications(true);
-    }, 1000000);
+    }, 30000);
 
     onUnmounted(() => {
         clearInterval(interval);
@@ -95,12 +95,10 @@ const toggleNotification = () => {
         <!-- Nút Icon Quả Chuông -->
         <button 
             @click="toggleNotification" 
-            class="relative p-2 rounded-full hover:bg-surface-container-high transition-colors focus:outline-none"
+            class="relative p-2 rounded-full hover:bg-surface-container-high transition-colors focus:outline-none cursor-pointer"
             title="Thông báo"
         >
-            <svg class="w-6 h-6 text-outline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
+            <span class="material-symbols-outlined">notifications</span>
 
             <span 
                 v-if="unreadCount > 0" 

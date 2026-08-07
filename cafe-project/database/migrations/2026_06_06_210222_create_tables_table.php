@@ -29,6 +29,8 @@ return new class extends Migration
             $table->enum('status', ['EMPTY', 'OCCUPIED'])
                 ->default('EMPTY')
                 ->comment('Trạng thái hiện tại của bàn (EMPTY: Bàn trống, OCCUPIED: Có khách)');
+            
+            $table->softDeletes();
 
             // Thời gian tạo và cập nhật tự động
             $table->timestamp('created_at')->useCurrent();

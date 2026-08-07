@@ -14,14 +14,12 @@ const isModalOpen = ref(false);
 const isEditMode = ref(false);
 const selectedCoupon = ref(null);
 
-// Khởi tạo cụm reactive chứa các bộ lọc
 const searchFilters = ref({
     search: props.filters.search || "",
     discount_type: props.filters.discount_type || "",
     status: props.filters.status || "",
 });
 
-// Watcher tự động trigger dữ liệu lọc lên Laravel
 watch(searchFilters, (newFilters) => {
     router.get("/quan-tri/ma-giam-gia", newFilters, {
         preserveState: true,
@@ -47,13 +45,10 @@ const openEditModal = (coupon) => {
     isModalOpen.value = true;
 };
 
+// Cập nhật hàm XÓA MỀM
 const deleteCoupon = (id, code) => {
-    if (confirm(`Bạn có chắc chắn muốn hủy bỏ và xóa mã "${code}" khỏi hệ thống?`)) {
-        router.delete(`/quan-tri/ma-giam-gia/${id}`, {
-            onSuccess: () => {
-                // Flash Session Laravel tự xử lý in toast
-            }
-        });
+    if (confirm(`Bạn có chắc chắn muốn chuyển mã "${code}" vào thùng rác không?`)) {
+        router.delete(`/quan-tri/ma-giam-gia/${id}`);
     }
 };
 
@@ -78,12 +73,27 @@ const isExpired = (date) => {
         <div class="space-y-6 relative font-sans">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl mt-2 mb-2"><span class="material-symbols-outlined text-primary">confirmation_number</span> MÃ GIẢM GIÁ</h1>
+                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl mt-2 mb-2 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">confirmation_number</span> 
+                        MÃ GIẢM GIÁ
+                    </h1>
                     <p class="text-body-medium text-on-surface-variant">Phát hành, quản lý và giám sát hiệu suất các chiến dịch thúc đẩy doanh số của quán.</p>
                 </div>
-                <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer">
-                    <span class="material-symbols-outlined text-md">add_card</span> Phát hành mã mới
-                </button>
+                
+                <div class="flex items-center gap-3 self-start sm:self-center">
+                    <!-- Nút dẫn tới Thùng Rác -->
+                    <Link
+                        href="/quan-tri/ma-giam-gia/thung-rac"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer text-red-600 hover:text-red-700"
+                    >
+                        <span class="material-symbols-outlined text-md">delete_sweep</span>
+                        Thùng rác
+                    </Link>
+
+                    <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-md">add_card</span> Phát hành mã mới
+                    </button>
+                </div>
             </div>
 
             <div v-if="$page.props.flash?.message" class="p-4 bg-primary-container/20 border border-primary/20 text-on-primary-container rounded-xl text-body-medium flex items-center gap-2">
@@ -191,7 +201,7 @@ const isExpired = (date) => {
                                 </td>
 
                                 <td class="p-4 font-mono text-body-small">
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-2 justify-center">
                                         <span :class="isExpired(coupon.expiration_date) ? 'text-error font-medium' : 'text-on-surface-variant'">
                                             {{ formatDateTime(coupon.expiration_date) }}
                                         </span>
@@ -222,7 +232,7 @@ const isExpired = (date) => {
                                         <button @click="openEditModal(coupon)" class="p-2 hover:bg-surface-container-high text-on-surface-variant hover:text-primary rounded-full transition-colors cursor-pointer" title="Chỉnh sửa">
                                             <span class="material-symbols-outlined text-xl">edit</span>
                                         </button>
-                                        <button @click="deleteCoupon(coupon.id, coupon.code)" class="p-2 hover:bg-error-container/20 text-on-surface-variant hover:text-error rounded-full transition-colors cursor-pointer" title="Xóa mã">
+                                        <button @click="deleteCoupon(coupon.id, coupon.code)" class="p-2 hover:bg-error-container/20 text-on-surface-variant hover:text-error rounded-full transition-colors cursor-pointer" title="Chuyển vào thùng rác">
                                             <span class="material-symbols-outlined text-xl">delete</span>
                                         </button>
                                     </div>

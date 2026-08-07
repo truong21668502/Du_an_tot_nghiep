@@ -34,6 +34,7 @@ return new class extends Migration
             $table->string('image_url', 255)->nullable()->comment('Hình ảnh đại diện của sản phẩm');
             
             $table->enum('is_active', ['Đang bán', 'Ngừng kinh doanh'])->default('Đang bán')->comment('Trạng thái kinh doanh hiện tại');
+            $table->softDeletes();
             
             // Thời gian tạo và cập nhật tự động chuẩn database
             $table->timestamp('created_at')->useCurrent()->comment('Thời gian tạo sản phẩm');

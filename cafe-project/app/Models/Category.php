@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany; // Đừng quên dòng import này nha
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Category extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     // Định nghĩa tên bảng trong database nếu hệ thống không tự nhận diện cấu trúc số nhiều
     protected $table = 'categories';

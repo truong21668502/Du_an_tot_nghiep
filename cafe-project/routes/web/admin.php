@@ -48,12 +48,19 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::post('/danh-muc', [CategoryController::class, 'store'])->name('category.store');
     Route::put('/danh-muc/{category}', [CategoryController::class, 'update'])->name('category.update');
     Route::delete('/danh-muc/{category}', [CategoryController::class, 'destroy'])->name('category.destroy');
+    Route::get('/danh-muc/thung-rac', [CategoryController::class, 'trash'])->name('categories.trash');
+    Route::post('/danh-muc/{id}/restore', [CategoryController::class, 'restore'])->name('categories.restore'); // Khôi phục
+    Route::delete('/danh-muc/{id}/force-delete', [CategoryController::class, 'forceDelete'])->name('categories.force-delete'); // Xóa vĩnh viễn
 
     // Quản lý sản phẩm
     Route::get('/san-pham', [ProductController::class, 'index'])->name('products.index');
     Route::post('/san-pham', [ProductController::class, 'store'])->name('products.store');
     Route::put('/san-pham/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/san-pham/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::get('san-pham/thung-rac', [ProductController::class, 'trash'])->name('products.trash'); // BẮT BUỘC đặt trước /{id}
+    Route::post('san-pham/{id}/restore', [ProductController::class, 'restore'])->name('products.restore');
+    Route::delete('san-pham/{id}/force-delete', [ProductController::class, 'forceDelete'])->name('products.force-delete');
+
     Route::post('/hinh-anh-phu', [App\Http\Controllers\Admin\ProductController::class, 'storeImage'])->name('products.storeImage');
     Route::delete('/hinh-anh-phu/{image}', [App\Http\Controllers\Admin\ProductController::class, 'destroyImage'])->name('products.destroyImage');
 
@@ -76,6 +83,9 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::post('/ma-giam-gia', [CouponController::class, 'store'])->name('coupons.store');
     Route::put('/ma-giam-gia/{coupon}', [CouponController::class, 'update'])->name('coupons.update');
     Route::delete('/ma-giam-gia/{coupon}', [CouponController::class, 'destroy'])->name('coupons.destroy');
+    Route::get('ma-giam-gia/thung-rac', [CouponController::class, 'trash'])->name('coupons.trash'); // PHẢI ĐẶT TRƯỚC /{id}
+    Route::post('ma-giam-gia/{id}/restore', [CouponController::class, 'restore'])->name('coupons.restore');
+    Route::delete('ma-giam-gia/{id}/force-delete', [CouponController::class, 'forceDelete'])->name('coupons.force-delete');
 
 
     // Quản lý người dùng
@@ -85,8 +95,8 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
     Route::delete('/nguoi-dung/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 
     //Route mới phục vụ riêng cho Thùng rác người dùng:
-    Route::post('/nguoi-dung/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
-    Route::delete('/nguoi-dung/{id}/force-delete', [UserController::class, 'forceDelete'])->name('users.forceDelete');
+    Route::post('nguoi-dung/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
+    Route::delete('nguoi-dung/{id}/force-delete', [UserController::class, 'forceDelete'])->name('users.forceDelete');
 
     // Quản lý Ví Voucher khách hàng
     Route::get('/vi-voucher', [UserVoucherController::class, 'index'])->name('userVouchers.index');

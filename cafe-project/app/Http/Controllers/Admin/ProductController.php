@@ -127,7 +127,41 @@ class ProductController extends Controller
         // Chỗ này bạn có thể bổ sung kiểm tra nếu sản phẩm đã nằm trong Đơn hàng (Order Details) thì không cho xóa
         $product->delete();
 
-        return redirect()->back()->with('toast-success', 'Xóa sản phẩm thành công!');
+        return redirect()->back()->with('toast-success', 'Đã đưa sản phẩm vào thùng rác!');
+    }
+
+    //thùng rác sản phẩm
+    public function trash()
+    {
+        $products = Product::onlyTrashed()
+            ->with(['category', 'variants', 'images'])
+            ->latest('deleted_at')
+            ->paginate(10);
+
+        return Inertia::render('Admin/Product/Trash', [
+            'products' => $products
+        ]);
+    }
+
+    // Khôi phục sản phẩm từ thùng rác
+    public function restore($id)
+    {
+        $product = Product::onlyTrashed()->findOrFail($id);
+        $product->restore();
+
+        return back()->with('toast-success', 'Khôi phục sản phẩm thành công.');
+    }
+
+    // Xóa vĩnh viễn sản phẩm khỏi cơ sở dữ liệu
+    public function forceDelete($id)
+    {
+        $product = Product::onlyTrashed()->findOrFail($id);
+
+        // Nâng cao: Có thể xóa file ảnh vật lý trên disk tại đây nếu cần
+
+        $product->forceDelete(); // Xóa vĩnh viễn khỏi DB
+
+        return back()->with('toast-success', 'Đã xóa vĩnh viễn sản phẩm.');
     }
 
     public function storeImage(Request $request)

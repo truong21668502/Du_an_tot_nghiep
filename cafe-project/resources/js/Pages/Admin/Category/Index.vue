@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from "vue";
-import { router } from "@inertiajs/vue3";
+import { router, Link } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
 import { toast } from 'vue3-toastify';
 
@@ -31,15 +31,14 @@ const openEditModal = (category) => {
     isModalOpen.value = true;
 };
 
+// Cập nhật hàm xóa thành XÓA MỀM
 const deleteCategory = (id, name) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa danh mục "${name}" không?`)) {
+    if (confirm(`Bạn có chắc chắn muốn chuyển danh mục "${name}" vào thùng rác không?`)) {
         router.delete(`/quan-tri/danh-muc/${id}`, {
-            onSuccess: () => toast.success('Xoá danh mục thành công !')
         });
     }
 };
 
-// Hàm định dạng ngày giờ thân thiện để Admin dễ giám sát
 const formatDateTime = (dateStr) => {
     if (!dateStr) return "---";
     const d = new Date(dateStr);
@@ -60,17 +59,31 @@ const formatDateTime = (dateStr) => {
         <div class="space-y-6 relative">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl"><span class="material-symbols-outlined text-primary">category</span> DANH MỤC SẢN PHẨM</h1>
+                    <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">category</span> 
+                        DANH MỤC SẢN PHẨM
+                    </h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">Quản lý và giám sát các nhóm thực đơn của Nắng Coffee.</p>
                 </div>
                 
-                <button
-                    @click="openCreateModal"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all duration-200 self-start sm:self-center cursor-pointer"
-                >
-                    <span class="material-symbols-outlined text-md">add</span>
-                    Thêm danh mục
-                </button>
+                <div class="flex items-center gap-3 self-start sm:self-center">
+                    <!-- Nút sang Màn hình Thùng rác -->
+                    <Link
+                        href="/quan-tri/danh-muc/thung-rac"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-sans text-label-large rounded-full shadow-sm transition-all duration-200 cursor-pointer text-red-600 hover:text-red-700"
+                    >
+                        <span class="material-symbols-outlined text-md">delete_sweep</span>
+                        Thùng rác
+                    </Link>
+
+                    <button
+                        @click="openCreateModal"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all duration-200 cursor-pointer"
+                    >
+                        <span class="material-symbols-outlined text-md">add</span>
+                        Thêm danh mục
+                    </button>
+                </div>
             </div>
 
             <div v-if="$page.props.flash?.message" class="p-4 bg-primary-container/20 border border-primary/20 text-on-primary-container rounded-xl font-sans text-body-medium flex items-center gap-2">
@@ -117,7 +130,7 @@ const formatDateTime = (dateStr) => {
                                         <button @click="openEditModal(category)" class="p-2 hover:bg-surface-container-high text-on-surface-variant hover:text-primary rounded-full transition-colors cursor-pointer" title="Chỉnh sửa">
                                             <span class="material-symbols-outlined text-xl">edit</span>
                                         </button>
-                                        <button @click="deleteCategory(category.id, category.category_name)" class="p-2 hover:bg-error-container/20 text-on-surface-variant hover:text-error rounded-full transition-colors cursor-pointer" title="Xóa">
+                                        <button @click="deleteCategory(category.id, category.category_name)" class="p-2 hover:bg-error-container/20 text-on-surface-variant hover:text-error rounded-full transition-colors cursor-pointer" title="Chuyển vào thùng rác">
                                             <span class="material-symbols-outlined text-xl">delete</span>
                                         </button>
                                     </div>
