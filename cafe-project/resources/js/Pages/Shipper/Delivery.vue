@@ -71,12 +71,14 @@ const submitComplete = () => {
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0)
 }
-
-// TÍNH TIỀN CẦN THU (Xử lý an toàn)
 const amountToCollect = computed(() => {
-    // Giả định order.payment_status lưu trạng thái thanh toán
-    const isPaid = props.order.payment_status === 'PAID' || props.order.payment?.payment_status === 'PAID'
-    return isPaid ? 0 : props.order.final_amount
+    const paymentMethod =
+        props.order.payment?.payment_method ||
+        props.order.payment_method
+
+    return paymentMethod === 'CASH'
+        ? props.order.final_amount
+        : 0
 })
 
 // BẢN ĐỒ
@@ -85,6 +87,8 @@ const mapsUrl = computed(() => {
     const destLng = props.order.longitude
     const shopLat = props.shopLat
     const shopLng = props.shopLng
+
+    console.log('Maps URL:', { destLat, destLng, shopLat, shopLng });
 
     if (!destLat || !destLng || !shopLat || !shopLng) return ''
 
@@ -126,7 +130,6 @@ const openExternalMap = () => {
 
                 <div class="p-4 lg:p-6 space-y-6">
                     
-                    <!-- TIỀN CẦN THU (Banner Nổi Bật Nhất) -->
                     <div 
                         class="p-5 rounded-2xl flex items-center justify-between shadow-soft border"
                         :class="amountToCollect > 0 ? 'bg-primary-container border-primary/20 text-on-primary-container' : 'bg-surface-container border-surface-container-highest text-on-surface'"
@@ -293,7 +296,7 @@ const openExternalMap = () => {
                 <!-- Nút mở App Google Maps -->
                 <button 
                     @click="openExternalMap"
-                    class="absolute bottom-4 right-4 bg-surface text-on-surface shadow-soft px-5 py-3 rounded-xl text-label-md flex items-center gap-2 hover:bg-surface-container-high transition border border-surface-container"
+                    class="fixed bottom-4 right-8 bg-surface text-on-surface shadow-soft px-5 py-3 rounded-xl text-label-md flex items-center gap-2 hover:bg-surface-container-high transition border border-surface-container"
                 >
                     <span class="material-symbols-outlined text-[20px] text-secondary">explore</span> 
                     Chỉ đường Maps

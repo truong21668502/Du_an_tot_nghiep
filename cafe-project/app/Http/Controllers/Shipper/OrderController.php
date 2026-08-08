@@ -65,6 +65,7 @@ public function index()
             ];
         });
 
+
         return Inertia::render('Shipper/Orders/Index', [
             'orders'  => $mappedOrders,
             'shopLat' => $shopLat,
@@ -77,14 +78,28 @@ public function index()
      */
     public function accept(Order $order)
     {
+        // Kiểm tra đơn có còn khả dụng không
         if ($order->status !== 'READY' || $order->shipper_id) {
             return back()->with('error', 'Đơn hàng không khả dụng.');
+        }
+
+        // Không cho shipper nhận thêm đơn nếu đang giao 1 đơn khác
+        $hasDeliveringOrder = Order::where('shipper_id', auth()->id())
+            ->where('status', 'DELIVERING')
+            ->exists();
+
+        if ($hasDeliveringOrder) {
+            return back()->withErrors([
+                'error' => 'Bạn đang có một đơn hàng đang giao.',
+            ]);
         }
 
         $order->update([
             'status'     => 'DELIVERING',
             'shipper_id' => auth()->id(),
         ]);
+
+        broadcast(new OrderStatusUpdated($order));
 
         return redirect()->route('shipper.delivery', $order->id)
             ->with('success', 'Bạn đã nhận đơn giao hàng.');
@@ -95,6 +110,12 @@ public function index()
      */
     public function show(Order $order)
     {
+
+        if($order->shipper_id !== auth()->id()) {
+            return redirect()->route('shipper.orders.index')
+                ->with('error', 'Bạn không có quyền xem đơn hàng này.');
+        }
+
         // Chỉ load chi tiết món ăn, không cần load user
         $order->load([
             'details.product:id,product_name,image_url', 
@@ -133,7 +154,7 @@ public function index()
         $cloudinary = new \Cloudinary\Cloudinary();
 
         $result = $cloudinary->uploadApi()->upload($request->file('delivery_photo')->getRealPath(), [
-            'folder'         => 'delivery_photos', // Đổi tên folder cho phù hợp với logic giao hàng
+            'folder'         => 'uploads_du_an/delivery_photos', // Đổi tên folder cho phù hợp với logic giao hàng
             'transformation' => ['quality' => 'auto', 'fetch_format' => 'auto'],
         ]);
 

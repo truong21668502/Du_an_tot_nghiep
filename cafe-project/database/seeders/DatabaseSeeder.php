@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             PostSeeder::class,
             ProhibitedWordSeeder::class,
             BannerSeeder::class,
+            SettingSeeder::class,
         ]);
     }
 

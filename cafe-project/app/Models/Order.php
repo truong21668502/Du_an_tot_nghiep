@@ -44,6 +44,7 @@ class Order extends Model
         'latitude',
         'longitude', 
         'goong_place_id',
+        'shipper_id',
         'distance',
         'duration',
     ];

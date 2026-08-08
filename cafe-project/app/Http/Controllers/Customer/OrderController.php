@@ -222,6 +222,8 @@ private function placeOrder(Cart $cart, array $data, Request $request): Order
             'status' => 'PENDING',
             'source' => 'CUSTOMER',
             'note' => $data['note'] ?? null,
+            'distance' => $data['distance'] ?? null,
+            'duration' => $data['duration'] ?? null,
         ];
 
         $address = $shippingData['address'] ?? null;

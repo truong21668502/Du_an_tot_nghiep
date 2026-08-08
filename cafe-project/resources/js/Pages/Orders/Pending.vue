@@ -12,12 +12,23 @@ const currentStatus = ref(order.value?.status || 'PENDING')
 const statusMap = {
   PENDING: { label: 'Chờ phục vụ', color: 'text-secondary', icon: 'hourglass_top', bg: 'bg-secondary-container/30' },
   PROCESSING: { label: 'Đang pha chế', color: 'text-primary', icon: 'coffee', bg: 'bg-primary-container/30' },
+  READY: { label: 'Sẵn sàng giao hàng', color: 'text-emerald-600', icon: 'room_service', bg: 'bg-emerald-500/10' },
+  DELIVERING: { label: 'Đang giao hàng', color: 'text-sky-600', icon: 'local_shipping', bg: 'bg-sky-500/10' },
   COMPLETED: { label: 'Hoàn thành', color: 'text-tertiary', icon: 'check_circle', bg: 'bg-tertiary-container/30' },
+  CANCELLED: { label: 'Đã hủy', color: 'text-red-600', icon: 'cancel', bg: 'bg-red-500/10' }
 }
+
+
 onMounted(() => {
-  if (typeof window.Echo !== 'undefined' && order.value) {
-    window.Echo.channel(`order.${order.value.id}`).listen('OrderStatusUpdated', (event) => { currentStatus.value = event.status })
-  }
+    if (typeof window.Echo !== 'undefined' && order.value) {
+        window.Echo
+            .channel('staff-orders')
+            .listen('.order.status-updated', (event) => {
+                if (event.order?.id === order.value.id) {
+                    currentStatus.value = event.order.status
+                }
+            })
+    }
 })
 </script>
 <template>

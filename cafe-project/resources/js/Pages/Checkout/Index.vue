@@ -34,6 +34,8 @@ const GOONG_API_KEY = import.meta.env.VITE_GOONG_API_KEY
 const shippingFee = ref(0)
 const shippingDistanceText = ref('')
 const shippingDurationText = ref('')
+const shippingDistance = ref(null) // km
+const shippingDuration = ref(null) // phút
 const isAddressOutOfRange = ref(false)
 const calculatingShipping = ref(false)
 
@@ -62,6 +64,10 @@ const calculateShippingForAddress = async (address) => {
 
         const leg = data.routes[0].legs[0]
         const distanceMeters = leg.distance.value
+
+shippingDistance.value = Number((distanceMeters / 1000).toFixed(2))
+shippingDuration.value = Math.ceil(leg.duration.value / 60)
+
         const fee = calculateShippingFee(distanceMeters)
 
         if (distanceMeters > MAX_DELIVERY_DISTANCE_METERS || fee === null) {
@@ -176,11 +182,22 @@ const submitOrder = () => {
 
     loading.value = true
     errors.value = {}
+    console.log('Submitting order with data:', {
+        order_type: 'DELIVERY',
+        address_id: selectedAddressId.value,
+        payment_method: selectedPaymentMethod.value,
+        distance: shippingDistance.value,
+        duration: shippingDuration.value,
+        note: note.value,
+    })
+    console.log('distance:', shippingDistance.value, 'duration:', shippingDuration.value)
 
     router.post(route('customer.orders.store'), {
         order_type: 'DELIVERY',
         address_id: selectedAddressId.value,
         payment_method: selectedPaymentMethod.value,
+        distance: shippingDistance.value,
+        duration: shippingDuration.value,
         note: note.value,
     }, {
         preserveScroll: true,

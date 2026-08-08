@@ -21,7 +21,7 @@ const formatCurrency = (value) => {
 
 const formatDistance = (meters) => {
     if (!meters) return 'Chưa rõ khoảng cách'
-    return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`
+    return  `${meters} km`
 }
 
 const formatTime = (isoString) => {
@@ -52,11 +52,8 @@ onMounted(() => {
                 if (existsIndex === -1) {
                     newOrder.is_my_order = false 
                     ordersList.value.unshift(newOrder)
-                    
-                    toast.info(`Đơn mới #${newOrder.code || newOrder.id} sẵn sàng giao!`, {
-                        position: toast.POSITION.TOP_CENTER,
-                        autoClose: 3000,
-                    })
+                    toast.info(`Đơn mới #${newOrder.code || newOrder.id} sẵn sàng giao!`)
+                    new Audio('https://res.cloudinary.com/dltgjdf9t/video/upload/v1785330018/Chu%C3%B4ng_nh%E1%BA%AFc_nh%E1%BB%9F_nh%C3%A2n_vi%C3%AAn_lp3cpm.mp3').play().catch(err => console.error('Error playing sound:', err));
                 }
             })
             .listen('.order.accepted', (e) => {
@@ -68,7 +65,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    if (window.Echo) {
+    if (window.Echo) {      
         window.Echo.leaveChannel('shipper-orders')
     }
 })
