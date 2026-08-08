@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Link, usePage, router } from '@inertiajs/vue3'
+import StaffAiChatWidget from '../Pages/Staff/Layout/StaffAiChatWidget.vue'
 import { toast } from "vue3-toastify";
 import 'vue3-toastify/dist/index.css';
 import axios from 'axios';
@@ -464,6 +465,9 @@ const submitNewOrder = () => {
                 </Transition>
             </div>
         </Transition>
+        
+        <!-- Nhúng Chatbot AI cho Nhân viên -->
+        <StaffAiChatWidget />
     </div>
 </template>
 
