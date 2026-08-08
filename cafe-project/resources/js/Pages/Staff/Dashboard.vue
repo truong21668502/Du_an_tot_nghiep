@@ -681,6 +681,12 @@ onUnmounted(() => {
                                         {{ table.table_name }}
                                     </span>
 
+                                    <!-- Chỉ báo số lượng khách/ghế -->
+                                    <div class="flex items-center justify-center gap-1 mt-1 mb-1 text-[11px] text-on-surface-variant/70">
+                                        <span class="material-symbols-outlined text-[12px]">group</span>
+                                        {{ table.capacity }}
+                                    </div>
+
                                     <!-- Ghế ngồi -->
                                     <div class="flex flex-wrap justify-center gap-0.5 mb-2 px-2">
                                         <span v-for="i in table.capacity" :key="i"

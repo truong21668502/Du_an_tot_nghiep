@@ -36,6 +36,16 @@ Schedule::call(function () {
 })->everyMinute();
 
 Schedule::command('stock:write-off-expired')
-    ->dailyAt('00:05')
+    ->dailyAt('00:00')
     ->withoutOverlapping()
-    ->onOneServer();
+    ->appendOutputTo(storage_path('logs/stock_write_off.log'));
+
+Schedule::call(function () {
+    // Chỉ xoá các phiên chat (và tin nhắn của chúng) không hoạt động quá 30 ngày
+    $inactiveConversations = \App\Models\ChatConversation::where('last_activity_at', '<', now()->subDays(30))->pluck('id');
+    
+    if ($inactiveConversations->isNotEmpty()) {
+        \App\Models\ChatMessage::whereIn('conversation_id', $inactiveConversations)->delete();
+        \App\Models\ChatConversation::whereIn('id', $inactiveConversations)->delete();
+    }
+})->dailyAt('01:00');

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Staff\DashboardController;
 use App\Http\Controllers\Staff\OrderController;
 use App\Http\Controllers\Staff\TableController;
+use App\Http\Controllers\Staff\StaffAiController;
 use App\Models\Order;
 use App\Models\Table;
 use App\Events\OrderCreated;
@@ -17,6 +18,12 @@ use App\Events\TableStatusUpdated;
 
 Route::middleware(['auth', 'role:STAFF,ADMIN'])->prefix('nhan-vien')->name('staff.')->group(function () {
     
+    // AI Chatbot Route
+    Route::get('/ai-conversations', [StaffAiController::class, 'getConversations'])->name('ai.conversations');
+    Route::get('/ai-history', [StaffAiController::class, 'getHistory'])->name('ai.history');
+    Route::post('/ai-chat', [StaffAiController::class, 'sendChatMessage'])->name('ai.chat');
+    Route::delete('/ai-conversation', [StaffAiController::class, 'deleteConversation'])->name('ai.delete-conversation');
+
     // Route dashboard
     Route::get('/bang-dieu-khien', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -37,26 +44,4 @@ Route::middleware(['auth', 'role:STAFF,ADMIN'])->prefix('nhan-vien')->name('staf
     Route::post('/so-do-ban/{fromTable}/gop-vao/{toTable}', [TableController::class, 'mergeTable'])->name('tables.merge');
     Route::patch('/so-do-ban/{table}/tach-ban', [TableController::class, 'unmergeTable'])->name('tables.unmerge');
 
-    // Route test tạo đơn hàng giả và bắn event real-time
-    Route::get('/test-tao-don', function () {
-        $order = Order::create([
-            'total_amount' => 20000, 
-            'discount_amount' => 0,
-            'final_amount' => 20000, 
-            'order_type' => 'DINE_IN',
-            'table_id' => 1, 
-            'status' => 'PENDING', 
-        ]);
-
-        $table = Table::find(1);
-        if ($table) {
-            $table->update(['status' => 'OCCUPIED']);
-            broadcast(new TableStatusUpdated($table));
-        }
-
-        $order->load(['table', 'orderDetails.product']);
-        broadcast(new OrderCreated($order));
-
-        return "Đã tạo đơn hàng giả, lưu trạng thái bàn vào DB và bắn event real-time!";
-    });
 });

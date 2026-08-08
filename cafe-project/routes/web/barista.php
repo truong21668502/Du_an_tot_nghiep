@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Barista\BaristaController;
+use App\Http\Controllers\Barista\BaristaAiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -10,6 +11,12 @@ use App\Http\Controllers\Barista\BaristaController;
 */
 
 Route::middleware(['auth', 'role:BARISTA,ADMIN'])->prefix('pha-che')->name('barista.')->group(function () {
+
+    // AI Chatbot Routes
+    Route::get('/ai-conversations', [BaristaAiController::class, 'getConversations'])->name('ai.conversations');
+    Route::get('/ai-history', [BaristaAiController::class, 'getHistory'])->name('ai.history');
+    Route::post('/ai-chat', [BaristaAiController::class, 'sendChatMessage'])->name('ai.chat');
+    Route::delete('/ai-conversation', [BaristaAiController::class, 'deleteConversation'])->name('ai.delete-conversation');
 
     // Hàng đợi pha chế (màn hình chính)
     Route::get('/hang-doi', [BaristaController::class, 'queue'])->name('queue');

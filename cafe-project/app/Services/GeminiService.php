@@ -201,4 +201,126 @@ class GeminiService
             return 'Lỗi kết nối đến máy chủ AI.';
         }
     }
+
+    /**
+     * Trò chuyện với Trợ lý AI dành cho Nhân viên (Staff)
+     */
+    public function chatWithStaffAi(array $chatHistory, string $currentQuestion, array $staffContext): ?string
+    {
+        $apiKey      = config('ai.ai_key');
+        $model       = config('ai.models.primary', 'gemini-1.5-flash');
+        $maxTokens   = 400;
+        $temperature = 0.5;
+
+        $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+
+        $systemPrompt = "Bạn là Trợ lý AI dành riêng cho Nhân viên (Staff) của quán Nắng Coffee.\n\n"
+            . "=== PHẠM VI HOẠT ĐỘNG (BẮT BUỘC TUÂN THỦ) ===\n"
+            . "1. Bạn CHỈ ĐƯỢC PHÉP hỗ trợ nhân viên về:\n"
+            . "   - Tình trạng các bàn hiện tại (bàn nào trống, bàn nào đang có khách).\n"
+            . "   - Trạng thái các đơn hàng hiện tại (đơn nào đang chờ xử lý, đơn nào đang pha chế).\n"
+            . "   - Hướng dẫn các nghiệp vụ trên hệ thống (cách tạo đơn mới, cách gộp bàn, tách bàn, xem chi tiết hóa đơn, v.v.).\n"
+            . "   - Thực đơn của quán (các món ăn, đồ uống).\n\n"
+            . "2. TỪ CHỐI CÁC CÂU HỎI NGOÀI PHẠM VI HOẶC BẢO MẬT:\n"
+            . "   - TỪ CHỐI tuyệt đối các câu hỏi về doanh thu, lợi nhuận, chiến lược kinh doanh của quán (vì đây là dữ liệu bảo mật chỉ Quản lý mới được xem).\n"
+            . "   - TỪ CHỐI các câu hỏi không liên quan đến quán (toán học, lập trình, xã hội, v.v.).\n"
+            . "   - Mẫu từ chối tham khảo: \"Dạ, em là Trợ lý của Nhân viên nên chỉ có quyền hỗ trợ xem trạng thái bàn, đơn hàng và các nghiệp vụ bán hàng thôi ạ. Các thông tin khác em không có quyền truy cập nhé!\"\n\n"
+            . "=== DỮ LIỆU NGỮ CẢNH HIỆN TẠI (Dành riêng cho Nhân viên) ===\n"
+            . json_encode($staffContext, JSON_UNESCAPED_UNICODE);
+
+        $contents = [];
+        foreach ($chatHistory as $msg) {
+            $contents[] = [
+                'role' => $msg['role'] === 'user' ? 'user' : 'model',
+                'parts' => [['text' => $msg['content']]]
+            ];
+        }
+        
+        $contents[] = [
+            'role' => 'user',
+            'parts' => [['text' => $currentQuestion]]
+        ];
+
+        try {
+            $response = Http::withHeaders(['Content-Type' => 'application/json'])->post($apiUrl, [
+                'system_instruction' => ['parts' => [['text' => $systemPrompt]]],
+                'contents' => $contents,
+                'generationConfig' => [
+                    'temperature' => (float) $temperature,
+                    'maxOutputTokens' => (int) $maxTokens,
+                ]
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+            }
+
+            return 'Xin lỗi, hệ thống AI đang bận. Vui lòng thử lại sau.';
+        } catch (\Exception $e) {
+            Log::error('Gemini Staff Chat Exception: ' . $e->getMessage());
+            return 'Lỗi kết nối đến máy chủ AI.';
+        }
+    }
+
+    /**
+     * Trò chuyện với Trợ lý AI dành cho Pha chế (Barista)
+     */
+    public function chatWithBaristaAi(array $chatHistory, string $currentQuestion, array $baristaContext): ?string
+    {
+        $apiKey      = config('ai.ai_key');
+        $model       = config('ai.models.primary', 'gemini-1.5-flash');
+        $maxTokens   = 400;
+        $temperature = 0.5;
+
+        $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+
+        $systemPrompt = "Bạn là Trợ lý AI dành riêng cho bộ phận Pha chế (Barista) của quán Nắng Coffee.\n\n"
+            . "=== PHẠM VI HOẠT ĐỘNG (BẮT BUỘC TUÂN THỦ) ===\n"
+            . "1. Bạn CHỈ ĐƯỢC PHÉP hỗ trợ pha chế về:\n"
+            . "   - Số lượng và thông tin chi tiết các món đang chờ pha (PENDING) hoặc đang pha (PREPARING).\n"
+            . "   - Hướng dẫn công thức pha chế của các đồ uống có trong danh sách yêu cầu.\n"
+            . "   - Kiểm tra tình trạng nguyên liệu kho (số lượng, hạn sử dụng).\n"
+            . "   - Hỗ trợ nghiệp vụ liên quan đến quầy pha chế.\n\n"
+            . "2. TỪ CHỐI CÁC CÂU HỎI NGOÀI PHẠM VI HOẶC BẢO MẬT:\n"
+            . "   - TỪ CHỐI các câu hỏi về doanh thu, thanh toán, quản lý bàn (đây là việc của nhân viên thu ngân/phục vụ).\n"
+            . "   - TỪ CHỐI các câu hỏi không liên quan đến quán.\n"
+            . "   - Mẫu từ chối tham khảo: \"Dạ, em là Trợ lý Pha chế nên chỉ có thể hỗ trợ anh/chị về các đơn hàng đồ uống cần làm, công thức và nguyên liệu thôi ạ!\"\n\n"
+            . "=== DỮ LIỆU NGỮ CẢNH HIỆN TẠI (Dành riêng cho Pha chế) ===\n"
+            . json_encode($baristaContext, JSON_UNESCAPED_UNICODE);
+
+        $contents = [];
+        foreach ($chatHistory as $msg) {
+            $contents[] = [
+                'role' => $msg['role'] === 'user' ? 'user' : 'model',
+                'parts' => [['text' => $msg['content']]]
+            ];
+        }
+        
+        $contents[] = [
+            'role' => 'user',
+            'parts' => [['text' => $currentQuestion]]
+        ];
+
+        try {
+            $response = Http::withHeaders(['Content-Type' => 'application/json'])->post($apiUrl, [
+                'system_instruction' => ['parts' => [['text' => $systemPrompt]]],
+                'contents' => $contents,
+                'generationConfig' => [
+                    'temperature' => (float) $temperature,
+                    'maxOutputTokens' => (int) $maxTokens,
+                ]
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+            }
+
+            return 'Xin lỗi, hệ thống AI đang bận. Vui lòng thử lại sau.';
+        } catch (\Exception $e) {
+            Log::error('Gemini Barista Chat Exception: ' . $e->getMessage());
+            return 'Lỗi kết nối đến máy chủ AI.';
+        }
+    }
 }

@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
+import BaristaAiChatWidget from '@/Pages/Barista/Layout/BaristaAiChatWidget.vue';
 
 const currentUrl = computed(() => usePage().url);
 const isMobileMenuOpen = ref(false);
@@ -151,10 +152,8 @@ const props = defineProps({
 
                     <!-- User -->
                     <div class="flex items-center gap-2.5">
-                        <div
-                            class="w-8 h-8 rounded-xl overflow-hidden ring-2 ring-primary/20 bg-primary-container flex items-center justify-center">
-                            <span class="material-symbols-outlined text-primary text-[18px]"
-                                style="font-variation-settings:'FILL' 1">coffee_maker</span>
+                        <div class="w-8 h-8 rounded-xl overflow-hidden ring-2 ring-primary/20">
+                            <img src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1780751292/N%E1%BA%AFng_coffee_tbphoj.jpg" alt="Avatar" class="w-full h-full object-cover">
                         </div>
                         <div class="hidden sm:block">
                             <p class="text-[14px] font-bold text-on-surface leading-none">Barista</p>
@@ -187,6 +186,9 @@ const props = defineProps({
                 <slot />
             </main>
         </div>
+        
+        <!-- Nhúng Chatbot AI cho Barista -->
+        <BaristaAiChatWidget />
     </div>
 </template>
 
