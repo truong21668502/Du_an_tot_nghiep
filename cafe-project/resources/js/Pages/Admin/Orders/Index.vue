@@ -277,6 +277,22 @@ const computeBaristaProgress = (details = []) => {
     };
 };
 
+
+const previewPhoto = ref(null); // { url, orderCode, receiverName }
+
+const openPhotoPreview = (order, event) => {
+    event.stopPropagation(); // chặn không cho mở OrderDetailModal khi bấm badge
+    previewPhoto.value = {
+        url: order.delivery_photo,
+        orderCode: order.order_code ?? order.id,
+        receiverName: order.receiver_name ?? order.user?.full_name ?? "Khách hàng",
+    };
+};
+
+const closePhotoPreview = () => {
+    previewPhoto.value = null;
+};
+
 const getItemCount = (order) => (order.details ?? []).reduce((t, d) => t + Number(d.quantity ?? 0), 0);
 const getOrderTypeLabel = (type) => orderTypeLabel[type] ?? type ?? "—";
 const getOrderTypeIcon = (type) => orderTypeIcon[type] ?? "receipt_long";
@@ -510,13 +526,22 @@ const closeOrderModal = () => {
                                 </td>
 
                                 <td class="p-4">
-                                    <span
-                                        class="inline-flex items-center gap-2 justify-center w-full px-3 py-1 rounded-full text-label-medium font-bold"
-                                        :class="getStatusClasses(order.status)">
-                                        <span class="h-2 w-2 rounded-full"
-                                            :class="getStatusDotClasses(order.status)"></span>
-                                        {{ getStatusLabel(order.status) }}
-                                    </span>
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <span
+                                            class="inline-flex items-center gap-2 justify-center px-3 py-1 rounded-full text-label-medium font-bold"
+                                            :class="getStatusClasses(order.status)">
+                                            <span class="h-2 w-2 rounded-full"
+                                                :class="getStatusDotClasses(order.status)"></span>
+                                            {{ getStatusLabel(order.status) }}
+                                        </span>
+
+                                        <button v-if="order.order_type === 'DELIVERY' && order.delivery_photo"
+                                            @click="openPhotoPreview(order, $event)"
+                                            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container hover:opacity-80 cursor-pointer"
+                                            title="Đã có ảnh xác nhận giao hàng — bấm để xem">
+                                            <span class="material-symbols-outlined text-[15px]">photo_camera</span>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -533,10 +558,18 @@ const closeOrderModal = () => {
                                 <p class="mt-0.5 font-sans text-body-small opacity-80">{{ formatDate(order.created_at)
                                     }}</p>
                             </div>
-                            <span
-                                class="inline-flex items-center gap-1.5 rounded-full bg-surface/70 px-2.5 py-1 font-sans text-label-medium font-bold">
-                                {{ getStatusLabel(order.status) }}
-                            </span>
+                            <div class="flex items-center gap-1.5">
+                                <button v-if="order.order_type === 'DELIVERY' && order.delivery_photo"
+                                    @click="openPhotoPreview(order, $event)"
+                                    class="flex h-7 w-7 items-center justify-center rounded-full bg-surface/70 hover:opacity-80 cursor-pointer"
+                                    title="Đã có ảnh xác nhận giao hàng">
+                                    <span class="material-symbols-outlined text-[15px]">photo_camera</span>
+                                </button>
+                                <span
+                                    class="inline-flex items-center gap-1.5 rounded-full bg-surface/70 px-2.5 py-1 font-sans text-label-medium font-bold">
+                                    {{ getStatusLabel(order.status) }}
+                                </span>
+                            </div>
                         </div>
 
                         <div class="p-4">
@@ -606,6 +639,30 @@ const closeOrderModal = () => {
                 </div>
             </div>
         </div>
+
+        <Teleport to="body">
+            <Transition enter-active-class="transition duration-150 ease-out" enter-from-class="opacity-0"
+                enter-to-class="opacity-100" leave-active-class="transition duration-100 ease-in"
+                leave-from-class="opacity-100" leave-to-class="opacity-0">
+                <div v-if="previewPhoto"
+                    class="fixed inset-0 z-[60] flex items-center justify-center bg-scrim/60 p-4 backdrop-blur-sm"
+                    @click.self="closePhotoPreview">
+                    <div class="max-w-lg w-full rounded-2xl bg-surface p-3 shadow-2xl">
+                        <div class="flex items-center justify-between px-1 pb-2">
+                            <p class="font-sans text-body-small font-bold text-on-surface">
+                                Ảnh xác nhận · #{{ previewPhoto.orderCode }} · {{ previewPhoto.receiverName }}
+                            </p>
+                            <button @click="closePhotoPreview"
+                                class="flex h-7 w-7 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high cursor-pointer">
+                                <span class="material-symbols-outlined text-[18px]">close</span>
+                            </button>
+                        </div>
+                        <img :src="previewPhoto.url" alt="Ảnh xác nhận giao hàng"
+                            class="max-h-[75vh] w-full rounded-xl object-contain" />
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
 
         <OrderDetailModal :order="selectedOrder" @close="closeOrderModal" />
     </AdminLayout>

@@ -42,11 +42,13 @@ class Order extends Model
         'ward',
         'city',
         'latitude',
-        'longitude', 
+        'longitude',
         'goong_place_id',
         'shipper_id',
         'distance',
         'duration',
+        'delivery_photo',
+        'delivery_photo_public_id',
     ];
 
     /**
@@ -63,6 +65,8 @@ class Order extends Model
         'updated_at' => 'datetime',
         'distance' => 'decimal:2',
         'duration' => 'integer',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
     ];
 
     protected $appends = ['barista_progress'];
@@ -118,5 +122,10 @@ class Order extends Model
             'is_complete' => $total > 0 && $done === $total,
             'label' => "{$done}/{$total}",
         ];
+    }
+
+    public function shipper(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'shipper_id');
     }
 }

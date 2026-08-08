@@ -11,12 +11,14 @@ const emit = defineEmits(["close"]);
 const cancelReason = ref("");
 const showCancelForm = ref(false);
 const processing = ref(false);
+const showFullPhoto = ref(false);
 
 watch(
     () => props.order?.id,
     () => {
         showCancelForm.value = false;
         cancelReason.value = "";
+        showFullPhoto.value = false;
     },
 );
 
@@ -417,6 +419,54 @@ const close = () => emit("close");
                                 </div>
                             </div>
 
+                            <!-- Shipper + Ảnh xác nhận giao hàng -->
+                            <div v-if="isDelivery && ['DELIVERING', 'COMPLETED'].includes(order.status)"
+                                class="mb-4 rounded-2xl border border-outline-variant/20 bg-surface p-4">
+                                <h3 class="mb-3 font-sans text-body-medium font-bold text-on-surface">Vận chuyển</h3>
+
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary-container text-on-secondary-container">
+                                            <span class="material-symbols-outlined">two_wheeler</span>
+                                        </div>
+                                        <div>
+                                            <p
+                                                class="font-sans text-label-medium font-semibold uppercase tracking-wide text-on-surface-variant">
+                                                Shipper</p>
+                                            <p v-if="order.shipper"
+                                                class="font-sans text-body-small font-bold text-on-surface">
+                                                {{ order.shipper.full_name }} · {{ order.shipper.phone_number }}
+                                            </p>
+                                            <p v-else class="font-sans text-body-small italic text-on-surface-variant">
+                                                Chưa gán shipper</p>
+                                        </div>
+                                    </div>
+
+                                    <div v-if="order.distance || order.duration"
+                                        class="text-right font-sans text-body-small text-on-surface-variant">
+                                        <p v-if="order.distance">📍 {{ order.distance }} km</p>
+                                        <p v-if="order.duration">⏱ ~{{ order.duration }} phút</p>
+                                    </div>
+                                </div>
+
+                                <!-- Ảnh xác nhận -->
+                                <div class="mt-3">
+                                    <p
+                                        class="mb-1 font-sans text-label-medium font-semibold uppercase tracking-wide text-on-surface-variant">
+                                        Ảnh xác nhận đã giao
+                                    </p>
+                                    <img v-if="order.delivery_photo" :src="order.delivery_photo"
+                                        alt="Ảnh xác nhận giao hàng"
+                                        class="max-h-56 w-full cursor-pointer rounded-xl object-cover transition hover:opacity-90"
+                                        @click="showFullPhoto = true" />
+                                    <p v-else-if="order.status === 'DELIVERING'"
+                                        class="font-sans text-body-small italic text-on-surface-variant">
+                                        Shipper chưa upload ảnh xác nhận
+                                    </p>
+                                </div>
+                            </div>
+
                             <!-- VOUCHER -->
                             <div v-if="coupon"
                                 class="mb-4 flex items-center justify-between rounded-2xl border border-primary/20 bg-primary-container/40 px-4 py-3">
@@ -591,6 +641,27 @@ const close = () => emit("close");
                         </div>
                     </div>
                 </Transition>
+            </div>
+        </Transition>
+    </Teleport>
+
+    <Teleport to="body">
+        <Transition enter-active-class="transition duration-150 ease-out" enter-from-class="opacity-0"
+            enter-to-class="opacity-100" leave-active-class="transition duration-100 ease-in"
+            leave-from-class="opacity-100" leave-to-class="opacity-0">
+            <div v-if="showFullPhoto && order?.delivery_photo"
+                class="fixed inset-0 z-[70] flex items-center justify-center bg-scrim/70 p-4 backdrop-blur-sm"
+                @click.self="showFullPhoto = false">
+                <div class="max-w-2xl w-full">
+                    <div class="mb-2 flex items-center justify-between">
+                        <button @click="showFullPhoto = false"
+                            class="flex h-8 w-8 items-center justify-center rounded-full bg-surface/20 text-on-primary hover:bg-surface/30 cursor-pointer">
+                            <span class="material-symbols-outlined text-[18px]">close</span>
+                        </button>
+                    </div>
+                    <img :src="order.delivery_photo" alt="Ảnh xác nhận giao hàng"
+                        class="max-h-[80vh] w-full rounded-2xl object-contain" />
+                </div>
             </div>
         </Transition>
     </Teleport>

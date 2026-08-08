@@ -19,6 +19,7 @@ class OrderController extends Controller
             ->with([
                 'table:id,table_name,area',
                 'user:id,full_name,phone_number',
+                'shipper:id,full_name,phone_number',
                 'coupon:id,code,discount_type,discount_value',
                 'payment',
                 'details.product:id,product_name,image_url',
@@ -79,6 +80,7 @@ class OrderController extends Controller
         $order->load([
             'table:id,table_name,area',
             'user:id,full_name,phone_number,email',
+            'shipper:id,full_name,phone_number',
             'coupon:id,code,discount_type,discount_value',
             'payment',
             'details.product:id,product_name,image_url',
@@ -118,6 +120,9 @@ class OrderController extends Controller
             if ($validated['status'] === 'CANCELLED' && $order->status === 'DELIVERING') {
                 return ['error' => 'Không thể hủy đơn đang giao hàng.'];
             }
+            if ($validated['status'] === 'COMPLETED' && $order->order_type === 'DELIVERY' && !$order->delivery_photo) {
+                return ['error' => 'Đơn giao hàng cần có ảnh xác nhận trước khi hoàn thành.'];
+            }
 
             if ($validated['status'] === 'READY' || $validated['status'] === 'COMPLETED') {
                 $order->loadMissing('details');
@@ -147,6 +152,7 @@ class OrderController extends Controller
                     'table',
                     'coupon',
                     'payment',
+                    'shipper',
                     'details.product',
                     'details.variant',
                 ])
