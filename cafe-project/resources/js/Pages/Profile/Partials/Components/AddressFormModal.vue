@@ -1,158 +1,432 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { Head, useForm } from '@inertiajs/vue3'
-import { toast } from 'vue3-toastify'
-import ShipperLayout from '@/Layouts/ShipperLayout.vue'
+import { reactive, watch, ref, onUnmounted, nextTick } from "vue";
+import BaseButton from "@/Components/Base/BaseButton.vue";
 
 const props = defineProps({
-    order: Object,
-    shopLat: Number,
-    shopLng: Number,
-})
+    show: Boolean,
+    editingAddress: Object,
+    loading: Boolean,
+    errors: Object,
+});
 
-// Camera/upload
-const deliveryPhoto = ref(null)
-const photoPreview = ref(null)
-const fileInput = ref(null)
+const emit = defineEmits(["close", "submit"]);
 
-const handleFileChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-        deliveryPhoto.value = file
-        photoPreview.value = URL.createObjectURL(file)
-    }
+// ================== CẤU HÌNH & HẰNG SỐ ==================
+const GOONG_API_KEY = import.meta.env.VITE_GOONG_API_KEY;
+import { SHOP_POS, MAX_DELIVERY_DISTANCE_METERS, calculateShippingFee } from "@/Composables/shipping";
+
+// ================== STATE ==================
+const form = reactive({
+    receiver_name: "",
+    receiver_phone: "",
+    address_detail: "",
+    ward: "",
+    city: "Thành phố Đà Nẵng",
+    latitude: null,
+    longitude: null,
+    goong_place_id: null,
+    is_default: false,
+});
+
+const searchInput = ref("");
+const suggestions = ref([]);
+const showSuggestions = ref(false);
+const isOutRange = ref(false);
+const isManualInputError = ref(false); // Lỗi khi người dùng tự gõ tay không qua gợi ý
+const distanceText = ref("");
+const durationText = ref("");
+const shippingFee = ref(0);
+const mapIframeSrc = ref("about:blank");
+
+let debounceTimer = null;
+
+// ================== HELPER FUNCTIONS ==================
+function formatCurrency(value) {
+    return value.toLocaleString("vi-VN") + "đ";
 }
 
-const openCamera = () => {
-    fileInput.value.click()
+function updateMapIframe(destLat, destLng) {
+    if (!destLat || !destLng) {
+        mapIframeSrc.value = "about:blank";
+        return;
+    }
+    mapIframeSrc.value = `https://www.google.com/maps/embed?pb=!1m28!1m12!1m3!1d${Math.floor(
+        Math.random() * 100000
+    )}!2d${destLng}!3d${destLat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!4m13!3e0!4m5!1s${
+        SHOP_POS.lat
+    }%2C${SHOP_POS.lng}!2s${SHOP_POS.lat}%2C${SHOP_POS.lng}!3m2!1d${
+        SHOP_POS.lat
+    }!2d${SHOP_POS.lng}!4m5!1s${destLat}%2C${destLng}!2s${destLat}%2C${destLng}!3m2!1d${destLat}!2d${destLng}!5e0!3m2!1svi!2s!4v${Date.now()}`;
 }
 
-const form = useForm({
-    delivery_photo: null,
-})
+// ================== GOONG MAP SERVICES ==================
+const handleInput = () => {
+    clearTimeout(debounceTimer);
+    const query = searchInput.value.trim();
 
-const submitComplete = () => {
-    if (!deliveryPhoto.value) {
-        toast.error('Vui lòng chụp ảnh xác nhận giao hàng!')
-        return
+    // BẮT BỘC: Ngay khi người dùng sửa chữ tay, hủy ngay lat/lng cũ
+    form.latitude = null;
+    form.longitude = null;
+    form.goong_place_id = null;
+    isManualInputError.value = false;
+
+    if (query.length < 3) {
+        suggestions.value = [];
+        showSuggestions.value = false;
+        return;
     }
-    form.delivery_photo = deliveryPhoto.value
-    form.post(route('shipper.orders.complete', props.order.id), {
-        preserveScroll: true,
-        onSuccess: () => {
-            toast.success('Giao hàng thành công!')
-        },
-        onError: (errors) => {
-            Object.values(errors).forEach(err => toast.error(err))
+
+    debounceTimer = setTimeout(async () => {
+        try {
+            const url = `https://rsapi.goong.io/v2/place/autocomplete?api_key=${GOONG_API_KEY}&input=${encodeURIComponent(
+                query
+            )}&location=${SHOP_POS.lat},${
+                SHOP_POS.lng
+            }&radius=5&limit=5&origin=${SHOP_POS.lat},${
+                SHOP_POS.lng
+            }&more_compound=true`;
+
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.predictions && data.predictions.length) {
+                suggestions.value = data.predictions;
+                showSuggestions.value = true;
+            } else {
+                suggestions.value = [];
+                showSuggestions.value = false;
+            }
+        } catch (err) {
+            console.error("Autocomplete error:", err);
+            suggestions.value = [];
+            showSuggestions.value = false;
         }
-    })
-}
+    }, 500);
+};
 
-// Tính khoảng cách (km) giữa 2 điểm để suy ra zoom
-function calcDistanceKm(lat1, lng1, lat2, lng2) {
-    const R = 6371
-    const dLat = (lat2 - lat1) * Math.PI / 180
-    const dLng = (lng2 - lng1) * Math.PI / 180
-    const a = Math.sin(dLat / 2) ** 2 +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLng / 2) ** 2
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
-}
+const selectPrediction = async (prediction) => {
+    searchInput.value = prediction.description;
+    showSuggestions.value = false;
+    isManualInputError.value = false;
+    await getPlaceDetail(prediction.place_id);
+};
 
-// Tạo iframe Google Maps miễn phí (không API key)
-const mapsUrl = computed(() => {
-    const destLat = parseFloat(props.order.latitude)
-    const destLng = parseFloat(props.order.longitude)
-    const shopLat = parseFloat(props.shopLat)
-    const shopLng = parseFloat(props.shopLng)
+const getPlaceDetail = async (placeId) => {
+    try {
+        const url = `https://rsapi.goong.io/Place/Detail?place_id=${placeId}&api_key=${GOONG_API_KEY}`;
+        const res = await fetch(url);
+        const data = await res.json();
 
-    if (!destLat || !destLng || !shopLat || !shopLng) return ''
+        if (!data.result || !data.result.geometry) return;
 
-    // Tính zoom dựa trên khoảng cách (công thức thực nghiệm)
-    const distanceKm = calcDistanceKm(shopLat, shopLng, destLat, destLng)
-    // zoom từ 12 (rất xa) đến 18 (gần), tính bằng 16 - log2(km * 1000 / 150)
-    let zoom = Math.round(16 - Math.log2(distanceKm * 1000 / 150))
-    zoom = Math.min(18, Math.max(12, zoom)) // giới hạn 12-18
+        const { lat, lng } = data.result.geometry.location;
+        const compound = data.result.compound || {};
 
-    // Timestamp để tránh cache
-    const timestamp = Date.now()
+        form.goong_place_id = placeId;
+        form.latitude = parseFloat(lat);
+        form.longitude = parseFloat(lng);
+        form.address_detail = data.result.formatted_address || searchInput.value;
+        form.ward = compound.ward || compound.district || "Chưa xác định";
+        form.city = compound.province || "Thành phố Đà Nẵng";
 
-    // Tọa độ trung tâm là điểm đến (dest)
-    return `https://www.google.com/maps/embed?pb=!1m28!1m12!1m3!1d${zoom}!2d${destLng}!3d${destLat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!4m13!3e0!4m5!1s${shopLat}%2C${shopLng}!2s${shopLat}%2C${shopLng}!3m2!1d${shopLat}!2d${shopLng}!4m5!1s${destLat}%2C${destLng}!2s${destLat}%2C${destLng}!3m2!1d${destLat}!2d${destLng}!5e0!3m2!1svi!2s!4v${timestamp}`
-})
-
-const openExternalMap = () => {
-    const destLat = props.order.latitude
-    const destLng = props.order.longitude
-    if (destLat && destLng) {
-        window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank')
+        await calculateDirection(lat, lng);
+    } catch (err) {
+        console.error("Place Detail error:", err);
     }
+};
+
+const calculateDirection = async (destLat, destLng) => {
+    try {
+        const url = `https://rsapi.goong.io/Direction?api_key=${GOONG_API_KEY}&origin=${SHOP_POS.lat},${SHOP_POS.lng}&destination=${destLat},${destLng}&vehicle=car`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.routes || data.routes.length === 0) {
+            isOutRange.value = true;
+            mapIframeSrc.value = "about:blank";
+            return;
+        }
+
+        const leg = data.routes[0].legs[0];
+        const distanceMeters = leg.distance.value;
+
+        distanceText.value = leg.distance.text;
+        durationText.value = leg.duration.text;
+
+        const fee = calculateShippingFee(distanceMeters);
+
+        if (distanceMeters > MAX_DELIVERY_DISTANCE_METERS || fee === null) {
+            isOutRange.value = true;
+            mapIframeSrc.value = "about:blank";
+        } else {
+            isOutRange.value = false;
+            shippingFee.value = fee;
+            updateMapIframe(destLat, destLng);
+        }
+    } catch (err) {
+        console.error("Direction error:", err);
+    }
+};
+
+// ================== WATCHERS ==================
+watch(
+    () => [props.show, props.editingAddress],
+    async ([newShow, newEditing]) => {
+        if (newShow) {
+            // Reset state
+            isOutRange.value = false;
+            isManualInputError.value = false;
+            distanceText.value = "";
+            durationText.value = "";
+            shippingFee.value = 0;
+            showSuggestions.value = false;
+
+            if (newEditing && Object.keys(newEditing).length > 0) {
+                const lat = newEditing.latitude ? parseFloat(newEditing.latitude) : null;
+                const lng = newEditing.longitude ? parseFloat(newEditing.longitude) : null;
+
+                Object.assign(form, {
+                    receiver_name: newEditing.receiver_name || "",
+                    receiver_phone: newEditing.receiver_phone || "",
+                    address_detail: newEditing.address_detail || "",
+                    ward: newEditing.ward || "",
+                    city: newEditing.city || "Thành phố Đà Nẵng",
+                    latitude: lat,
+                    longitude: lng,
+                    goong_place_id: newEditing.goong_place_id || null,
+                    is_default: !!newEditing.is_default,
+                });
+
+                const fullText = [
+                    newEditing.address_detail,
+                    newEditing.ward,
+                    newEditing.city
+                ].filter(Boolean).join(", ");
+
+                searchInput.value = fullText || newEditing.address_detail || "";
+
+                await nextTick();
+
+                if (lat && lng) {
+                    await calculateDirection(lat, lng);
+                } else {
+                    updateMapIframe(SHOP_POS.lat, SHOP_POS.lng);
+                }
+            } else {
+                Object.assign(form, {
+                    receiver_name: "",
+                    receiver_phone: "",
+                    address_detail: "",
+                    ward: "",
+                    city: "Thành phố Đà Nẵng",
+                    latitude: null,
+                    longitude: null,
+                    goong_place_id: null,
+                    is_default: false,
+                });
+                searchInput.value = "";
+                updateMapIframe(SHOP_POS.lat, SHOP_POS.lng);
+            }
+        }
+    },
+    { immediate: true, deep: true }
+);
+
+const handleClickOutside = (e) => {
+    if (!e.target.closest(".autocomplete-container")) {
+        showSuggestions.value = false;
+    }
+};
+
+if (typeof window !== "undefined") {
+    document.addEventListener("click", handleClickOutside);
 }
+
+onUnmounted(() => {
+    if (typeof window !== "undefined") {
+        document.removeEventListener("click", handleClickOutside);
+    }
+});
+
+// ================== SUBMIT ==================
+const handleSubmit = () => {
+    // 1. Kiểm tra BẮT BỘC phải chọn từ gợi ý để có lat/lng
+    if (!form.latitude || !form.longitude) {
+        isManualInputError.value = true;
+        return;
+    }
+
+    // 2. Kiểm tra bán kính 5km
+    if (isOutRange.value) return;
+
+    form.address_detail = searchInput.value || form.address_detail;
+
+    emit("submit", {
+        ...form,
+        latitude: parseFloat(form.latitude),
+        longitude: parseFloat(form.longitude),
+    });
+};
 </script>
 
 <template>
-    <ShipperLayout>
-        <Head title="Giao hàng" />
-        <div class="flex flex-col lg:flex-row h-full">
-            <!-- Cột trái: Thông tin đơn -->
-            <div class="lg:w-1/2 p-6 bg-white border-r overflow-y-auto">
-                <h2 class="text-xl font-bold mb-4">Đơn hàng #{{ order.id }}</h2>
-                <div class="space-y-3 text-sm">
-                    <p><strong>Khách hàng:</strong> {{ order.user?.full_name || '...' }}</p>
-                    <p><strong>SĐT:</strong> {{ order.user?.phone_number || order.receiver_phone }}</p>
-                    <p><strong>Địa chỉ:</strong> {{ order.address_detail }}, {{ order.ward }}, {{ order.city }}</p>
-                    <p><strong>Tiền ship:</strong> {{ Number(order.shipping_fee).toLocaleString('vi-VN') }}đ</p>
-                    <p><strong>Tổng tiền:</strong> {{ Number(order.final_amount).toLocaleString('vi-VN') }}đ</p>
-                    <p><strong>Thanh toán:</strong> {{ order.payment?.payment_method === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản' }}</p>
+    <Teleport to="body">
+        <div
+            v-if="show"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 md:p-6 backdrop-blur-sm"
+        >
+            <div
+                class="bg-surface w-full h-full md:h-auto md:max-h-[92vh] md:max-w-2xl rounded-none md:rounded-2xl border border-outline-variant/20 p-6 md:p-8 space-y-5 overflow-y-auto flex flex-col shadow-2xl"
+            >
+                <!-- Header -->
+                <div class="flex justify-between items-center border-b border-outline-variant/20 pb-4">
+                    <h3 class="font-serif text-headline-sm text-primary font-semibold">
+                        {{ editingAddress ? "Sửa địa chỉ nhận hàng" : "Thêm địa chỉ mới" }}
+                    </h3>
+                    <button
+                        @click="emit('close')"
+                        class="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full transition-colors"
+                    >
+                        <span class="material-symbols-outlined text-xl">close</span>
+                    </button>
                 </div>
 
-                <div class="mt-4">
-                    <h4 class="font-semibold mb-2">Sản phẩm:</h4>
-                    <ul class="space-y-2">
-                        <li v-for="detail in order.details" :key="detail.id" class="flex justify-between text-sm">
-                            <span>{{ detail.product?.product_name }} ({{ detail.variant?.size }}) x{{ detail.quantity }}</span>
-                            <span>{{ Number(detail.unit_price * detail.quantity).toLocaleString('vi-VN') }}đ</span>
-                        </li>
-                    </ul>
-                    <p v-if="order.note" class="text-xs text-gray-500 mt-2">Ghi chú: {{ order.note }}</p>
-                </div>
+                <!-- Form Inputs -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Tên người nhận -->
+                    <div class="space-y-1">
+                        <input
+                            v-model="form.receiver_name"
+                            placeholder="Tên người nhận"
+                            class="w-full px-4 py-2.5 bg-surface border rounded-xl font-sans text-body-md focus:outline-none focus:border-secondary"
+                            :class="errors?.receiver_name ? 'border-red-500' : 'border-outline-variant/30'"
+                        />
+                        <p v-if="errors?.receiver_name" class="text-red-500 text-xs font-sans pl-1">
+                            {{ Array.isArray(errors.receiver_name) ? errors.receiver_name[0] : errors.receiver_name }}
+                        </p>
+                    </div>
 
-                <div class="mt-6 border-t pt-4">
-                    <h4 class="font-semibold mb-3">Xác nhận giao hàng</h4>
-                    <div class="flex flex-col items-center">
-                        <input ref="fileInput" type="file" accept="image/*" capture="environment" class="hidden" @change="handleFileChange">
-                        <div class="flex gap-4 mb-4">
-                            <button type="button" @click="openCamera" class="px-4 py-2 bg-gray-200 rounded-full text-sm flex items-center gap-2">
-                                <span class="material-symbols-outlined">camera_alt</span> Chụp ảnh
-                            </button>
-                            <label class="px-4 py-2 bg-gray-200 rounded-full text-sm flex items-center gap-2 cursor-pointer">
-                                <span class="material-symbols-outlined">upload</span> Tải lên
-                                <input type="file" accept="image/*" class="hidden" @change="handleFileChange">
-                            </label>
+                    <!-- Số điện thoại -->
+                    <div class="space-y-1">
+                        <input
+                            v-model="form.receiver_phone"
+                            placeholder="Số điện thoại"
+                            class="w-full px-4 py-2.5 bg-surface border rounded-xl font-sans text-body-md focus:outline-none focus:border-secondary"
+                            :class="errors?.receiver_phone ? 'border-red-500' : 'border-outline-variant/30'"
+                        />
+                        <p v-if="errors?.receiver_phone" class="text-red-500 text-xs font-sans pl-1">
+                            {{ Array.isArray(errors.receiver_phone) ? errors.receiver_phone[0] : errors.receiver_phone }}
+                        </p>
+                    </div>
+
+                    <!-- Ô tìm kiếm địa chỉ tự động (Goong Autocomplete) -->
+                    <div class="md:col-span-2 space-y-1 relative autocomplete-container">
+                        <div class="relative">
+                            <input
+                                v-model="searchInput"
+                                @input="handleInput"
+                                placeholder="Nhập địa chỉ nhận hàng (Ví dụ: 123 Nguyễn Văn Linh...)"
+                                class="w-full pl-10 pr-4 py-2.5 bg-surface border rounded-xl font-sans text-body-md focus:outline-none focus:border-secondary"
+                                :class="errors?.address_detail || isOutRange || isManualInputError ? 'border-red-500' : 'border-outline-variant/30'"
+                            />
+                            <span class="material-symbols-outlined absolute left-3 top-3 text-gray-400 text-lg">location_on</span>
                         </div>
-                        <div v-if="photoPreview" class="mb-4">
-                            <img :src="photoPreview" alt="Preview" class="max-w-xs rounded-lg shadow">
+
+                        <!-- Dropdown gợi ý địa chỉ -->
+                        <div
+                            v-if="showSuggestions && suggestions.length"
+                            class="absolute z-50 left-0 right-0 mt-1 bg-surface border border-outline-variant/30 rounded-xl shadow-xl max-h-60 overflow-y-auto"
+                        >
+                            <div
+                                v-for="p in suggestions"
+                                :key="p.place_id"
+                                @click="selectPrediction(p)"
+                                class="p-3 hover:bg-surface-container-low cursor-pointer border-b border-outline-variant/10 text-sm flex items-center gap-2 text-on-surface"
+                            >
+                                <span class="text-gray-400">📍</span>
+                                <span>{{ p.description }}</span>
+                            </div>
                         </div>
-                        <button @click="submitComplete" :disabled="form.processing"
-                                class="bg-primary text-white px-6 py-2.5 rounded-full shadow hover:bg-primary-dark transition disabled:opacity-50">
-                            Hoàn thành giao hàng
-                        </button>
+
+                        <!-- Cảnh báo nếu tự gõ tay không chọn từ danh sách -->
+                        <p v-if="isManualInputError" class="text-red-500 text-xs font-sans pl-1">
+                            Vui lòng chọn một địa chỉ cụ thể từ danh sách gợi ý bên dưới để định vị bản đồ.
+                        </p>
+                        <p v-else-if="errors?.address_detail" class="text-red-500 text-xs font-sans pl-1">
+                            {{ Array.isArray(errors.address_detail) ? errors.address_detail[0] : errors.address_detail }}
+                        </p>
+                    </div>
+
+                    <!-- Cảnh báo nếu nằm ngoài bán kính 5km -->
+                    <div v-if="isOutRange" class="md:col-span-2 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm">
+                        <span class="material-symbols-outlined text-lg">warning</span>
+                        <span>Địa chỉ này vượt quá bán kính giao hàng (tối đa 5km từ cửa hàng). Vui lòng chọn địa điểm khác!</span>
+                    </div>
+
+                    <!-- Panel hiển thị khoảng cách và phí ship -->
+                    <div v-if="distanceText && !isOutRange" class="md:col-span-2 p-3 bg-surface-container-low border border-outline-variant/20 rounded-xl grid grid-cols-3 gap-2 text-center text-xs md:text-sm">
+                        <div>
+                            <span class="text-on-surface-variant block">Khoảng cách</span>
+                            <strong class="text-primary font-semibold">{{ distanceText }}</strong>
+                        </div>
+                        <div>
+                            <span class="text-on-surface-variant block">Thời gian giao</span>
+                            <strong class="text-primary font-semibold">{{ durationText }}</strong>
+                        </div>
+                        <div>
+                            <span class="text-on-surface-variant block">Phí vận chuyển</span>
+                            <strong class="text-secondary font-bold">{{ formatCurrency(shippingFee) }}</strong>
+                        </div>
+                    </div>
+
+                    <!-- Iframe Google Map dẫn đường -->
+                    <div class="md:col-span-2 w-full h-48 md:h-56 rounded-xl overflow-hidden border border-outline-variant/30 relative">
+                        <iframe
+                            :src="mapIframeSrc"
+                            class="w-full h-full border-0"
+                            allowfullscreen=""
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade"
+                        ></iframe>
+                    </div>
+
+                    <!-- Checkbox địa chỉ mặc định -->
+                    <label class="md:col-span-2 flex items-center gap-2 cursor-pointer pt-1">
+                        <input
+                            v-model="form.is_default"
+                            type="checkbox"
+                            class="w-4 h-4 rounded border-outline-variant/50 text-primary focus:ring-secondary/30"
+                        />
+                        <span class="font-sans text-label-sm text-on-surface-variant">Đặt làm địa chỉ mặc định</span>
+                    </label>
+
+                    <!-- GHI CHÚ BÁN KÍNH GIAO HÀNG (NOTE DƯỚI CÙNG) -->
+                    <div class="md:col-span-2 pt-1">
+                        <p class="font-sans text-xs italic text-amber-600 font-medium flex items-center gap-1">
+                            <span>*</span> Chỉ hỗ trợ giao hàng trong bán kính 5km trở xuống.
+                        </p>
                     </div>
                 </div>
-            </div>
 
-            <!-- Cột phải: Bản đồ -->
-            <div class="lg:w-1/2 h-[70vh] lg:h-auto relative">
-                <iframe v-if="mapsUrl" :src="mapsUrl" class="w-full h-full border-0" allowfullscreen loading="lazy"></iframe>
-                <div v-else class="flex items-center justify-center h-full text-gray-400">
-                    Không có dữ liệu bản đồ.
+                <!-- Footer nút bấm -->
+                <div class="flex gap-3 justify-end pt-4 border-t border-outline-variant/20">
+                    <button
+                        @click="emit('close')"
+                        type="button"
+                        class="px-5 py-2.5 border border-outline-variant/30 rounded-full font-sans text-label-sm text-on-surface-variant hover:bg-surface-container-low transition-colors"
+                    >
+                        Hủy
+                    </button>
+                    <BaseButton
+                        @click="handleSubmit"
+                        variant="primary"
+                        :disabled="loading || isOutRange"
+                        class="px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {{ loading ? "Đang lưu..." : editingAddress ? "Cập nhật" : "Lưu địa chỉ" }}
+                    </BaseButton>
                 </div>
-                <button @click="openExternalMap"
-                        class="absolute bottom-4 right-4 bg-white shadow-lg px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 hover:bg-gray-100 transition">
-                    <span class="material-symbols-outlined">open_in_new</span> Mở Google Maps
-                </button>
             </div>
         </div>
-    </ShipperLayout>
+    </Teleport>
 </template>

@@ -2,15 +2,88 @@ import { ref } from "vue";
 import { router, usePage } from "@inertiajs/vue3";
 
 let googleInitialized = false;
+let googleSdkPromise = null;
 let oneTapDisplayed = false;
 let retryCount = 0;
+
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
 
+const loadGoogleScript = () => {
+    // Google SDK đã có sẵn
+    if (window.google?.accounts?.id) {
+        return Promise.resolve();
+    }
 
-const isAuthenticated = () => {
-    const page = usePage();
-    return !!page.props.auth?.user;
+    // Đang có một request load SDK khác
+    // Tất cả component sẽ dùng chung Promise này
+    if (googleSdkPromise) {
+        return googleSdkPromise;
+    }
+
+    googleSdkPromise = new Promise((resolve, reject) => {
+        const scriptUrl = "https://accounts.google.com/gsi/client";
+
+        const existingScript = document.querySelector(
+            `script[src="${scriptUrl}"]`
+        );
+
+        // Script đã tồn tại nhưng chưa load xong
+        if (existingScript) {
+            const checkLoaded = () => {
+                if (window.google?.accounts?.id) {
+                    resolve();
+                } else {
+                    reject(new Error("Google SDK không khả dụng"));
+                }
+            };
+
+            existingScript.addEventListener("load", checkLoaded, {
+                once: true,
+            });
+
+            existingScript.addEventListener(
+                "error",
+                () => {
+                    reject(new Error("Không thể tải Google SDK"));
+                },
+                { once: true }
+            );
+
+            return;
+        }
+
+        const script = document.createElement("script");
+
+        script.src = scriptUrl;
+        script.async = true;
+        script.defer = true;
+
+        const timeout = setTimeout(() => {
+            googleSdkPromise = null;
+            reject(new Error("Google SDK tải quá thời gian chờ"));
+        }, 10000);
+
+        script.onload = () => {
+            clearTimeout(timeout);
+
+            if (window.google?.accounts?.id) {
+                resolve();
+            } else {
+                reject(new Error("Google SDK đã load nhưng không khả dụng"));
+            }
+        };
+
+        script.onerror = () => {
+            clearTimeout(timeout);
+            googleSdkPromise = null;
+            reject(new Error("Không thể tải Google SDK"));
+        };
+
+        document.head.appendChild(script);
+    });
+
+    return googleSdkPromise;
 };
 
 export function useGoogleOneTap() {
@@ -18,6 +91,12 @@ export function useGoogleOneTap() {
     const loading = ref(false);
     const errors = ref({});
     const isBlocked = ref(false);
+
+    const isAuthenticated = () => {
+        const page = usePage();
+
+        return !!page.props.auth?.user;
+    };
 
     const handleGoogleCredentialResponse = (response) => {
         loading.value = true;
@@ -30,169 +109,194 @@ export function useGoogleOneTap() {
             },
             {
                 preserveState: true,
+
                 onError: (err) => {
                     errors.value = err;
                 },
+
                 onFinish: () => {
                     loading.value = false;
                 },
-            },
+            }
         );
     };
 
     const showFallbackButton = () => {
         isBlocked.value = true;
         oneTapDisplayed = false;
-        googleInitialized = false;
-        isGoogleInitialized.value = false;
-        console.warn("Google One Tap bị chặn hoặc không hiển thị. Chuyển sang nút bấm thủ công.");
+
+        console.warn(
+            "Google One Tap không hiển thị. Có thể sử dụng nút Google thủ công."
+        );
     };
 
     const handlePromptNotification = (notification) => {
         if (notification.isNotDisplayed()) {
             const reason = notification.getNotDisplayedReason();
+
             console.log("One Tap không hiển thị:", reason);
 
-            if (
-                reason === "opt_out_or_no_session" ||
-                reason === "suppressed_by_user" ||
-                reason === "auto_cancel" ||
-                reason === "user_cancel" ||
-                reason === "browser_not_supported" ||
-                reason === "invalid_browser" ||
-                reason === "unknown_reason"
-            ) {
-                showFallbackButton();
-            } else if (retryCount < MAX_RETRIES && reason === "network_error") {
+            if (reason === "network_error" && retryCount < MAX_RETRIES) {
                 retryCount++;
+
                 setTimeout(() => {
                     attemptOneTapPrompt();
                 }, RETRY_DELAY * retryCount);
-            } else {
-                showFallbackButton();
+
+                return;
             }
+
+            showFallbackButton();
         }
 
         if (notification.isSkippedMoment()) {
-            console.log("One Tap bị bỏ qua:", notification.getSkippedReason());
+            console.log(
+                "One Tap bị bỏ qua:",
+                notification.getSkippedReason()
+            );
         }
 
         if (notification.isDismissedMoment()) {
-            console.log("One Tap bị đóng:", notification.getDismissedReason());
+            console.log(
+                "One Tap bị đóng:",
+                notification.getDismissedReason()
+            );
+
             showFallbackButton();
         }
     };
 
     const attemptOneTapPrompt = () => {
-        if (!window.google?.accounts?.id) return;
-        if (!isGoogleInitialized.value) return;
-        if (isBlocked.value) return;
+        if (!window.google?.accounts?.id) {
+            return;
+        }
+
+        if (!isGoogleInitialized.value) {
+            return;
+        }
 
         try {
             window.google.accounts.id.prompt(handlePromptNotification);
+
             oneTapDisplayed = true;
         } catch (error) {
-            console.error("Lỗi khi gọi Google One Tap prompt:", error);
+            console.error(
+                "Lỗi khi gọi Google One Tap prompt:",
+                error
+            );
+
             showFallbackButton();
         }
     };
 
     const initGoogleOneTap = () => {
         const page = usePage();
-        const googleClientId = page.props.auth_config?.google_client_id;
 
-        if (!googleClientId || googleInitialized) return;
-        if (!window.google?.accounts?.id) return;
+        const googleClientId =
+            page.props.auth_config?.google_client_id;
 
-        if (isBlocked.value) return;
+        if (!googleClientId) {
+            console.warn("Không tìm thấy Google Client ID");
+            return false;
+        }
+
+        if (!window.google?.accounts?.id) {
+            console.warn("Google SDK chưa sẵn sàng");
+            return false;
+        }
+
+        // Đã initialize rồi
+        if (googleInitialized) {
+            isGoogleInitialized.value = true;
+            return true;
+        }
 
         try {
             window.google.accounts.id.initialize({
                 client_id: googleClientId,
+
                 callback: handleGoogleCredentialResponse,
+
                 auto_select: false,
+
                 use_fedcm_for_prompt: false,
+
                 cancel_on_tap_outside: false,
+
                 context: "signin",
+
                 itp_support: true,
             });
 
             googleInitialized = true;
+
             isGoogleInitialized.value = true;
 
-            window.google.accounts.id.prompt(handlePromptNotification);
-            oneTapDisplayed = true;
+            // One Tap chỉ prompt nếu chưa bị block
+            if (!isBlocked.value) {
+                attemptOneTapPrompt();
+            }
+
+            return true;
         } catch (error) {
-            console.error("Lỗi khởi tạo Google One Tap:", error);
-            showFallbackButton();
+            console.error(
+                "Lỗi khởi tạo Google One Tap:",
+                error
+            );
+
+            return false;
         }
     };
 
-    const loadGoogleScript = () => {
-        return new Promise((resolve, reject) => {
-            if (window.google?.accounts?.id) {
-                resolve();
-                return;
-            }
+    const initialize = async () => {
+        if (isAuthenticated()) {
+            return false;
+        }
 
-            const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
-            if (existingScript) {
-                existingScript.onload = () => resolve();
-                existingScript.onerror = () => {
-                    showFallbackButton();
-                    reject(new Error("Không thể tải Google SDK"));
-                };
-                return;
-            }
+        try {
+            // Chờ Google SDK thật sự load xong
+            await loadGoogleScript();
 
-            const script = document.createElement("script");
-            script.src = "https://accounts.google.com/gsi/client";
-            script.async = true;
-            script.defer = true;
+            // Initialize Google
+            return initGoogleOneTap();
+        } catch (error) {
+            console.error(
+                "Khởi tạo Google One Tap thất bại:",
+                error
+            );
 
-            const timeout = setTimeout(() => {
-                showFallbackButton();
-                reject(new Error("Google SDK tải quá thời gian chờ"));
-            }, 10000);
-
-            script.onload = () => {
-                clearTimeout(timeout);
-                resolve();
-            };
-
-            script.onerror = () => {
-                clearTimeout(timeout);
-                showFallbackButton();
-                reject(new Error("Không thể tải Google SDK"));
-            };
-
-            document.head.appendChild(script);
-        });
+            return false;
+        }
     };
 
-    const triggerGooglePrompt = () => {
+    const triggerGooglePrompt = async () => {
         const page = usePage();
 
-        if (isBlocked.value && page.props.auth_config?.google_client_id) {
-            isBlocked.value = false;
-            retryCount = 0;
-            initialize();
+        const googleClientId =
+            page.props.auth_config?.google_client_id;
+
+        if (!googleClientId) {
+            errors.value = {
+                error:
+                    "Hệ thống kết nối Google đang bận, vui lòng thử lại sau giây lát!",
+            };
+
             return;
         }
 
-        if (window.google?.accounts?.id && isGoogleInitialized.value) {
+        // Nếu chưa initialize thì initialize trước
+        if (!googleInitialized) {
+            await initialize();
+        }
+
+        if (
+            window.google?.accounts?.id &&
+            isGoogleInitialized.value
+        ) {
+            isBlocked.value = false;
+            retryCount = 0;
+
             attemptOneTapPrompt();
-        } else if (page.props.auth_config?.google_client_id) {
-            initGoogleOneTap();
-            setTimeout(() => {
-                if (isGoogleInitialized.value) {
-                    attemptOneTapPrompt();
-                }
-            }, 500);
-        } else {
-            errors.value = {
-                error: "Hệ thống kết nối Google đang bận, vui lòng thử lại sau giây lát!",
-            };
         }
     };
 
@@ -200,51 +304,30 @@ export function useGoogleOneTap() {
         googleInitialized = false;
         oneTapDisplayed = false;
         retryCount = 0;
+
         isBlocked.value = false;
         isGoogleInitialized.value = false;
 
         if (window.google?.accounts?.id) {
             try {
                 window.google.accounts.id.cancel();
-            } catch (e) {
-                // Bỏ qua lỗi cancel
+            } catch (error) {
+                // Ignore
             }
         }
     };
-
-    const isAuthenticated = () => {
-        const page = usePage();
-        return !!page.props.auth?.user;
-    };
-
-    const initialize = async () => {
-        if(isAuthenticated()) {
-            showFallbackButton();
-            return;
-        }
-
-        if (isBlocked.value) {
-            console.log("Google One Tap đang bị chặn, bỏ qua khởi tạo");
-            return;
-        }
-
-        try {
-            await loadGoogleScript();
-            await new Promise((resolve) => setTimeout(resolve, 300));
-            initGoogleOneTap();
-        } catch (error) {
-            console.error("Khởi tạo Google One Tap thất bại:", error);
-        }
-    };
-
 
     return {
         isGoogleInitialized,
         isBlocked,
         loading,
         errors,
+
         initialize,
         triggerGooglePrompt,
         resetGoogleState,
+
+        // Export để Login.vue có thể đảm bảo SDK đã load
+        loadGoogleScript,
     };
 }
