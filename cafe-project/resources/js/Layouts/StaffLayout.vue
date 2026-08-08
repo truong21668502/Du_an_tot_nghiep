@@ -222,10 +222,6 @@ const submitNewOrder = () => {
             </nav>
 
             <div class="mt-auto flex flex-col gap-2 text-label-md px-2 pt-4 border-t border-outline-variant/30">
-                <a href="#" class="flex items-center gap-4 text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 hover:text-primary transition-colors duration-300 group">
-                    <span class="material-symbols-outlined group-hover:text-primary transition-colors duration-300">settings</span>
-                    Cài đặt
-                </a>
                 <Link :href="route('logout')" method="post" as="button" class="flex items-center w-full text-left gap-4 text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 hover:text-error transition-colors duration-300 group">
                     <span class="material-symbols-outlined group-hover:text-error transition-colors duration-300">logout</span>
                     Đăng xuất
@@ -299,10 +295,6 @@ const submitNewOrder = () => {
                         {{ link.label }}
                     </Link>
                     <div class="mt-4 pt-4 border-t border-outline-variant/30 space-y-3">
-                        <button class="flex items-center gap-4 py-3 px-4 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all w-full text-left">
-                            <span class="material-symbols-outlined">settings</span>
-                            <span class="text-body-md">Cài đặt</span>
-                        </button>
                         <Link :href="route('logout')" method="post" as="button" class="flex items-center gap-4 py-3 px-4 rounded-lg text-error hover:bg-error-container/50 transition-all w-full text-left">
                             <span class="material-symbols-outlined">logout</span>
                             <span class="text-body-md font-bold">Đăng xuất</span>

@@ -98,16 +98,6 @@ const completeOrder = (orderId) => {
     });
 };
 
-const startDelivering = (orderId) => {
-    router.patch(route('staff.orders.start-delivering', orderId), {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            orders.value = orders.value.filter(o => o.id !== orderId);
-            closeOrderModal();
-        }
-    });
-};
-
 const cancelOrder = (orderId) => {
     router.patch(route('staff.orders.cancel', orderId), {}, {
         preserveScroll: true,
@@ -769,13 +759,20 @@ onUnmounted(() => {
                                     </span>
                                 </div>
                             </div>
-                            <span
-                                class="text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap flex-shrink-0 border"
-                                :class="order.status === 'PENDING'
-                                    ? 'bg-error/10 text-error border-error/20'
-                                    : (order.status === 'READY' ? 'bg-green-500/10 text-green-600 border-green-500/20' : 'bg-primary/10 text-primary border-primary/20')">
-                                {{ order.status === 'PENDING' ? 'Chờ xử lý' : (order.status === 'READY' ? 'Sẵn sàng giao' : 'Đang xử lý') }}
-                            </span>
+                            <div class="flex flex-col items-end gap-1">
+                                <span
+                                    class="text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap flex-shrink-0 border"
+                                    :class="order.status === 'PENDING'
+                                        ? 'bg-error/10 text-error border-error/20'
+                                        : (order.status === 'READY' ? 'bg-green-500/10 text-green-600 border-green-500/20' : 'bg-primary/10 text-primary border-primary/20')">
+                                    {{ order.status === 'PENDING' ? 'Chờ xử lý' : (order.status === 'READY' ? 'Sẵn sàng giao' : 'Đang xử lý') }}
+                                </span>
+                                <div v-if="order.estimated_prep_time && order.status === 'PENDING'" 
+                                        class="flex items-center gap-0.5 text-[10px] font-medium text-error" title="AI Dự đoán thời gian">
+                                    <span class="material-symbols-outlined text-[12px] animate-pulse">timer</span>
+                                    ~{{ order.estimated_prep_time }}p
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Items preview -->
@@ -1083,10 +1080,7 @@ onUnmounted(() => {
                                     class="px-5 py-2 rounded-xl font-bold text-[13px] flex items-center gap-2 transition-all border bg-error/5 text-error border-error/20 hover:bg-error/10">
                                     <span class="material-symbols-outlined text-[18px]">cancel</span> Hủy đơn
                                 </button>
-                                <button v-if="selectedOrder?.status === 'READY' && selectedOrder?.order_type === 'DELIVERY'" @click="startDelivering(selectedOrder.id)"
-                                    class="px-5 py-2 rounded-xl bg-primary text-on-primary font-bold text-[13px] hover:bg-primary/90 flex items-center gap-2 transition-all shadow-sm">
-                                    <span class="material-symbols-outlined text-[18px]">delivery_dining</span> Đưa shipper
-                                </button>
+
                                 <button v-if="selectedOrder?.status === 'PENDING'"
                                     @click="acceptOrder(selectedOrder.id)"
                                     class="px-6 py-2 rounded-xl font-bold text-[13px] text-on-primary flex items-center gap-2 transition-all shadow-sm hover:opacity-90 bg-primary">

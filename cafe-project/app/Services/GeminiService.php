@@ -323,4 +323,52 @@ class GeminiService
             return 'Lỗi kết nối đến máy chủ AI.';
         }
     }
+
+    /**
+     * Ước lượng thời gian pha chế cho đơn hàng mới
+     */
+    public function estimateOrderPrepTime(array $newOrderDetails): ?int
+    {
+        $apiKey      = config('ai.ai_key');
+        $model       = config('ai.models.primary', 'gemini-1.5-flash');
+        $maxTokens   = 10; // Chỉ cần trả về số phút
+        $temperature = 0.2; // Rất thấp để câu trả lời chính xác và logic
+
+        $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+
+        $systemPrompt = "Bạn là một Quản lý quầy pha chế xuất sắc. Nhiệm vụ của bạn là tính toán ĐỘ KHÓ và ƯỚC LƯỢNG THỜI GIAN (bằng phút) ĐỂ PHA CHẾ RIÊNG cho đơn hàng đồ uống mới này.\n"
+            . "Dữ liệu Đơn mới: " . json_encode($newOrderDetails, JSON_UNESCAPED_UNICODE) . "\n\n"
+            . "QUY TẮC TÍNH TOÁN (Tham khảo):\n"
+            . "- Mỗi ly đồ uống thông thường (Cà phê đá, Trà chanh) mất khoảng 2-3 phút để làm.\n"
+            . "- Đồ uống phức tạp (Trà sữa chân trâu, Latte, Sinh tố) mất khoảng 4-5 phút.\n"
+            . "- Các món đóng chai sẵn (Nước suối, Bò húc) mất 0 phút.\n"
+            . "- Trả về DUY NHẤT một con số nguyên đại diện cho TỔNG SỐ PHÚT CHỜ DỰ KIẾN để hoàn thành các món trong đơn này (không kèm bất kỳ chữ nào khác). Ví dụ: 10";
+
+        try {
+            $response = Http::timeout(3)->withHeaders(['Content-Type' => 'application/json'])->post($apiUrl, [
+                'system_instruction' => ['parts' => [['text' => $systemPrompt]]],
+                'contents' => [
+                    ['role' => 'user', 'parts' => [['text' => 'Dự đoán thời gian cho đơn này là bao nhiêu phút?']]]
+                ],
+                'generationConfig' => [
+                    'temperature' => (float) $temperature,
+                    'maxOutputTokens' => (int) $maxTokens,
+                ]
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $reply = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                // Lấy ra con số đầu tiên trong câu trả lời
+                if (preg_match('/\d+/', $reply, $matches)) {
+                    return (int) $matches[0];
+                }
+            }
+
+            return null; // Fallback nếu AI trả lời sai định dạng
+        } catch (\Exception $e) {
+            Log::error('Gemini Estimate Prep Time Exception: ' . $e->getMessage());
+            return null; // Trả về null để chạy fallback
+        }
+    }
 }
