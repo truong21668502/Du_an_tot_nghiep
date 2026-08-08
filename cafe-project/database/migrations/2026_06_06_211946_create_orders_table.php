@@ -34,7 +34,6 @@ return new class extends Migration
                 ->comment('Mã bàn ăn (Khóa ngoại, NULL nếu mang đi hoặc giao hàng)');
             
             $table->foreignId('shipper_id')->nullable()->constrained('users')->nullOnDelete();
-
             $table->string('delivery_photo')->nullable()->comment('Ảnh xác nhận đã giao hàng');
             $table->string('delivery_photo_public_id')->nullable()->comment('Public ID trên Cloudinary để xoá ảnh');
             $table->decimal('distance', 5, 2)->nullable()->comment('Khoảng cách giao hàng (km)');
