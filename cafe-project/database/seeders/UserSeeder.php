@@ -119,7 +119,7 @@ class UserSeeder extends Seeder
                 'phone_number' => '0904000002',
                 'email' => 'customer2@gmail.com',
                 'password' => Hash::make('Customer@123'),
-                'role' => 'CUSTOMER',
+                'role' => 'SHIPPER',
                 'gender' => 'Nam',
                 'date_of_birth' => '2002-09-05',
                 'reward_points' => 80,

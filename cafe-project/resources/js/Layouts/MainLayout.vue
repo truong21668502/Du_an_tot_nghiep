@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { ref, computed, watch } from 'vue'
 import { usePage, router, Link } from '@inertiajs/vue3'
 import ChatBox from '@/Components/Chat/ChatBox.vue'
@@ -246,7 +246,7 @@ router.on('navigate', () => {
           </div>
         
           <!-- Fanpage Facebook Plugin -->
-          <div class="w-full max-w-[340px] overflow-hidden rounded-lg shadow-sm border border-surface-container-highest/30 bg-white">
+          <div class="w-full max-w-[340px] overflow-hidden shadow-sm border border-surface-container-highest/30 bg-white">
             <iframe 
               src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fprofile.php%3Fid%3D61581909366342&tabs=&width=340&height=130&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=false&appId" 
               width="100%" 

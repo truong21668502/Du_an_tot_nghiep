@@ -83,16 +83,6 @@ const completeOrder = (orderId) => {
     });
 };
 
-const startDelivering = (orderId) => {
-    router.patch(route('staff.orders.start-delivering', orderId), {}, {
-        preserveScroll: true,
-        onSuccess: () => {
-            orders.value = orders.value.filter(o => o.id !== orderId);
-            closeOrderModal();
-        }
-    });
-};
-
 const cancelOrder = (orderId) => {
     if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) {
         router.patch(route('staff.orders.cancel', orderId), {}, {
@@ -312,18 +302,26 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                             <p class="text-[11px] text-on-surface-variant mt-0.5 uppercase tracking-wider">{{
                                 order.order_type }}</p>
                         </div>
-                        <span v-if="order.status === 'PENDING'"
-                            class="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>Chờ xử lý
-                        </span>
-                        <span v-else-if="order.status === 'PROCESSING'"
-                            class="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>Đang xử lý
-                        </span>
-                        <span v-else-if="order.status === 'READY'"
-                            class="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-green-500/70"></span>Sẵn sàng giao
-                        </span>
+                        <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                            <span v-if="order.status === 'PENDING'"
+                                class="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>Chờ xử lý
+                            </span>
+                            <span v-else-if="order.status === 'PROCESSING'"
+                                class="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>Đang xử lý
+                            </span>
+                            <span v-else-if="order.status === 'READY'"
+                                class="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-500/70"></span>Sẵn sàng giao
+                            </span>
+                            
+                            <div v-if="order.estimated_prep_time && order.status === 'PENDING'" 
+                                 class="flex items-center gap-0.5 text-[10px] font-medium text-error mt-0.5" title="AI Dự đoán thời gian">
+                                <span class="material-symbols-outlined text-[12px] animate-pulse">timer</span>
+                                ~{{ order.estimated_prep_time }}p
+                            </div>
+                        </div>
                     </div>
 
                     <ul class="space-y-1.5 mb-4">
@@ -537,10 +535,7 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                 class="px-5 py-2 rounded-xl bg-error/10 text-error border border-error/30 font-bold text-label-md hover:bg-error/20 flex items-center gap-2 transition-all">
                                 <span class="material-symbols-outlined text-[18px]">cancel</span> Hủy đơn
                             </button>
-                            <button v-if="selectedOrder?.status === 'READY' && selectedOrder?.order_type === 'DELIVERY'" @click="startDelivering(selectedOrder.id)"
-                                class="px-5 py-2 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:bg-primary/90 flex items-center gap-2 transition-all shadow-sm">
-                                <span class="material-symbols-outlined text-[18px]">delivery_dining</span> Đưa shipper
-                            </button>
+
                             <button v-if="selectedOrder?.status === 'PENDING'" @click="acceptOrder(selectedOrder.id)"
                                 class="px-6 py-2 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:bg-primary/90 flex items-center gap-2 transition-all shadow-sm">
                                 <span class="material-symbols-outlined text-[18px]">check_circle</span> Tiếp nhận đơn

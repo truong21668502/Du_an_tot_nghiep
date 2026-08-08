@@ -95,12 +95,6 @@ const props = defineProps({
 
             <!-- Footer: settings + logout -->
             <div class="mt-auto flex flex-col gap-2 text-label-md px-2 pt-4 border-t border-outline-variant/30">
-                <a href="#"
-                    class="flex items-center gap-4 text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 hover:text-primary transition-colors duration-300 group">
-                    <span
-                        class="material-symbols-outlined group-hover:text-primary transition-colors duration-300">settings</span>
-                    Cài đặt
-                </a>
                 <Link :href="route('logout')" method="post" as="button"
                     class="flex items-center w-full text-left gap-4 text-on-surface-variant hover:bg-surface-container-high rounded-xl px-4 py-3 hover:text-error transition-colors duration-300 group">
                     <span
