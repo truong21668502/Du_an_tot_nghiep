@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Review;
 use Illuminate\Foundation\Http\FormRequest;
 use App\Models\ProhibitedWord;
+use App\Services\ProfanityFilterService;
 
 class CreateReviewRequest extends FormRequest
 {
@@ -16,25 +17,16 @@ class CreateReviewRequest extends FormRequest
         return [
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'rating'     => ['required', 'integer', 'between:1,5'],
-            'comment' => ['required', 'string', 'min:5', 'max:500',
-                    function ($attribute, $value, $fail) {
-                    if (empty($value)) return;
-                    
-                    $prohibitedWords = ProhibitedWord::where('is_active', true)
-                        ->pluck('word')
-                        ->toArray();
-                    
-                    foreach ($prohibitedWords as $word) {
-                        $pattern = '/\b' . preg_quote($word, '/') . '\b/iu';
-                        
-                        if (preg_match($pattern, $value)) {
-                            $fail("Bình luận chứa từ ngữ không phù hợp. Vui lòng kiểm tra lại.");
-                            return;
-                        }
-                    }
-                },
-        ],
+            'comment' => ['required', 'string', 'min:5', 'max:500'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'comment' => app(ProfanityFilterService::class)
+                ->filter($this->input('comment')),
+        ]);
     }
 
     public function withValidator($validator): void

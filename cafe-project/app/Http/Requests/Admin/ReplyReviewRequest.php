@@ -7,6 +7,7 @@ use App\Models\ProhibitedWord;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Contracts\Validation\Validator;
+use App\Services\ProfanityFilterService;
 
 class ReplyReviewRequest extends FormRequest
 {
@@ -14,6 +15,13 @@ class ReplyReviewRequest extends FormRequest
     {
         // Chỉ ADMIN mới được trả lời
     return $this->user() && in_array($this->user()->role, ['ADMIN', 'STAFF', 'BARISTA']);
+    }
+        protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'comment' => app(ProfanityFilterService::class)
+                ->filter($this->input('comment')),
+        ]);
     }
 
     protected function failedAuthorization()
@@ -23,6 +31,7 @@ class ReplyReviewRequest extends FormRequest
             'message' => 'Bạn không có quyền thực hiện hành động này.'
         ], 403));
     }
+    
 
     public function rules(): array
     {
@@ -31,24 +40,11 @@ class ReplyReviewRequest extends FormRequest
                 'required',
                 'string',
                 'min:3',
-                'max:1000',
-                function ($attribute, $value, $fail) {
-                    if (empty($value)) return;
-                    
-                    $prohibitedWords = ProhibitedWord::where('is_active', true)
-                        ->pluck('word')
-                        ->toArray();
-                    
-                    foreach ($prohibitedWords as $word) {
-                        if (stripos($value, $word) !== false) {
-                            $fail("Nội dung phản hồi chứa từ ngữ không phù hợp. Vui lòng kiểm tra lại.");
-                            return;
-                        }
-                    }
-                },
-            ],
+                'max:1000'],
         ];
     }
+
+
 
     public function messages(): array
     {
