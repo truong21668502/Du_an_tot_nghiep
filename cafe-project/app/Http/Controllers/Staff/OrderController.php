@@ -85,33 +85,6 @@ class OrderController extends Controller
             }
         }
 
-        // Chuẩn bị dữ liệu đơn mới
-        $newOrderItems = $order->details()->with('product')->get()->map(function ($detail) {
-            return [
-                'item_name' => $detail->product->product_name ?? 'N/A',
-                'quantity' => $detail->quantity
-            ];
-        })->toArray();
-
-        // Gọi AI dự đoán thời gian
-        try {
-            $geminiService = app(\App\Services\GeminiService::class);
-            $aiPredictedTime = $geminiService->estimateOrderPrepTime($newOrderItems);
-            
-            if ($aiPredictedTime !== null) {
-                $order->estimated_prep_time = $aiPredictedTime;
-            } else {
-                // Fallback: 5 phút / ly mới
-                $totalNewDrinks = array_sum(array_column($newOrderItems, 'quantity'));
-                $order->estimated_prep_time = $totalNewDrinks * 5;
-            }
-            $order->save();
-        } catch (\Exception $e) {
-            // Fallback an toàn tuyệt đối
-            $order->estimated_prep_time = count($request->items) * 5;
-            $order->save();
-        }
-
         // Load thêm quan hệ 'payment' để bắn qua Vue
         broadcast(new OrderCreated($order->load(['table', 'details.product', 'details.variant', 'payment'])));
 

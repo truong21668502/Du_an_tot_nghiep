@@ -316,11 +316,6 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                 <span class="w-1.5 h-1.5 rounded-full bg-green-500/70"></span>Sẵn sàng giao
                             </span>
                             
-                            <div v-if="order.estimated_prep_time && order.status === 'PENDING'" 
-                                 class="flex items-center gap-0.5 text-[10px] font-medium text-error mt-0.5" title="AI Dự đoán thời gian">
-                                <span class="material-symbols-outlined text-[12px] animate-pulse">timer</span>
-                                ~{{ order.estimated_prep_time }}p
-                            </div>
                         </div>
                     </div>
 

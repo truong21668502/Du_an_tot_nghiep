@@ -86,31 +86,6 @@ private function placeOrder(Cart $cart, array $data, Request $request): Order
             $this->syncOrderDetails($order, $cart);
             $this->syncPayment($order, $data['payment_method']);
 
-            // Tính thời gian dự kiến (AI)
-            $newOrderItems = $order->details()->with('product')->get()->map(function ($detail) {
-                return [
-                    'item_name' => $detail->product->product_name ?? 'N/A',
-                    'quantity' => $detail->quantity
-                ];
-            })->toArray();
-
-            try {
-                $geminiService = app(\App\Services\GeminiService::class);
-                $aiPredictedTime = $geminiService->estimateOrderPrepTime($newOrderItems);
-                
-                if ($aiPredictedTime !== null) {
-                    $order->estimated_prep_time = $aiPredictedTime;
-                } else {
-                    $totalNewDrinks = array_sum(array_column($newOrderItems, 'quantity'));
-                    $order->estimated_prep_time = $totalNewDrinks * 5;
-                }
-                $order->save();
-            } catch (\Exception $e) {
-                $totalNewDrinks = array_sum(array_column($newOrderItems, 'quantity'));
-                $order->estimated_prep_time = $totalNewDrinks * 5;
-                $order->save();
-            }
-
             if ($couponId && Auth::check()) {
                 $couponUser = DB::table('coupon_user')
                     ->where('user_id', Auth::id())

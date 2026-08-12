@@ -142,7 +142,6 @@ const props = defineProps({
                         {{ pendingCount }} chờ pha
                     </div>
 
-                    <div class="w-px h-6 bg-outline-variant/30"></div>
 
                     <!-- User -->
                     <div class="flex items-center gap-2.5">

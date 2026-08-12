@@ -767,11 +767,6 @@ onUnmounted(() => {
                                         : (order.status === 'READY' ? 'bg-green-500/10 text-green-600 border-green-500/20' : 'bg-primary/10 text-primary border-primary/20')">
                                     {{ order.status === 'PENDING' ? 'Chờ xử lý' : (order.status === 'READY' ? 'Sẵn sàng giao' : 'Đang xử lý') }}
                                 </span>
-                                <div v-if="order.estimated_prep_time && order.status === 'PENDING'" 
-                                        class="flex items-center gap-0.5 text-[10px] font-medium text-error" title="AI Dự đoán thời gian">
-                                    <span class="material-symbols-outlined text-[12px] animate-pulse">timer</span>
-                                    ~{{ order.estimated_prep_time }}p
-                                </div>
                             </div>
                         </div>
 

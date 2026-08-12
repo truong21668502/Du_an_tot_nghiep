@@ -253,14 +253,6 @@ const submitNewOrder = () => {
 
                 <!-- Right: Actions + Avatar -->
                 <div class="flex items-center gap-3">
-                    <!-- Notification bell -->
-                    <button class="relative w-9 h-9 rounded-xl text-on-surface-variant hover:text-primary hover:bg-primary-container/20 flex items-center justify-center transition-all">
-                        <span class="material-symbols-outlined text-[20px]">notifications</span>
-                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-surface"></span>
-                    </button>
-
-                    <!-- Divider -->
-                    <div class="w-px h-6 bg-outline-variant/30"></div>
 
                     <!-- User -->
                     <div class="flex items-center gap-2.5">

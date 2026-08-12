@@ -25,7 +25,7 @@ defineEmits(["update:priceRange", "update:rating", "close"]);
 
     <aside
         :class="[
-            'fixed md:sticky top-24 left-0 h-[calc(100vh-6rem)] w-80 bg-surface border-r border-outline-variant/20 p-6 overflow-y-auto z-50 transition-transform duration-300',
+            'fixed md:sticky top-24 left-0 h-[calc(100vh-6rem)] w-80 bg-surface border-r border-outline-variant/20 p-6 overflow-y-auto transition-transform duration-300',
             'md:translate-x-0',
             show ? 'translate-x-0' : '-translate-x-full',
         ]"
