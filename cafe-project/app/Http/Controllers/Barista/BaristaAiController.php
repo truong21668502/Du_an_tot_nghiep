@@ -145,11 +145,11 @@ class BaristaAiController extends Controller
 
         // Gom dữ liệu ngữ cảnh cho Pha chế
         $pendingItems = OrderDetail::whereIn('barista_status', ['PENDING', 'PREPARING'])
-            ->with(['order.table', 'item'])
+            ->with(['order.table', 'product'])
             ->get()
             ->map(function ($detail) {
                 return [
-                    'item_name' => $detail->item->item_name ?? 'N/A',
+                    'item_name' => $detail->product->product_name ?? 'N/A',
                     'quantity' => $detail->quantity,
                     'note' => $detail->note,
                     'status' => $detail->barista_status,
