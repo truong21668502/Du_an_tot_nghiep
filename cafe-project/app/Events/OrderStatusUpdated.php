@@ -20,7 +20,10 @@ class OrderStatusUpdated implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        return [new Channel('staff-orders')];
+        return [
+            new Channel('staff-orders'),
+            new Channel('shipper-orders'),
+        ];
     }
 
     public function broadcastAs(): string
@@ -37,18 +40,19 @@ class OrderStatusUpdated implements ShouldBroadcastNow
 
         // Chỉ gửi thông tin tối thiểu qua Pusher để tránh lỗi "Payload too large"
         // Frontend sẽ tự reload dữ liệu đầy đủ từ server
-        $this->order->loadMissing('table');
+        $this->order->loadMissing(['table', 'payment']);
 
         return [
             'order' => [
                 'id' => $this->order->id,
                 'status' => $this->order->status,
+                'payment_status' => $this->order->payment ? $this->order->payment->payment_status : 'PENDING',
                 'table_id' => $this->order->table_id,
                 'table' => $this->order->table ? [
                     'id' => $this->order->table->id,
                     'table_name' => $this->order->table->table_name,
                 ] : null,
-            ],
+            ]
         ];
     }
 }

@@ -16,7 +16,10 @@ class OrderPaymentConfirmed implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        return [new Channel('staff-orders')];
+        return [
+            new Channel('staff-orders'),
+            new Channel('shipper-orders')
+        ];
     }
 
     public function broadcastAs(): string

@@ -16,6 +16,8 @@ const selectedOrder = ref(null);
 const isOrderModalOpen = ref(false);
 const filterStatus = ref('ALL');
 const vnpayQrUrl = ref(null);
+const showPaymentConfirm = ref(false);
+const showCancelConfirm = ref(false);
 
 // Đồng bộ dữ liệu khi Inertia reload props
 watch(() => props.initialOrders, (newVal) => {
@@ -41,6 +43,8 @@ const openOrderDetails = async (order) => {
 
 const closeOrderModal = () => {
     isOrderModalOpen.value = false;
+    showPaymentConfirm.value = false;
+    showCancelConfirm.value = false;
     vnpayQrUrl.value = null;
     setTimeout(() => selectedOrder.value = null, 300);
 };
@@ -74,9 +78,11 @@ const completeOrder = (orderId) => {
                 if (selectedOrder.value?.id === orderId) {
                     selectedOrder.value.status = 'READY';
                 }
+                toast.success(`Đơn hàng #${orderId} đã sẵn sàng giao!`);
                 closeOrderModal();
             } else {
                 orders.value = orders.value.filter(o => o.id !== orderId);
+                toast.info(`Đơn hàng #${orderId} đã hoàn thành!`);
                 closeOrderModal();
             }
         }
@@ -509,47 +515,112 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                             </div>
                         </div>
 
-                        <div
-                            class="px-5 py-4 bg-surface border-t border-outline-variant/20 flex gap-3 justify-end flex-wrap">
-                            <button @click="closeOrderModal"
-                                class="px-5 py-2 rounded-xl text-label-md font-bold text-on-surface-variant hover:bg-surface-container transition-colors">
-                                Đóng lại
-                            </button>
-                            <button v-if="selectedOrder?.payment?.payment_status === 'PENDING'"
-                                @click="confirmPayment(selectedOrder.id)"
-                                class="px-5 py-2 rounded-xl bg-emerald-600/10 text-emerald-700 border border-emerald-600/30 font-bold text-label-md hover:bg-emerald-600/20 flex items-center gap-2 transition-all">
-                                <span class="material-symbols-outlined text-[18px]">payments</span>
-                                <span v-if="selectedOrder?.payment?.payment_method === 'CASH' && selectedOrder?.order_type === 'DELIVERY'">
-                                    Thu {{ formatCurrency((selectedOrder?.total_amount ?? 0) - (selectedOrder?.discount_amount ?? 0)) }}
-                                </span>
-                                <span v-else>
-                                    {{ selectedOrder?.payment?.payment_method === 'CASH' ? 'Thu tiền mặt' : 'Xác nhận đã thanh toán' }}
-                                </span>
-                            </button>
-                            <button v-if="selectedOrder?.status === 'PENDING'" @click="cancelOrder(selectedOrder.id)"
-                                class="px-5 py-2 rounded-xl bg-error/10 text-error border border-error/30 font-bold text-label-md hover:bg-error/20 flex items-center gap-2 transition-all">
-                                <span class="material-symbols-outlined text-[18px]">cancel</span> Hủy đơn
-                            </button>
+                        <!-- Footer -->
+                        <div class="px-5 py-4 border-t space-y-3 bg-surface-container-low border-outline-variant/20">
 
-                            <button v-if="selectedOrder?.status === 'PENDING'" @click="acceptOrder(selectedOrder.id)"
-                                class="px-6 py-2 rounded-xl bg-primary text-on-primary font-bold text-label-md hover:bg-primary/90 flex items-center gap-2 transition-all shadow-sm">
-                                <span class="material-symbols-outlined text-[18px]">check_circle</span> Tiếp nhận đơn
-                            </button>
-                            <!-- Nút Hoàn thành: chỉ bấm được khi đã thanh toán VÀ tất cả món đã pha xong -->
-                            <button v-else-if="selectedOrder?.status === 'PROCESSING'"
-                                @click="(() => {
-                                    const allDone = selectedOrder?.details?.every(d => d.barista_status === 'COMPLETED');
-                                    const paid = selectedOrder?.payment?.payment_status === 'PAID';
-                                    if (!allDone) { toast.warning('Chưa pha xong hết các món, không thể hoàn thành!'); }
-                                    else if (!paid) { toast.warning('Đơn chưa được thanh toán, không thể hoàn thành!'); }
-                                    else { completeOrder(selectedOrder.id); }
-                                })()"
-                                :class="(selectedOrder?.payment?.payment_status === 'PAID' && selectedOrder?.details?.every(d => d.barista_status === 'COMPLETED'))
-                                    ? 'bg-secondary text-on-secondary hover:bg-secondary/90 shadow-sm cursor-pointer'
-                                    : 'bg-surface-container-high text-on-surface-variant/50 border border-outline-variant/30 cursor-not-allowed'"
-                                class="px-6 py-2 rounded-xl font-bold text-label-md flex items-center gap-2 transition-all">
-                                <span class="material-symbols-outlined text-[18px]">task_alt</span> Đã hoàn thành
-                            </button>
+                            <!-- Xác nhận thanh toán -->
+                            <template v-if="selectedOrder?.payment?.payment_status === 'PENDING'">
+                                <button v-if="!showPaymentConfirm" @click="showPaymentConfirm = true"
+                                    class="w-full px-5 py-2.5 rounded-xl font-bold text-[13px] flex items-center justify-center gap-2 transition-all border bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20">
+                                    <span class="material-symbols-outlined text-[18px]">payments</span>
+                                    <span v-if="selectedOrder?.payment?.payment_method === 'CASH' && selectedOrder?.order_type === 'DELIVERY'">
+                                        Thu {{ formatCurrency((selectedOrder?.total_amount ?? 0) - (selectedOrder?.discount_amount ?? 0)) }}
+                                    </span>
+                                    <span v-else>
+                                        {{ selectedOrder?.payment?.payment_method === 'CASH' ? 'Thu tiền mặt' : 'Xác nhận đã thanh toán' }}
+                                    </span>
+                                </button>
+                                <div v-else
+                                    class="rounded-xl border-2 border-secondary/30 bg-secondary/5 p-4 space-y-3">
+                                    <div class="flex items-center gap-2 text-secondary">
+                                        <span class="material-symbols-outlined text-[20px]">payments</span>
+                                        <p class="text-[13px] font-bold">{{ selectedOrder?.payment?.payment_method ===
+                                            'CASH' ? 'Xác nhận thu tiền mặt?' : 'Xác nhận đã thanh toán?' }}</p>
+                                    </div>
+                                    <p class="text-[12px] text-on-surface-variant">
+                                        <span v-if="selectedOrder?.payment?.payment_method === 'CASH' && selectedOrder?.order_type === 'DELIVERY'">
+                                            Nhân viên thu: {{ formatCurrency((selectedOrder?.total_amount ?? 0) - (selectedOrder?.discount_amount ?? 0)) }}
+                                            (khách trả thêm {{ formatCurrency(selectedOrder?.shipping_fee ?? 0) }} ship cho shipper)
+                                        </span>
+                                        <span v-else>
+                                            {{ selectedOrder?.payment?.payment_method === 'CASH' ? 'Khách đã đưa' : 'Đã nhận đủ' }}: {{ formatCurrency(selectedOrder?.final_amount) }}
+                                        </span>
+                                    </p>
+                                    <div class="flex gap-2">
+                                        <button @click="showPaymentConfirm = false"
+                                            class="flex-1 py-2.5 rounded-xl border border-outline-variant/40 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container transition-all">
+                                            Huỷ
+                                        </button>
+                                        <button @click="confirmPayment(selectedOrder.id)"
+                                            class="flex-1 py-2.5 rounded-xl bg-secondary text-on-secondary font-bold text-[13px] hover:bg-secondary/90 transition-all shadow-sm">
+                                            <span class="flex items-center justify-center gap-1.5">
+                                                <span class="material-symbols-outlined text-[16px]">check</span> Xác
+                                                nhận
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Xác nhận huỷ đơn -->
+                            <template v-if="selectedOrder?.status === 'PENDING'">
+                                <div v-if="showCancelConfirm"
+                                    class="rounded-xl border-2 border-error/30 bg-error/5 p-4 space-y-3">
+                                    <div class="flex items-center gap-2 text-error">
+                                        <span class="material-symbols-outlined text-[20px]">warning</span>
+                                        <p class="text-[13px] font-bold">Xác nhận huỷ đơn?</p>
+                                    </div>
+                                    <p class="text-[12px] text-on-surface-variant">Hành động này sẽ huỷ đơn hàng #{{
+                                        selectedOrder?.id }} và không thể hoàn tác.</p>
+                                    <div class="flex gap-2">
+                                        <button @click="showCancelConfirm = false"
+                                            class="flex-1 py-2.5 rounded-xl border border-outline-variant/40 font-bold text-[13px] text-on-surface-variant hover:bg-surface-container transition-all">
+                                            Quay lại
+                                        </button>
+                                        <button @click="cancelOrder(selectedOrder.id)"
+                                            class="flex-1 py-2.5 rounded-xl bg-error text-on-error font-bold text-[13px] hover:bg-error/90 transition-all shadow-sm">
+                                            <span class="flex items-center justify-center gap-1.5">
+                                                <span class="material-symbols-outlined text-[16px]">check</span> Huỷ đơn
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Nút thao tác -->
+                            <div v-if="!showCancelConfirm && !showPaymentConfirm"
+                                class="flex gap-3 justify-end flex-wrap">
+                                <button @click="closeOrderModal"
+                                    class="px-5 py-2 rounded-xl text-[13px] font-bold hover:bg-surface-container text-on-surface-variant transition-colors">Đóng
+                                    lại</button>
+                                <button v-if="selectedOrder?.status === 'PENDING'" @click="showCancelConfirm = true"
+                                    class="px-5 py-2 rounded-xl font-bold text-[13px] flex items-center gap-2 transition-all border bg-error/5 text-error border-error/20 hover:bg-error/10">
+                                    <span class="material-symbols-outlined text-[18px]">cancel</span> Hủy đơn
+                                </button>
+
+                                <button v-if="selectedOrder?.status === 'PENDING'"
+                                    @click="acceptOrder(selectedOrder.id)"
+                                    class="px-6 py-2 rounded-xl font-bold text-[13px] text-on-primary flex items-center gap-2 transition-all shadow-sm hover:opacity-90 bg-primary">
+                                    <span class="material-symbols-outlined text-[18px]">check_circle</span> Tiếp nhận
+                                    đơn
+                                </button>
+                                <!-- Nút Hoàn thành: chỉ bấm được khi đã thanh toán VÀ tất cả món đã pha xong -->
+                                <button v-else-if="selectedOrder?.status === 'PROCESSING'"
+                                    @click="(() => {
+                                        const allDone = selectedOrder?.details?.every(d => d.barista_status === 'COMPLETED');
+                                        const paid = selectedOrder?.payment?.payment_status === 'PAID';
+                                        const isDelivery = selectedOrder?.order_type === 'DELIVERY';
+                                        if (!allDone) { toast.warning('Chưa pha xong hết các món, không thể hoàn thành!'); }
+                                        else if (!paid && !isDelivery) { toast.warning('Đơn chưa được thanh toán, không thể hoàn thành!'); }
+                                        else { completeOrder(selectedOrder.id); }
+                                    })()"
+                                    :class="((selectedOrder?.payment?.payment_status === 'PAID' || selectedOrder?.order_type === 'DELIVERY') && selectedOrder?.details?.every(d => d.barista_status === 'COMPLETED'))
+                                        ? 'bg-secondary text-on-secondary hover:bg-secondary/90 shadow-sm cursor-pointer'
+                                        : 'bg-surface-container-high text-on-surface-variant/50 border border-outline-variant/30 cursor-not-allowed'"
+                                    class="px-6 py-2 rounded-xl font-bold text-[13px] flex items-center gap-2 transition-all">
+                                    <span class="material-symbols-outlined text-[18px]">task_alt</span> Hoàn thành
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </Transition>

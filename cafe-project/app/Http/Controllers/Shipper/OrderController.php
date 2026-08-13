@@ -19,7 +19,8 @@ public function index()
     {
         $shipperId = Auth::id(); 
 
-        $orders = Order::where('order_type', 'DELIVERY')
+        $orders = Order::with('payment')
+            ->where('order_type', 'DELIVERY')
             ->where(function ($query) use ($shipperId) {
                 // Điều kiện A: Đơn mới chờ nhận (READY & chưa có shipper)
                 $query->where(function ($q) {
@@ -47,21 +48,20 @@ public function index()
             ]));
 
             return [
-                'id'           => $order->id,
-                'code'         => $order->code ?? 'ĐH'.$order->id,
-                'status'       => $order->status,
-                'customer'     => $order->receiver_name ?? 'Khách lẻ',
-                'phone'        => $order->receiver_phone,
-                'address'      => $address,
-                'distance'     => $order->distance, 
-                'shipping_fee' => $order->shipping_fee,
-                'total'        => $order->final_amount,
-                'created_at'   => $order->created_at->toIso8601String(),
-                'latitude'     => $order->latitude,
-                'longitude'    => $order->longitude,
-                
-                // Trả thêm trường này để Frontend biết đây là đơn của mình hay đơn chờ nhận chung
-                'is_my_order'  => $order->shipper_id === $shipperId,
+                'id'             => $order->id,
+                'code'           => $order->code ?? 'ĐH'.$order->id,
+                'status'         => $order->status,
+                'customer'       => $order->receiver_name ?? 'Khách lẻ',
+                'phone'          => $order->receiver_phone,
+                'address'        => $address,
+                'distance'       => $order->distance, 
+                'shipping_fee'   => $order->shipping_fee,
+                'total'          => $order->final_amount,
+                'created_at'     => $order->created_at->toIso8601String(),
+                'latitude'       => $order->latitude,
+                'longitude'      => $order->longitude,
+                'payment_status' => $order->payment ? $order->payment->payment_status : 'PENDING',
+                'is_my_order'    => $order->shipper_id === $shipperId,
             ];
         });
 
@@ -81,6 +81,11 @@ public function index()
         // Kiểm tra đơn có còn khả dụng không
         if ($order->status !== 'READY' || $order->shipper_id) {
             return back()->with('error', 'Đơn hàng không khả dụng.');
+        }
+
+        $order->load('payment');
+        if (!$order->payment || $order->payment->payment_status !== 'PAID') {
+            return back()->with('error', 'Đơn hàng chưa được thanh toán (ứng tiền) tại quầy. Vui lòng yêu cầu nhân viên thu tiền trước khi nhận đơn.');
         }
 
         // Không cho shipper nhận thêm đơn nếu đang giao 1 đơn khác

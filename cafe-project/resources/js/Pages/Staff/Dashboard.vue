@@ -1087,11 +1087,12 @@ onUnmounted(() => {
                                     @click="(() => {
                                         const allDone = selectedOrder?.details?.every(d => d.barista_status === 'COMPLETED');
                                         const paid = selectedOrder?.payment?.payment_status === 'PAID';
+                                        const isDelivery = selectedOrder?.order_type === 'DELIVERY';
                                         if (!allDone) { toast.warning('Chưa pha xong hết các món, không thể hoàn thành!'); }
-                                        else if (!paid) { toast.warning('Đơn chưa được thanh toán, không thể hoàn thành!'); }
+                                        else if (!paid && !isDelivery) { toast.warning('Đơn chưa được thanh toán, không thể hoàn thành!'); }
                                         else { completeOrder(selectedOrder.id); }
                                     })()"
-                                    :class="(selectedOrder?.payment?.payment_status === 'PAID' && selectedOrder?.details?.every(d => d.barista_status === 'COMPLETED'))
+                                    :class="((selectedOrder?.payment?.payment_status === 'PAID' || selectedOrder?.order_type === 'DELIVERY') && selectedOrder?.details?.every(d => d.barista_status === 'COMPLETED'))
                                         ? 'bg-secondary text-on-secondary hover:bg-secondary/90 shadow-sm cursor-pointer'
                                         : 'bg-surface-container-high text-on-surface-variant/50 border border-outline-variant/30 cursor-not-allowed'"
                                     class="px-6 py-2 rounded-xl font-bold text-[13px] flex items-center gap-2 transition-all">

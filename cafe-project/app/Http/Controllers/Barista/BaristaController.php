@@ -90,7 +90,7 @@ class BaristaController extends Controller
             'filters' => $request->only('search'),
         ]);
     }
-
+    
     /**
      * Cập nhật trạng thái pha chế của từng món
      * PENDING → PREPARING → COMPLETED

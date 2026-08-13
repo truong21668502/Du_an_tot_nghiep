@@ -61,6 +61,20 @@ onMounted(() => {
                     ordersList.value = ordersList.value.filter(o => o.id !== e.order.id)
                 }
             })
+            .listen('.order.status-updated', (e) => {
+                const idx = ordersList.value.findIndex(o => o.id === e.order.id)
+                if (idx !== -1) {
+                    if (e.order.payment_status) {
+                        ordersList.value[idx].payment_status = e.order.payment_status
+                    }
+                }
+            })
+            .listen('.order.payment-confirmed', (e) => {
+                const idx = ordersList.value.findIndex(o => o.id === e.id)
+                if (idx !== -1) {
+                    ordersList.value[idx].payment_status = e.payment_status
+                }
+            })
     }
 })
 
@@ -177,14 +191,17 @@ const goToDelivery = (orderId) => {
                                     </div>
                                 </div>
 
-                                <!-- Card Action -->
                                 <div class="pl-2 pt-2">
                                     <button 
-                                        @click="openConfirm(order)"
-                                        class="w-full cursor-pointer bg-primary hover:bg-inverse-surface text-on-primary py-3 rounded-lg text-label-md transition-colors flex items-center justify-center"
+                                        @click="order.payment_status === 'PAID' ? openConfirm(order) : null"
+                                        :class="order.payment_status === 'PAID' 
+                                            ? 'cursor-pointer bg-primary hover:bg-inverse-surface text-on-primary' 
+                                            : 'cursor-not-allowed bg-surface-container-highest text-on-surface-variant opacity-60'"
+                                        class="w-full py-3 rounded-lg text-label-md transition-colors flex items-center justify-center"
                                     >
-                                        <span class="material-symbols-outlined text-[20px] mr-2">local_shipping</span>
-                                        NHẬN ĐƠN NÀY
+                                        <span v-if="order.payment_status === 'PAID'" class="material-symbols-outlined text-[20px] mr-2">local_shipping</span>
+                                        <span v-else class="material-symbols-outlined text-[20px] mr-2">payments</span>
+                                        {{ order.payment_status === 'PAID' ? 'NHẬN ĐƠN NÀY' : 'CHỜ QUẦY THU TIỀN' }}
                                     </button>
                                 </div>
                             </div>

@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
@@ -27,7 +27,7 @@ const handleRegister = () => {
       <div class="text-center mb-10">
         <Link href="/" class="inline-block font-serif text-headline-md text-primary mb-3 hover:opacity-80 transition-opacity">Nắng Coffee</Link>
         <h1 class="font-serif text-headline-sm text-on-surface">Đăng ký tài khoản</h1>
-        <p class="font-sans text-body-md text-on-surface-variant mt-2">Tạo tài khoản để tích điểm và đặt bàn dễ dàng hơn.</p>
+        <p class="font-sans text-body-md text-on-surface-variant mt-2">Tạo tài khoản để mua sắm, thanh toán và theo dõi đơn hàng dễ dàng hơn.</p>
       </div>
       <div class="bg-surface rounded-2xl shadow-soft border border-outline-variant/20 p-8">
         <form @submit.prevent="handleRegister" class="space-y-5">
