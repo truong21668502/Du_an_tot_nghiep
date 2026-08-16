@@ -395,6 +395,12 @@ const submitOrder = () => {
           <span v-if="loading" class="material-symbols-outlined animate-spin text-lg">refresh</span>
           {{ loading ? 'Đang xử lý...' : selectedPaymentMethod === 'BANK_TRANSFER' ? 'Thanh toán VNPay' : 'Đặt món' }}
         </BaseButton>
+        <div v-if="errors && Object.keys(errors).length" class="mt-4 p-3 bg-error-container/10 border border-error/30 rounded-xl text-error space-y-1">
+          <p v-for="(msg, key) in errors" :key="key" class="font-sans text-label-sm">
+            <span class="material-symbols-outlined text-sm align-middle mr-1">error</span>
+            {{ msg }}
+          </p>
+        </div>
         
         <!-- Thông báo lỗi -->
         <div v-if="!canSubmit && selectedAddressId && isAddressOutOfRange" class="mt-3 text-error text-label-sm text-center">
