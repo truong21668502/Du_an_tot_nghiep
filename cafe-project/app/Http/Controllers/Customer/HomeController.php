@@ -23,9 +23,18 @@ class HomeController extends Controller
             ->limit(6)
             ->pluck('product_id');
 
-        if ($bestSellerIds->isEmpty()) {
-            $bestSellerIds = Product::where('is_active', 'Đang bán')->limit(6)->pluck('id');
-        }
+                if ($bestSellerIds->count() < 6) {
+                    $neededQuantity = 6 - $bestSellerIds->count(); // Số lượng cần bù cho đủ 6
+                    
+                    $latestProductIds = Product::where('is_active', 'Đang bán')
+                        ->whereNotIn('id', $bestSellerIds) // Tránh trùng với sản phẩm bán chạy đã lấy
+                        ->orderByDesc('id') // Hoặc orderByDesc('created_at') để lấy mới nhất
+                        ->limit($neededQuantity)
+                        ->pluck('id');
+
+                    // Gộp 2 danh sách lại với nhau (Sử dụng merge của Collection)
+                    $bestSellerIds = $bestSellerIds->merge($latestProductIds);
+                }
 
         $products = Product::with(['category', 'variants', 'images'])
             ->withAvg('reviews', 'rating')
