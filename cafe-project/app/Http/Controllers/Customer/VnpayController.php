@@ -72,10 +72,16 @@ class VnpayController extends Controller
     {
         if ($order->payment->payment_status !== 'PAID') {
             DB::transaction(function () use ($order, $inputData) {
+                $vnpPayDate = $inputData['vnp_PayDate'] ?? null;
+                $paymentTime = $vnpPayDate 
+                    ? \Carbon\Carbon::createFromFormat('YmdHis', $vnpPayDate)->format('Y-m-d H:i:s')
+                    : now();
+
                 $order->payment->update([
                     'payment_status' => 'PAID',
                     'transaction_id' => $inputData['vnp_TransactionNo'] ?? null,
-                    'payment_time' => now(),
+                    'payment_time' => $paymentTime,
+                    'vnp_txn_ref'    => $inputData['vnp_TxnRef'] ?? null,
                 ]);
 
                 if ($order->order_type === 'DELIVERY') {

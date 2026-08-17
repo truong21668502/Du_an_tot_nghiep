@@ -13,6 +13,7 @@ use App\Models\UserAddress;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class ProfileController extends Controller
 {
@@ -109,7 +110,7 @@ class ProfileController extends Controller
         return back()->with('toast-success', 'Cập nhật ảnh đại diện thành công');
     }
 
-    public function cancelOrder(Order $order)
+public function cancelOrder(Order $order)
     {
         if ($order->user_id !== Auth::id()) abort(403);
 
@@ -117,8 +118,110 @@ class ProfileController extends Controller
             return back()->with('toast-error', 'Không thể hủy đơn hàng ở trạng thái này');
         }
 
+        // Lấy thông tin thanh toán (Yêu cầu Model Order có relationship: public function payment())
+        $payment = $order->payment;
+
+        // Kiểm tra xem đơn hàng đã được thanh toán thành công chưa
+        if ($payment && $payment->payment_status === 'PAID') {
+            
+            // Nếu phương thức là BANK_TRANSFER (VNPAY), tiến hành hoàn tiền qua API
+            if ($payment->payment_method === 'BANK_TRANSFER') {
+                $refundResult = $this->processVnPayRefund($payment, $order);
+
+                // Nếu hoàn tiền VNPAY thất bại, dừng việc hủy đơn và báo lỗi
+                if (!$refundResult['success']) {
+                    return back()->with('toast-error', 'Hoàn tiền thất bại: ' . $refundResult['message']);
+                }
+            }
+
+            // Cập nhật trạng thái thanh toán thành Đã hoàn tiền
+            $payment->update(['payment_status' => 'REFUNDED']);
+        }
+
+        // Cập nhật trạng thái đơn hàng
         $order->update(['status' => 'CANCELLED', 'cancel_reason' => 'Khách hàng hủy đơn']);
-        return redirect()->route('profile.orders')->with('toast-success', 'Hủy đơn hàng thành công');
+        
+        return redirect()->route('profile.orders')->with('toast-success', 'Hủy đơn hàng và hoàn tiền thành công');
+    }
+
+    /**
+     * Xử lý gọi API Hoàn tiền của VNPAY Sandbox
+     */
+    private function processVnPayRefund($payment, $order)
+    {
+        $vnp_TmnCode = env('VNP_TMN_CODE');
+        $vnp_HashSecret = env('VNP_HASH_SECRET');
+        $vnp_Url = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction"; // Endpoint Refund của Sandbox
+
+        // Các tham số bắt buộc theo tài liệu VNPAY
+        $vnp_RequestId = uniqid(); // Mã request id duy nhất cho mỗi lần gọi API
+        $vnp_Command = "refund";
+        $vnp_TransactionType = "02"; // 02: Hoàn tiền toàn phần
+        $vnp_TxnRef = $payment->vnp_txn_ref;
+        $vnp_Amount = $payment->amount * 100; // VNPAY yêu cầu nhân 100
+        $vnp_TransactionNo = $payment->transaction_id; // Mã giao dịch do VNPAY sinh ra lúc thanh toán
+        
+        // Thời gian tạo giao dịch gốc (VNPAY yêu cầu định dạng yyyyMMddHHmmss)
+        $vnp_TransactionDate = date('YmdHis', strtotime($payment->payment_time)); 
+        
+        $vnp_CreateBy = Auth::user()->name ?? 'System'; // Người thực hiện hoàn tiền
+        $vnp_CreateDate = date('YmdHis');
+        $vnp_IpAddr = request()->ip();
+        $vnp_OrderInfo = "Hoan tien don hang " . $order->id;
+
+        $data = [
+            "vnp_RequestId" => $vnp_RequestId,
+            "vnp_Version" => "2.1.0",
+            "vnp_Command" => $vnp_Command,
+            "vnp_TmnCode" => $vnp_TmnCode,
+            "vnp_TransactionType" => $vnp_TransactionType,
+            "vnp_TxnRef" => $vnp_TxnRef,
+            "vnp_Amount" => $vnp_Amount,
+            "vnp_TransactionNo" => $vnp_TransactionNo,
+            "vnp_TransactionDate" => $vnp_TransactionDate,
+            "vnp_CreateBy" => $vnp_CreateBy,
+            "vnp_CreateDate" => $vnp_CreateDate,
+            "vnp_IpAddr" => $vnp_IpAddr,
+            "vnp_OrderInfo" => $vnp_OrderInfo
+        ];
+
+        // Tạo chuỗi Hash Checksum (Phải đúng thứ tự theo tài liệu VNPAY)
+        $format = '%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s';
+        $dataHash = sprintf(
+            $format,
+            $data['vnp_RequestId'],
+            $data['vnp_Version'],
+            $data['vnp_Command'],
+            $data['vnp_TmnCode'],
+            $data['vnp_TransactionType'],
+            $data['vnp_TxnRef'],
+            $data['vnp_Amount'],
+            $data['vnp_TransactionNo'],
+            $data['vnp_TransactionDate'],
+            $data['vnp_CreateBy'],
+            $data['vnp_CreateDate'],
+            $data['vnp_IpAddr'],
+            $data['vnp_OrderInfo']
+        );
+
+        // Tạo mã bảo mật
+        $vnp_SecureHash = hash_hmac('sha512', $dataHash, $vnp_HashSecret);
+        $data['vnp_SecureHash'] = $vnp_SecureHash;
+
+        // Gọi API bằng Laravel Http Client
+        $response = Http::withoutVerifying()->post($vnp_Url, $data);
+
+        if ($response->successful()) {
+            $responseData = $response->json();
+            
+            // Mã '00' biểu thị VNPAY đã chấp nhận yêu cầu hoàn tiền thành công
+            if (isset($responseData['vnp_ResponseCode']) && $responseData['vnp_ResponseCode'] == '00') {
+                return ['success' => true];
+            }
+            return ['success' => false, 'message' => $responseData['vnp_Message'] ?? 'Từ chối từ VNPAY'];
+        }
+
+        return ['success' => false, 'message' => 'Lỗi kết nối tới hệ thống VNPAY'];
     }
 
 public function storeAddress(StoreAddressRequest $request)

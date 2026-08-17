@@ -18,6 +18,7 @@ class Payment extends Model
         'transaction_id',
         'amount',
         'payment_status',
+        'vnp_txn_ref',
         'payment_time',
     ];
 

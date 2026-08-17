@@ -35,6 +35,7 @@ return new class extends Migration
                 ->comment('Trạng thái giao dịch (PENDING: Chờ, PAID: Thành công, FAILED: Thất bại, REFUNDED: Đã hoàn tiền)');
                 
             $table->dateTime('payment_time')->nullable()->comment('Thời gian chính xác giao dịch được thực hiện thành công');
+            $table->string('vnp_txn_ref', 100)->nullable()->comment('Mã tham chiếu gửi qua VNPAY');
 
             // Thời gian hệ thống tự động ghi nhận bản ghi
             $table->timestamp('created_at')->useCurrent();
