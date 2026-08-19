@@ -35,9 +35,7 @@ class BaristaController extends Controller
         ]);
     }
 
-    /**
-     * Lịch sử pha chế trong ngày hôm nay
-     */
+    // Lịch sử pha chế trong ngày hôm nay
     public function history(Request $request)
     {
         $search = $request->input('search');
@@ -91,10 +89,7 @@ class BaristaController extends Controller
         ]);
     }
     
-    /**
-     * Cập nhật trạng thái pha chế của từng món
-     * PENDING → PREPARING → COMPLETED
-     */
+    //Cập nhật trạng thái pha chế của từng món PENDING → PREPARING → COMPLETED
     public function updateStatus(Request $request, OrderDetail $detail)
     {
         $transitions = [
@@ -112,7 +107,7 @@ class BaristaController extends Controller
         
         if ($newStatus === 'COMPLETED') {
             $stockService = new \App\Services\StockService();
-            // Load necessary relationships to get the recipe and material
+            // Tải quan hệ variant.recipes và product để sử dụng trong transaction
             $detail->load(['variant.recipes', 'product']);
             
             try {
