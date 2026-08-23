@@ -210,17 +210,17 @@ const closeQrPreview = () => {
                         </select>
                     </div>
 
-<div class="sm:col-span-2">
-    <button 
-        @click="printQr" 
-        type="button"
-        class="w-full h-[38px] sm:h-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-secondary text-on-secondary hover:bg-secondary/90 font-sans text-label-large rounded-xl shadow-sm hover:shadow transition-all cursor-pointer border border-transparent"
-        title="Mở trang cấu hình in mã QR cho toàn bộ bàn"
-    >
-        <span class="material-symbols-outlined text-lg">print</span>
-        <span>In toàn bộ QR</span>
-    </button>
-</div>
+                    <div class="sm:col-span-2">
+                        <button 
+                            @click="printQr" 
+                            type="button"
+                            class="w-full h-[38px] sm:h-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-secondary text-on-secondary hover:bg-secondary/90 font-sans text-label-large rounded-xl shadow-sm hover:shadow transition-all cursor-pointer border border-transparent"
+                            title="Mở trang cấu hình in mã QR cho toàn bộ bàn"
+                        >
+                            <span class="material-symbols-outlined text-lg">print</span>
+                            <span>In toàn bộ QR</span>
+                        </button>
+                    </div>
 
                     <div class="sm:col-span-1 text-right flex justify-end">
                         <button @click="clearFilters" v-if="searchFilters.search || searchFilters.area || searchFilters.capacity || searchFilters.status" class="w-full h-full p-2 hover:bg-error-container/20 text-outline hover:text-error rounded-xl transition-colors flex items-center justify-center cursor-pointer" title="Xóa toàn bộ bộ lọc">

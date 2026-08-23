@@ -17,11 +17,10 @@ class TableUpdateRequest extends FormRequest
         $tableId = $this->route('table');
 
         return [
-            'table_name' => 'required|string|max:50',
-            'area'       => 'nullable|string|max:50',
+            'table_name' => 'required|string|min:2|max:50',
+            'area'       => 'nullable|string|min:2|max:50',
             'capacity'   => 'required|integer|min:1',
             'qr_code'    => 'nullable|string|max:255|unique:tables,qr_code,' . $tableId,
-            'qr_image'    => 'nullable|string|max:255',
             'status'     => 'required|in:EMPTY,OCCUPIED,RESERVED',
         ];
     }
