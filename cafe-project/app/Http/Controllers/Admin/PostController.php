@@ -35,7 +35,8 @@ class PostController extends Controller
             'category_id' => 'required|exists:post_categories,id',
             'content' => 'required|string',
             'thumbnail_url' => 'nullable|string',
-            'slug' => 'nullable|string'
+            'slug' => 'nullable|string',
+            'status' => 'required|in:DRAFT,PUBLISHED'
         ]);
 
         $validated['slug'] = $request->slug ?: Str::slug($request->title);
@@ -65,7 +66,8 @@ class PostController extends Controller
             'category_id' => 'required|exists:post_categories,id',
             'content' => 'required|string',
             'thumbnail_url' => 'nullable|string',
-            'slug' => 'nullable|string'
+            'slug' => 'nullable|string',
+            'status' => 'required|in:DRAFT,PUBLISHED'
         ]);
 
         $validated['slug'] = $request->slug ?: Str::slug($request->title);
