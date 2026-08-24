@@ -29,6 +29,7 @@ class CategoryController extends Controller
      */
     public function store(StoreCategoryRequest $request)
     {
+        //xét validated data từ request
         $validated = $request->validated();
 
         if (empty($validated['slug'])) {
@@ -39,6 +40,7 @@ class CategoryController extends Controller
             }
         }
 
+        // Lưu dữ liệu vào database
         Category::create($validated);
 
         // Chỉ cần redirect back để Inertia tự làm mới data trên trang Index
@@ -62,6 +64,7 @@ class CategoryController extends Controller
             }
         }
 
+        // Cập nhật dữ liệu vào database
         $category->update($validated);
 
         return redirect()->back()->with('toast-success', 'Cập nhật danh mục thành công!');
@@ -72,13 +75,9 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-        if ($category->products()->exists()) {
-            return redirect()->back()->with('toast-error', 'Không thể xóa! Danh mục này đang chứa sản phẩm.');
-        }
-
         $category->delete();
 
-        return redirect()->back()->with('toast-success', 'Xóa danh mục thành công!');
+        return redirect()->back()->with('toast-success', 'Đã đưa danh mục vào thùng rác!');
     }
 
     /**
@@ -111,6 +110,11 @@ class CategoryController extends Controller
     public function forceDelete($id)
     {
         $category = Category::onlyTrashed()->findOrFail($id);
+
+        if ($category->products()->exists()) {
+            return redirect()->back()->with('toast-error', 'Không thể xóa! Danh mục này đang chứa sản phẩm.');
+        }
+
         $category->forceDelete();
 
         return back()->with('toast-success', 'Đã xóa vĩnh viễn danh mục.');

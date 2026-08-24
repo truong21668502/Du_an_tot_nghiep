@@ -14,11 +14,10 @@ class TableStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'table_name' => 'required|string|max:50',
-            'area'       => 'nullable|string|max:50',
+            'table_name' => 'required|string|min:2|max:50',
+            'area'       => 'nullable|string|min:2|max:50',
             'capacity'   => 'required|integer|min:1',
             'qr_code'    => 'nullable|string|max:255|unique:tables,qr_code',
-            'qr_image'    => 'nullable|string|max:255',
             'status'     => 'required|in:EMPTY,OCCUPIED',
         ];
     }

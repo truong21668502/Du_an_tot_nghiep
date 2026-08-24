@@ -70,6 +70,7 @@ class AdminReviewController extends Controller
     // Gửi phản hồi
     public function reply(Request $request, $id)
     {
+        // Validate dữ liệu đầu vào
         $request->validate([
             'comment' => 'required|string|max:1000'
         ]);

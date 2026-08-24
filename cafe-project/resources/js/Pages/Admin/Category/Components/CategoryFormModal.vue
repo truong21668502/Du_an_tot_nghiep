@@ -37,7 +37,6 @@ const submitForm = () => {
         form.put(`/quan-tri/danh-muc/${props.category.id}`, {
             onSuccess: () => {
                 emit("close");
-                toast.success('Sửa danh mục thành công !');
                 form.reset();
             },
         });
@@ -45,7 +44,6 @@ const submitForm = () => {
         form.post("/quan-tri/danh-muc", {
             onSuccess: () => {
                 emit("close");
-                toast.success('Tạo danh mục thành công !');
                 form.reset();
             },
         });

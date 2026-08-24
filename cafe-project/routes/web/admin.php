@@ -112,6 +112,8 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
 
     // API lấy thông báo
     Route::get('/api/notifications', [NotificationController::class, 'getNotifications'])->name('notifications');
+    Route::patch('/api/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::patch('/api/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
 
     // Quản lý bình luận đánh giá sản phẩm của quản trị viên
     Route::get('/danh-gia-san-pham', [AdminReviewController::class, 'index'])->name('admin-reviews.index');
