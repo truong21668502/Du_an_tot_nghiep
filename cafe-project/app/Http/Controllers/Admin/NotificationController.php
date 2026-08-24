@@ -171,7 +171,6 @@ class NotificationController extends Controller
     {
         $cancelledOrders = DB::table('orders')
             ->where('status', 'CANCELLED')
-            ->whereDate('created_at', Carbon::today())
             ->select('id', 'cancel_reason', 'created_at')
             ->latest()
             ->limit(3)

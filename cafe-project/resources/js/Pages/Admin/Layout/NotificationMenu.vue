@@ -10,6 +10,7 @@ const isAudioUnlocked = ref(false);
 
 let notificationAudio = null;
 
+// Mở khóa âm thanh trên trình duyệt sau lần click đầu tiên
 const unlockAudio = () => {
     if (notificationAudio && !isAudioUnlocked.value) {
         notificationAudio.play().then(() => {
@@ -21,55 +22,75 @@ const unlockAudio = () => {
     }
 };
 
-onMounted(() => {
-    notificationAudio = new Audio('/sounds/notification.mp3');
-    notificationAudio.load();
-
-    window.addEventListener('click', unlockAudio);
-
-    // Lấy thông báo lần đầu
-    fetchNotifications(false);
-
-    // Quét ngầm 30s/lần
-    const interval = setInterval(() => {
-        fetchNotifications(true);
-    }, 30000);
-
-    onUnmounted(() => {
-        clearInterval(interval);
-        window.removeEventListener('click', unlockAudio);
-    });
-});
-
+// Hàm phát âm thanh
 const playNotificationSound = () => {
     if (!notificationAudio) return;
     notificationAudio.currentTime = 0;
-    const playPromise = notificationAudio.play();
-    if (playPromise !== undefined) {
-        playPromise.catch((error) => {
-            console.warn("Trình duyệt chặn autoplay âm thanh:", error);
-        });
-    }
+    notificationAudio.play().catch((error) => {
+        console.warn("Trình duyệt chặn autoplay âm thanh:", error);
+    });
 };
 
-const fetchNotifications = async (isInterval = false) => {
+// Lấy danh sách thông báo ban đầu từ database
+const fetchNotifications = async () => {
     isLoading.value = true;
     try {
         const res = await axios.get('/quan-tri/api/notifications');
-        const newUnreadCount = res.data.unread_count || 0;
-
-        if (isInterval && newUnreadCount > 0) {
-            playNotificationSound();
-        }
-
         notifications.value = res.data.notifications || [];
-        unreadCount.value = newUnreadCount;
+        unreadCount.value = res.data.unread_count || 0;
     } catch (err) {
         console.error("Lỗi lấy thông báo:", err);
     } finally {
         isLoading.value = false;
     }
 };
+
+onMounted(() => {
+    notificationAudio = new Audio('/sounds/notification.mp3');
+    notificationAudio.load();
+
+    window.addEventListener('click', unlockAudio);
+
+    //Tải danh sách thông báo lần đầu khi load trang
+    fetchNotifications();
+
+    // Lắng nghe Realtime qua WebSocket Reverb
+    if (window.Echo) {
+        window.Echo.channel('admin-notifications')
+            .listen('.notification.created', (event) => {
+                if (!event.notification) return;
+
+                // Kiểm tra xem thông báo đã có trong danh sách chưa (tránh trùng id)
+                const existingIndex = notifications.value.findIndex(n => n.id === event.notification.id);
+                
+                if (existingIndex !== -1) {
+                    // Nếu đã có thì cập nhật lại nội dung mới nhất
+                    notifications.value[existingIndex] = event.notification;
+                } else {
+                    // Nếu là thông báo mới hoàn toàn -> chèn lên đầu
+                    notifications.value.unshift(event.notification);
+                    unreadCount.value++;
+                    
+                    // Giữ tối đa 10 thông báo trên popup
+                    if (notifications.value.length > 10) {
+                        notifications.value.pop();
+                    }
+
+                    // Phát chuông báo có thông báo mới
+                    playNotificationSound();
+                }
+            });
+    }
+});
+
+onUnmounted(() => {
+    window.removeEventListener('click', unlockAudio);
+    
+    // Hủy đăng ký kênh để tránh rò rỉ bộ nhớ
+    if (window.Echo) {
+        window.Echo.leaveChannel('admin-notifications');
+    }
+});
 
 // Đánh dấu 1 thông báo đã đọc khi click
 const handleNotificationClick = async (item) => {
@@ -131,7 +152,7 @@ const toggleNotification = () => {
             <div class="p-3 px-4 border-b border-outline-variant/20 flex justify-between items-center bg-surface-container-low">
                 <h4 class="font-bold text-title-small text-on-surface">Thông báo</h4>
                 <button 
-                    v-if="unreadCount > 0"
+                    v-if="unreadCount > 0" 
                     @click="markAllAsRead" 
                     class="text-[11px] text-primary hover:underline font-medium cursor-pointer"
                 >
@@ -156,7 +177,7 @@ const toggleNotification = () => {
                     class="p-3 hover:bg-surface-container-high transition-colors flex gap-3 items-start cursor-pointer"
                     :class="{ 'opacity-60 bg-surface-container-low/40': item.is_read }"
                 >
-                    <!-- Chấm màu trạng thái: nếu đã đọc thì chuyển sang màu xám mờ -->
+                    <!-- Chấm màu trạng thái: nếu đã đọc thì xám mờ -->
                     <span 
                         class="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0"
                         :class="item.is_read ? 'bg-outline-variant' : {

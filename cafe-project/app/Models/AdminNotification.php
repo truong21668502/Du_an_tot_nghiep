@@ -10,20 +10,36 @@ class AdminNotification extends Model
 {
     use Prunable;
 
-    /**
-     * Tự động xác định các bản ghi cần dọn dẹp
-     * Ví dụ: Xóa các thông báo đã đọc quá 30 ngày, hoặc thông báo chưa đọc quá 60 ngày
-     */
-    public function prunable(): Builder
-    {
-        return static::query()->where('created_at', '<=', now()->subDays(30));
-    }
+    protected $table = 'admin_notifications';
 
     protected $fillable = [
-        'type', 'category', 'title', 'message', 'link', 'dedup_key', 'read_at'
+        'dedup_key',
+        'category',
+        'type',
+        'title',
+        'message',
+        'link',
+        'read_at',
     ];
 
     protected $casts = [
         'read_at' => 'datetime',
     ];
+
+    public function prunable(): Builder
+    {
+        return static::query()->where('created_at', '<=', now()->subDays(30));
+    }
+
+    /**
+     * Tự động bắt sự kiện khi có bản ghi mới được tạo vào DB
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (AdminNotification $notification) {
+            if (is_null($notification->read_at)) {
+                broadcast(new \App\Events\NotificationCreated($notification));
+            }
+        });
+    }
 }
