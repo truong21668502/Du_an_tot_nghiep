@@ -19,7 +19,6 @@ const form = useForm({
     role: "STAFF",
     gender: "Khác",
     date_of_birth: "",
-    reward_points: 0,
     status: "active",
     status_note: "",
 });
@@ -41,7 +40,6 @@ watch(() => props.isOpen, (newVal) => {
             } else {
                 form.date_of_birth = "";
             }
-            form.reward_points = props.userData.reward_points || 0;
             form.status = props.userData.status;
             form.status_note = props.userData.status_note || "";
         } else {
@@ -109,7 +107,7 @@ const submitForm = () => {
                     <span v-if="form.errors.password" class="text-body-small text-error">{{ form.errors.password }}</span>
                 </div>
 
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col gap-1">
                         <label class="text-label-large text-on-surface-variant font-bold">Vai trò *</label>
                         <select v-model="form.role" class="px-3 py-2 rounded-xl border border-outline-variant bg-surface text-on-surface text-body-medium cursor-pointer focus:outline-none focus:border-primary">
@@ -127,11 +125,6 @@ const submitForm = () => {
                             <option value="inactive">Tạm ngưng</option>
                             <option value="banned">Bị khóa (Banned)</option>
                         </select>
-                    </div>
-
-                    <div class="flex flex-col gap-1">
-                        <label class="text-label-large text-on-surface-variant font-bold" :class="{'text-outline/40': form.role !== 'CUSTOMER'}">Điểm tích lũy</label>
-                        <input v-model.number="form.reward_points" type="number" min="0" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface font-mono font-bold text-center text-on-surface" :disabled="form.role !== 'CUSTOMER'" />
                     </div>
                 </div>
 

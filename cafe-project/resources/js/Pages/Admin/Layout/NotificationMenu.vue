@@ -6,29 +6,18 @@ const isOpen = ref(false);
 const isLoading = ref(false);
 const unreadCount = ref(0);
 const notifications = ref([]);
-const isAudioUnlocked = ref(false);
 
-let notificationAudio = null;
+// Trạng thái hiển thị thông báo nháy "Bạn có 1 thông báo mới"
+const showNewAlert = ref(false);
+let alertTimeout = null;
 
-// Mở khóa âm thanh trên trình duyệt sau lần click đầu tiên
-const unlockAudio = () => {
-    if (notificationAudio && !isAudioUnlocked.value) {
-        notificationAudio.play().then(() => {
-            notificationAudio.pause();
-            notificationAudio.currentTime = 0;
-            isAudioUnlocked.value = true;
-            window.removeEventListener('click', unlockAudio);
-        }).catch(() => {});
-    }
-};
-
-// Hàm phát âm thanh
-const playNotificationSound = () => {
-    if (!notificationAudio) return;
-    notificationAudio.currentTime = 0;
-    notificationAudio.play().catch((error) => {
-        console.warn("Trình duyệt chặn autoplay âm thanh:", error);
-    });
+const triggerNewNotificationAlert = () => {
+    showNewAlert.value = true;
+    if (alertTimeout) clearTimeout(alertTimeout);
+    // Tự động ẩn sau 4 giây
+    alertTimeout = setTimeout(() => {
+        showNewAlert.value = false;
+    }, 4000);
 };
 
 // Lấy danh sách thông báo ban đầu từ database
@@ -46,12 +35,7 @@ const fetchNotifications = async () => {
 };
 
 onMounted(() => {
-    notificationAudio = new Audio('/sounds/notification.mp3');
-    notificationAudio.load();
-
-    window.addEventListener('click', unlockAudio);
-
-    //Tải danh sách thông báo lần đầu khi load trang
+    // Tải danh sách thông báo lần đầu khi load trang
     fetchNotifications();
 
     // Lắng nghe Realtime qua WebSocket Reverb
@@ -76,15 +60,15 @@ onMounted(() => {
                         notifications.value.pop();
                     }
 
-                    // Phát chuông báo có thông báo mới
-                    playNotificationSound();
+                    // Kích hoạt dòng nháy thông báo
+                    triggerNewNotificationAlert();
                 }
             });
     }
 });
 
 onUnmounted(() => {
-    window.removeEventListener('click', unlockAudio);
+    if (alertTimeout) clearTimeout(alertTimeout);
     
     // Hủy đăng ký kênh để tránh rò rỉ bộ nhớ
     if (window.Echo) {
@@ -123,11 +107,36 @@ const markAllAsRead = async () => {
 
 const toggleNotification = () => {
     isOpen.value = !isOpen.value;
+    if (isOpen.value) {
+        showNewAlert.value = false; // Đóng alert khi người dùng bấm mở xem dropdown
+    }
 };
 </script>
 
 <template>
-    <div class="relative">
+    <div class="relative flex items-center">
+        <!-- Toast Dòng nháy thông báo mới (Hiển thị ngay dưới quả chuông) -->
+        <Transition
+            enter-active-class="transition duration-300 ease-out"
+            enter-from-class="transform -translate-y-2 opacity-0"
+            enter-to-class="transform translate-y-0 opacity-100"
+            leave-active-class="transition duration-200 ease-in"
+            leave-from-class="transform translate-y-0 opacity-100"
+            leave-to-class="transform -translate-y-2 opacity-0"
+        >
+            <div 
+                v-if="showNewAlert && !isOpen" 
+                @click="toggleNotification"
+                class="absolute right-0 top-full mt-2 whitespace-nowrap cursor-pointer z-50 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-xl animate-pulse"
+            >
+                <!-- Mũi tên nhỏ trỏ lên quả chuông -->
+                <div class="absolute -top-1.5 right-3 w-3 h-3 bg-primary rotate-45"></div>
+
+                <span class="inline-block w-2 h-2 rounded-full bg-white animate-ping"></span>
+                <span>Bạn có thông báo mới</span>
+            </div>
+        </Transition>
+
         <!-- Nút Quả Chuông -->
         <button 
             @click="toggleNotification" 
@@ -147,7 +156,7 @@ const toggleNotification = () => {
         <!-- Dropdown Thông Báo -->
         <div 
             v-if="isOpen" 
-            class="absolute right-0 mt-2 w-80 sm:w-96 bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/30 z-50 overflow-hidden"
+            class="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/30 z-50 overflow-hidden"
         >
             <div class="p-3 px-4 border-b border-outline-variant/20 flex justify-between items-center bg-surface-container-low">
                 <h4 class="font-bold text-title-small text-on-surface">Thông báo</h4>

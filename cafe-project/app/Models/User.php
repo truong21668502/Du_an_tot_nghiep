@@ -21,7 +21,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role',
-        'reward_points',
         'gender',
         'date_of_birth',
         'status',
@@ -33,7 +32,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $casts = [
         'date_of_birth' => 'date',
-        'reward_points' => 'integer',
         'is_email_verified' => 'boolean',
         'password' => 'hashed',
         'created_at' => 'datetime',

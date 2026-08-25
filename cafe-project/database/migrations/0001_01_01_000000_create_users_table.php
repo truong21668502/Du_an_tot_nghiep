@@ -23,8 +23,6 @@ return new class extends Migration
                 ->default('CUSTOMER')
                 ->comment('Vai trò/Phân quyền trong hệ thống');
                 
-            $table->integer('reward_points')->nullable()->default(0)->comment('Điểm tích lũy cho khách hàng');
-            
             $table->enum('gender', ['Nam', 'Nữ', 'Khác'])
                 ->default('Khác')
                 ->comment('Giới tính của người dùng');
