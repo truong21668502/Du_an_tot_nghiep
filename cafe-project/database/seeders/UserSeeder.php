@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
                 'role' => 'ADMIN',
                 'gender' => 'Nam',
                 'date_of_birth' => '1990-05-15',
-                'reward_points' => 0,
+                
                 'status' => 'ACTIVE',
                 'is_email_verified' => true,
                 'google_id' => null,
@@ -38,7 +38,7 @@ class UserSeeder extends Seeder
                 'role' => 'STAFF',
                 'gender' => 'Nam',
                 'date_of_birth' => '1998-09-20',
-                'reward_points' => 0,
+                
                 'status' => 'ACTIVE',
                 'is_email_verified' => true,
                 'google_id' => null,
@@ -54,7 +54,7 @@ class UserSeeder extends Seeder
                 'role' => 'STAFF',
                 'gender' => 'Nam',
                 'date_of_birth' => '2006-03-10',
-                'reward_points' => 0,
+                
                 'status' => 'ACTIVE',
                 'is_email_verified' => true,
                 'google_id' => null,
@@ -72,7 +72,7 @@ class UserSeeder extends Seeder
                 'role' => 'BARISTA',
                 'gender' => 'Nữ',
                 'date_of_birth' => '2006-11-25',
-                'reward_points' => 0,
+                
                 'status' => 'ACTIVE',
                 'is_email_verified' => true,
                 'google_id' => null,
@@ -88,7 +88,7 @@ class UserSeeder extends Seeder
                 'role' => 'BARISTA',
                 'gender' => 'Nam',
                 'date_of_birth' => '1999-07-14',
-                'reward_points' => 0,
+                
                 'status' => 'ACTIVE',
                 'is_email_verified' => true,
                 'google_id' => null,
@@ -106,7 +106,7 @@ class UserSeeder extends Seeder
                 'role' => 'CUSTOMER',
                 'gender' => 'Nam',
                 'date_of_birth' => '2001-01-30',
-                'reward_points' => 150,
+                
                 'status' => 'ACTIVE',
                 'is_email_verified' => true,
                 'google_id' => null,
@@ -122,7 +122,7 @@ class UserSeeder extends Seeder
                 'role' => 'SHIPPER',
                 'gender' => 'Nam',
                 'date_of_birth' => '2002-09-05',
-                'reward_points' => 80,
+                
                 'status' => 'ACTIVE',
                 'is_email_verified' => true,
                 'google_id' => null,
@@ -138,7 +138,7 @@ class UserSeeder extends Seeder
                 'role' => 'CUSTOMER',
                 'gender' => 'Nam',
                 'date_of_birth' => '1995-04-18',
-                'reward_points' => 0,
+                
                 'status' => 'INACTIVE', // tài khoản chưa kích hoạt — để test case này
                 'is_email_verified' => false,
                 'google_id' => null,
