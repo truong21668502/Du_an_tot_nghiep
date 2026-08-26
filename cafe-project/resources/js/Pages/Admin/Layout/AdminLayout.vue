@@ -21,7 +21,7 @@ const navigateTo = (href) => {
     router.visit(href, {
         preserveScroll: true
     });
-    mobileOpen.value = false;
+    mobileOpen.value = false;   
 };
 
 const menuGroups = [
@@ -110,6 +110,7 @@ const menuGroups = [
             { label: "Bàn", href: "/quan-tri/ban", icon: "table_bar" },
             { label: "Thương hiệu", href: "/quan-tri/thuong-hieu", icon: "store" },
             { label: "Banner trang chủ", href: "/quan-tri/banners", icon: "view_carousel" },
+            { label: "Cài đặt", href: "/quan-tri/cai-dat", icon: "settings" },
             
         ],
     },

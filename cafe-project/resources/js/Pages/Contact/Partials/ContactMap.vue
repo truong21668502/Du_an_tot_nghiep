@@ -1,21 +1,34 @@
 ﻿<script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 import AnimateOnScroll from '@/Components/Base/AnimateOnScroll.vue'
+
+const page = usePage()
+const settings = computed(() => page.props.settings || {})
+const brand = computed(() => page.props.brand || {})
+
 const mapLoaded = ref(false)
-const storeInfo = {
-  name: 'Cà Phê Mới',
-  address: '137 Đường Nguyễn Thị Thập, Thanh Khê, Đà Nẵng, Việt Nam',
-  lat: 10.7769,
-  lng: 106.7009,
-  zoom: 16
-}
-const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d958.4502622652067!2d108.16879227575338!3d16.075810615347628!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x312d0763e938a625%3A0xed2edc58d1b6fe5b!2zQ2FvIMSR4bqzbmcgRlBUIFBvbHl0ZWNobmljIMSQw6AgTuG6tW5n!5e0!3m2!1svi!2s!4v1780736609360!5m2!1svi!2s`
+
+const storeInfo = computed(() => {
+  const shop = settings.value?.shop_info || {}
+  return {
+    name: brand.value?.brand_name || shop.shop_name || 'Cửa hàng',
+    address: shop.shop_address || '',
+    lat: parseFloat(shop.shop_lat) || 0,
+    lng: parseFloat(shop.shop_lng) || 0,
+    zoom: 16
+  }
+})
+
+const mapUrl = computed(() => settings.value?.website?.google_maps_embed_url || '')
+
 onMounted(() => {
   setTimeout(() => {
     mapLoaded.value = true
   }, 300)
 })
 </script>
+
 <template>
   <section class="py-24 px-margin-mobile md:px-gutter bg-surface-container-low">
     <div class="max-w-[1280px] mx-auto">

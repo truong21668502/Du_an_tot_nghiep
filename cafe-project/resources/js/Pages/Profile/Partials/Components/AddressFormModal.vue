@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, watch, ref, onUnmounted, nextTick } from "vue";
 import BaseButton from "@/Components/Base/BaseButton.vue";
-
+import { usePage } from '@inertiajs/vue3'
 const props = defineProps({
     show: Boolean,
     editingAddress: Object,
@@ -13,8 +13,8 @@ const emit = defineEmits(["close", "submit"]);
 
 // ================== CẤU HÌNH & HẰNG SỐ ==================
 const GOONG_API_KEY = import.meta.env.VITE_GOONG_API_KEY;
-import { SHOP_POS, MAX_DELIVERY_DISTANCE_METERS, calculateShippingFee } from "@/Composables/shipping";
-
+import { useShipping } from "@/Composables/useShipping";
+const { shopPos, maxDeliveryDistanceMeters, calculateShippingFee } = useShipping();
 // ================== STATE ==================
 const form = reactive({
     receiver_name: "",
@@ -27,6 +27,12 @@ const form = reactive({
     goong_place_id: null,
     is_default: false,
 });
+
+
+    console.log('Settings:', usePage().props.settings)
+    console.log('ShopPos:', shopPos.value)
+    console.log('MaxDistance:', maxDeliveryDistanceMeters.value)
+
 
 const searchInput = ref("");
 const suggestions = ref([]);
@@ -53,10 +59,10 @@ function updateMapIframe(destLat, destLng) {
     mapIframeSrc.value = `https://www.google.com/maps/embed?pb=!1m28!1m12!1m3!1d${Math.floor(
         Math.random() * 100000
     )}!2d${destLng}!3d${destLat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!4m13!3e0!4m5!1s${
-        SHOP_POS.lat
-    }%2C${SHOP_POS.lng}!2s${SHOP_POS.lat}%2C${SHOP_POS.lng}!3m2!1d${
-        SHOP_POS.lat
-    }!2d${SHOP_POS.lng}!4m5!1s${destLat}%2C${destLng}!2s${destLat}%2C${destLng}!3m2!1d${destLat}!2d${destLng}!5e0!3m2!1svi!2s!4v${Date.now()}`;
+        shopPos.value.lat
+    }%2C${shopPos.value.lng}!2s${shopPos.value.lat}%2C${shopPos.value.lng}!3m2!1d${
+        shopPos.value.lat
+    }!2d${shopPos.value.lng}!4m5!1s${destLat}%2C${destLng}!2s${destLat}%2C${destLng}!3m2!1d${destLat}!2d${destLng}!5e0!3m2!1svi!2s!4v${Date.now()}`;
 }
 
 // ================== GOONG MAP SERVICES ==================
@@ -80,10 +86,10 @@ const handleInput = () => {
         try {
             const url = `https://rsapi.goong.io/v2/place/autocomplete?api_key=${GOONG_API_KEY}&input=${encodeURIComponent(
                 query
-            )}&location=${SHOP_POS.lat},${
-                SHOP_POS.lng
-            }&radius=5&limit=5&origin=${SHOP_POS.lat},${
-                SHOP_POS.lng
+            )}&location=${shopPos.value.lat},${
+                shopPos.value.lng
+            }&radius=5&limit=5&origin=${shopPos.value.lat},${
+                shopPos.value.lng
             }&more_compound=true`;
 
             const res = await fetch(url);
@@ -137,7 +143,7 @@ const getPlaceDetail = async (placeId) => {
 
 const calculateDirection = async (destLat, destLng) => {
     try {
-        const url = `https://rsapi.goong.io/Direction?api_key=${GOONG_API_KEY}&origin=${SHOP_POS.lat},${SHOP_POS.lng}&destination=${destLat},${destLng}&vehicle=car`;
+        const url = `https://rsapi.goong.io/Direction?api_key=${GOONG_API_KEY}&origin=${shopPos.value.lat},${shopPos.value.lng}&destination=${destLat},${destLng}&vehicle=bike`;
         const res = await fetch(url);
         const data = await res.json();
 
@@ -155,7 +161,7 @@ const calculateDirection = async (destLat, destLng) => {
 
         const fee = calculateShippingFee(distanceMeters);
 
-        if (distanceMeters > MAX_DELIVERY_DISTANCE_METERS || fee === null) {
+        if (distanceMeters > maxDeliveryDistanceMeters.value || fee === null) {
             isOutRange.value = true;
             mapIframeSrc.value = "about:blank";
         } else {
@@ -210,7 +216,7 @@ watch(
                 if (lat && lng) {
                     await calculateDirection(lat, lng);
                 } else {
-                    updateMapIframe(SHOP_POS.lat, SHOP_POS.lng);
+                    updateMapIframe(shopPos.value.lat, shopPos.value.lng);
                 }
             } else {
                 Object.assign(form, {
@@ -225,7 +231,7 @@ watch(
                     is_default: false,
                 });
                 searchInput.value = "";
-                updateMapIframe(SHOP_POS.lat, SHOP_POS.lng);
+                updateMapIframe(shopPos.value.lat, shopPos.value.lng);
             }
         }
     },
@@ -256,7 +262,6 @@ const handleSubmit = () => {
         return;
     }
 
-    // 2. Kiểm tra bán kính 5km
     if (isOutRange.value) return;
 
     form.address_detail = searchInput.value || form.address_detail;
@@ -360,7 +365,7 @@ const handleSubmit = () => {
                     <!-- Cảnh báo nếu nằm ngoài bán kính 5km -->
                     <div v-if="isOutRange" class="md:col-span-2 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm">
                         <span class="material-symbols-outlined text-lg">warning</span>
-                        <span>Địa chỉ này vượt quá bán kính giao hàng (tối đa 5km từ cửa hàng). Vui lòng chọn địa điểm khác!</span>
+                        <span>Địa chỉ này vượt quá bán kính giao hàng (tối đa {{ maxDeliveryDistanceMeters / 1000 }}km từ cửa hàng). Vui lòng chọn địa điểm khác!</span>
                     </div>
 
                     <!-- Panel hiển thị khoảng cách và phí ship -->
@@ -403,7 +408,7 @@ const handleSubmit = () => {
                     <!-- GHI CHÚ BÁN KÍNH GIAO HÀNG (NOTE DƯỚI CÙNG) -->
                     <div class="md:col-span-2 pt-1">
                         <p class="font-sans text-xs italic text-amber-600 font-medium flex items-center gap-1">
-                            <span>*</span> Chỉ hỗ trợ giao hàng trong bán kính 5km trở xuống.
+                            <span>*</span> Chỉ hỗ trợ giao hàng trong bán kính {{ maxDeliveryDistanceMeters / 1000 }}km trở xuống.
                         </p>
                     </div>
                 </div>

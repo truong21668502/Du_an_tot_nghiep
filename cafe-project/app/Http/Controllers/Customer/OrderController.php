@@ -139,39 +139,52 @@ private function placeOrder(Cart $cart, array $data, Request $request): Order
      * Xác định phí ship + địa chỉ giao hàng dựa trên address_id trong request.
      * Ném CartException nếu địa chỉ không hợp lệ hoặc vượt bán kính giao hàng.
      */
-    private function resolveShippingFee(array $data): array
-    {
-        if (($data['order_type'] ?? null) !== 'DELIVERY') {
-            return ['fee' => 0.0, 'address' => null];
-        }
-
-        if (empty($data['address_id'])) {
-            throw new CartException('Vui lòng chọn địa chỉ giao hàng');
-        }
-
-        $address = UserAddress::find($data['address_id']);
-
-        if (!$address || !$address->latitude || !$address->longitude) {
-            throw new CartException('Địa chỉ giao hàng không hợp lệ, vui lòng chọn lại');
-        }
-
-        $distanceMeters = $this->shippingService->getDistanceMeters(
-            (float) $address->latitude,
-            (float) $address->longitude
-        );
-
-        if ($distanceMeters === null) {
-            throw new CartException('Không thể tính khoảng cách giao hàng, vui lòng thử lại');
-        }
-
-        $fee = $this->shippingService->calculateFee($distanceMeters);
-
-        if ($fee === null || $distanceMeters > ShippingService::MAX_DISTANCE_METERS) {
-            throw new CartException('Địa chỉ giao hàng vượt quá bán kính hỗ trợ (5km)');
-        }
-
-        return ['fee' => $fee, 'address' => $address];
+private function resolveShippingFee(array $data): array
+{
+    if (($data['order_type'] ?? null) !== 'DELIVERY') {
+        return ['fee' => 0.0, 'address' => null];
     }
+
+    if (empty($data['address_id'])) {
+        throw new CartException('Vui lòng chọn địa chỉ giao hàng');
+    }
+
+    $address = UserAddress::find($data['address_id']);
+
+    if (!$address || !$address->latitude || !$address->longitude) {
+        throw new CartException('Địa chỉ giao hàng không hợp lệ, vui lòng chọn lại');
+    }
+
+    $distanceMeters = $this->shippingService->getDistanceMeters(
+        (float) $address->latitude,
+        (float) $address->longitude
+    );
+
+    if ($distanceMeters === null) {
+        throw new CartException('Không thể tính khoảng cách giao hàng, vui lòng thử lại');
+    }
+
+    // Lấy bán kính tối đa từ ShippingService (đã load cấu hình động từ DB)
+    $maxDistanceMeters = $this->shippingService->getMaxDistanceMeters();
+
+    // Tính phí ship từ bảng giá động
+    $fee = $this->shippingService->calculateFee($distanceMeters);
+
+    // Kiểm tra vượt bán kính hoặc không có mức phí phù hợp
+    if ($distanceMeters > $maxDistanceMeters) {
+        $maxRadiusKm = $maxDistanceMeters / 1000;
+        throw new CartException("Địa chỉ giao hàng vượt quá bán kính hỗ trợ ({$maxRadiusKm}km)");
+    }
+
+    if ($fee === null) {
+        throw new CartException('Không có mức phí giao hàng phù hợp cho khoảng cách này');
+    }
+
+    return [
+        'fee' => $fee,
+        'address' => $address,
+    ];
+}
 
     private function calculateAmounts(Cart $cart): array
     {

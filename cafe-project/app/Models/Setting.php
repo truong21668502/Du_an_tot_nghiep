@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Support\Facades\Cache;
 
 class Setting extends Model
 {
@@ -24,4 +25,18 @@ class Setting extends Model
     {
         return static::where('group', $group)->pluck('value', 'key')->toArray();
     }
+
+    protected static function booted()
+    {
+        // Khi Admin Thêm mới hoặc Cập nhật dữ liệu thành công
+        static::saved(function ($setting) {
+            Cache::forget('shop_settings_grouped');
+        });
+
+        // Khi Admin Xóa một dòng dữ liệu cấu hình
+        static::deleted(function ($setting) {
+            Cache::forget('shop_settings_grouped');
+        });
+    }
+
 }

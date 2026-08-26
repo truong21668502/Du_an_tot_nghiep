@@ -5,6 +5,8 @@ namespace App\Http\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Inertia\Middleware;
+use App\Models\Setting;
+use Illuminate\Support\Facades\Cache;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -48,6 +50,12 @@ class HandleInertiaRequests extends Middleware
                 'toast-error' => fn () => $request->session()->get('toast-error'),
                 'toast-warning' => fn () => $request->session()->get('toast-warning'),
             ],
+            'settings' => fn () => Cache::remember('shop_settings_grouped', now()->addDays(7), function () {
+            return Setting::all()
+                ->groupBy('group')
+                ->map(fn ($items) => $items->pluck('value', 'key'))
+                ->toArray();
+        }),
         ];
-    }
+    }   
 }

@@ -40,7 +40,7 @@ return new class extends Migration
             // Thời gian hệ thống tự động ghi nhận bản ghi
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
-        });
+        }); 
     }
 
     /**

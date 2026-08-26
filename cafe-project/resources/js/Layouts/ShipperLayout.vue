@@ -6,7 +6,7 @@ const currentUrl = computed(() => usePage().url);
 const isMobileMenuOpen = ref(false);
 
 const navLinks = [
-    { label: 'Đơn chờ giao', href: '/shipper/don-cho-giao', icon: 'local_shipping' },
+    { label: 'Đơn chờ giao', href: '/giao-hang', icon: 'local_shipping' },
     // Có thể thêm 'Lịch sử' sau
 ];
 
@@ -57,7 +57,7 @@ const props = defineProps({
         <!-- Sidebar -->
         <aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-surface-container-low shadow-soft py-6 z-40 border-r border-outline-variant/30">
             <div class="px-6 mb-6">
-                <Link href="/shipper/don-cho-giao" class="text-headline-sm text-primary tracking-tight hover:opacity-80 transition-opacity font-serif font-bold">
+                <Link href="/giao-hang" class="text-headline-sm text-primary tracking-tight hover:opacity-80 transition-opacity font-serif font-bold">
                     Nắng Coffee
                 </Link>
                 <p class="text-label-sm text-on-surface-variant/70 mt-1">Shipper Panel</p>

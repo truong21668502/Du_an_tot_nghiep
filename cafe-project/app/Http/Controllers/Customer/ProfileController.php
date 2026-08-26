@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
+use App\Models\Setting;
 
 class ProfileController extends Controller
 {
@@ -141,8 +142,16 @@ public function cancelOrder(Order $order)
         // Cập nhật trạng thái đơn hàng
         $order->update(['status' => 'CANCELLED', 'cancel_reason' => 'Khách hàng hủy đơn']);
         
-        return redirect()->route('profile.orders')->with('toast-success', 'Hủy đơn hàng và hoàn tiền thành công');
-    }
+        if ($payment && $payment->payment_status === 'PAID') {
+            $message = 'Hủy đơn hàng và hoàn tiền thành công';
+        } else {
+            $message = 'Hủy đơn hàng thành công';
+        }
+
+        return redirect()
+            ->route('profile.orders')
+            ->with('toast-success', $message);
+            }
 
     /**
      * Xử lý gọi API Hoàn tiền của VNPAY Sandbox

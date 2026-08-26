@@ -211,7 +211,7 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
 
     Route::get('/cai-dat', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/cai-dat', [SettingController::class, 'update'])->name('settings.update');
-
+    Route::get('/api/coupons/search/{q?}', [SettingController::class, 'searchCoupons'])->name('admin.settings.coupons.search');
 
 });
 

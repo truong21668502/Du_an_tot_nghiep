@@ -1,6 +1,9 @@
 ﻿<script setup>
 import BaseButton from '@/Components/Base/BaseButton.vue'
-import { Link } from '@inertiajs/vue3'
+import { Link, usePage } from '@inertiajs/vue3'
+import { computed } from 'vue'
+
+const page = usePage()
 
 defineProps({
   subtotal: { type: Number, required: true },
@@ -9,6 +12,18 @@ defineProps({
   formatPrice: { type: Function, required: true },
   itemCount: { type: Number, required: true },
   loading: { type: Boolean, default: false }
+})
+
+const shippingFees = computed(() => {
+  const raw = page.props.settings?.delivery?.shipping_fees
+  if (!raw) return []
+
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
 })
 </script>
 
@@ -36,26 +51,21 @@ defineProps({
         <span>-{{ formatPrice(discount) }}</span>
       </div>
 
-      <!-- Phí ship -->
-      <div class="rounded-lg bg-primary/5 border border-primary/10 p-3 space-y-1">
+      <!-- Phí ship (từ settings) -->
+      <div
+        v-if="shippingFees.length"
+        class="rounded-lg bg-primary/5 border border-primary/10 p-3 space-y-1"
+      >
         <div class="font-medium text-primary">
           Phí giao hàng (ước tính)
         </div>
 
-        <div class="text-sm text-on-surface-variant">
-          • 0 – 2 km: 10.000đ
-        </div>
-
-        <div class="text-sm text-on-surface-variant">
-          • Trên 2 – 3 km: 15.000đ
-        </div>
-
-        <div class="text-sm text-on-surface-variant">
-          • Trên 3 – 4 km: 20.000đ
-        </div>
-
-        <div class="text-sm text-on-surface-variant">
-          • Trên 4 – 5 km: 25.000đ
+        <div
+          v-for="(fee, index) in shippingFees"
+          :key="index"
+          class="text-sm text-on-surface-variant"
+        >
+          • {{ fee.from_km }} – {{ fee.to_km }} km: {{ formatPrice(fee.fee) }}
         </div>
 
         <div class="text-xs text-gray-500 mt-2 italic">

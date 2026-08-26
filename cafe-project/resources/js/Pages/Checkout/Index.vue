@@ -6,10 +6,13 @@ import MainLayout from '@/Layouts/MainLayout.vue'
 import AnimateOnScroll from '@/Components/Base/AnimateOnScroll.vue'
 import BaseButton from '@/Components/Base/BaseButton.vue'
 import AddressFormModal from '@/Pages/Profile/Partials/Components/AddressFormModal.vue'
-import { SHOP_POS, MAX_DELIVERY_DISTANCE_METERS, calculateShippingFee } from '@/Composables/shipping'
+import { useShipping } from '@/Composables/useShipping'
 
 defineOptions({ layout: MainLayout })
 
+const { shopPos, maxDeliveryDistanceMeters, calculateShippingFee } = useShipping();
+
+console.log('max delivery distance (meters):', maxDeliveryDistanceMeters.value)
 const page = usePage()
 const subtotal = computed(() => page.props.subtotal || 0)
 const voucher = computed(() => page.props.voucher || null)
@@ -52,7 +55,7 @@ const calculateShippingForAddress = async (address) => {
     isAddressOutOfRange.value = false
 
     try {
-        const url = `https://rsapi.goong.io/Direction?api_key=${GOONG_API_KEY}&origin=${SHOP_POS.lat},${SHOP_POS.lng}&destination=${address.latitude},${address.longitude}&vehicle=car`
+       const url = `https://rsapi.goong.io/Direction?api_key=${GOONG_API_KEY}&origin=${shopPos.value.lat},${shopPos.value.lng}&destination=${address.latitude},${address.longitude}&vehicle=bike`
         const res = await fetch(url)
         const data = await res.json()
 
@@ -70,7 +73,7 @@ shippingDuration.value = Math.ceil(leg.duration.value / 60)
 
         const fee = calculateShippingFee(distanceMeters)
 
-        if (distanceMeters > MAX_DELIVERY_DISTANCE_METERS || fee === null) {
+        if (distanceMeters > maxDeliveryDistanceMeters.value || fee === null) {
             isAddressOutOfRange.value = true
             shippingFee.value = 0
         } else {
@@ -361,7 +364,7 @@ const submitOrder = () => {
           <!-- Thông báo ngoài phạm vi -->
           <p v-if="isAddressOutOfRange && selectedAddressId" class="text-error text-label-sm flex items-start gap-1">
             <span class="material-symbols-outlined text-sm">error</span>
-            <span>Địa chỉ này vượt quá bán kính giao hàng (tối đa 5km), vui lòng chọn địa chỉ khác.</span>
+            <span>Địa chỉ này vượt quá bán kính giao hàng (tối đa {{ maxDeliveryDistanceMeters / 1000 }}km), vui lòng chọn địa chỉ khác.</span>
           </p>
           
           <!-- Khoảng cách và thời gian (hiển thị khi có) -->
@@ -371,7 +374,7 @@ const submitOrder = () => {
               <span>{{ shippingDistanceText }}</span>
             </div>
             <div v-if="shippingDurationText" class="flex justify-between text-label-sm text-on-surface-variant">
-              <span>Thời gian ước tính</span>
+              <span>Thời gian vận chuyển ước tính</span>
               <span>{{ shippingDurationText }}</span>
             </div>
           </div>

@@ -1,15 +1,23 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { usePage, router, Link } from '@inertiajs/vue3'
-import ChatBox from '@/Components/Chat/ChatBox.vue'
+import FloatingContact from '@/Components/FloatingContact.vue'
 import { toast } from "vue3-toastify";
+
 const isMobileMenuOpen = ref(false)
 const page = usePage()
 const currentUrl = computed(() => page.url)
+
 const user = computed(() => page.props.auth?.user || null)
 const brand = computed(() => page.props.brand || null)
 const brandName = computed(() => brand.value?.brand_name || 'Nắng Coffee')
 const logoUrl = computed(() => brand.value?.logo_url || 'https://res.cloudinary.com/dltgjdf9t/image/upload/v1780996916/NangCoffee_logo_fullmau_wl8jbz.png')
+
+// Lấy dữ liệu settings từ Inertia props
+const settings = computed(() => page.props.settings || {})
+const shopInfo = computed(() => settings.value?.shop_info || {})
+const website = computed(() => settings.value?.website || {})
+
 const navLinks = [
   { label: 'Trang chủ', href: '/', routeName: 'home' },
   { label: 'Thực đơn', href: '/thuc-don', routeName: 'menu' },
@@ -17,25 +25,30 @@ const navLinks = [
   { label: 'Liên hệ', href: '/lien-he', routeName: 'contact' },
   { label: 'Bài viết', href: '/bai-viet', routeName: 'blog' },
 ]
+
 const isActiveLink = (path) => {
   if (path === '/') return currentUrl.value === '/'
   return currentUrl.value.startsWith(path)
 }
+
 const navigateTo = (href) => {
   router.visit(href)
   isMobileMenuOpen.value = false
 }
+
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
 }
+
 router.on('navigate', () => {
   isMobileMenuOpen.value = false
 })
-
 </script>
+
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="min-h-screen flex flex-col relative">
     <nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 shadow-sm">
+      <!-- (Phần Header giữ nguyên như cũ, không thay đổi) -->
       <div class="flex justify-between items-center h-20 px-margin-mobile md:px-gutter max-w-[1280px] mx-auto">
         <a 
           href="/" 
@@ -110,6 +123,7 @@ router.on('navigate', () => {
           v-if="isMobileMenuOpen" 
           class="md:hidden bg-surface border-t border-outline-variant/30 px-margin-mobile py-4 shadow-lg"
         >
+          <!-- (Nội dung Mobile menu giữ nguyên) -->
           <template v-if="user">
             <div class="flex items-center gap-3 px-4 py-3 mb-2 bg-primary-container/20 rounded-xl">
               <span class="material-symbols-outlined text-3xl text-primary">account_circle</span>
@@ -174,15 +188,15 @@ router.on('navigate', () => {
         </div>
       </Transition>
     </nav>
-    <main class="flex-grow pt-20">
-      <slot />
-      <ChatBox />
+
+    <main class="flex-grow pt-20 relative">
+        <slot />
+        <FloatingContact />
     </main>
     <footer class="w-full py-12 md:py-16 px-4 md:px-8 bg-surface-container-low border-t border-surface-container-highest/20">
-      <!-- Container chuyển sang Grid để tự động sắp xếp chuẩn responsive -->
       <div class="max-w-[1280px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-8 md:gap-10">
 
-        <!-- Cột 1: Thông tin thương hiệu (Chiếm 4 cột trên PC) -->
+        <!-- Cột 1: Thông tin thương hiệu -->
         <div class="lg:col-span-4 flex flex-col justify-between">
           <div>
             <div class="flex items-center gap-2.5 mb-4">
@@ -198,21 +212,21 @@ router.on('navigate', () => {
             </p>
           </div>
         
-          <!-- Icon mạng xã hội -->
+          <!-- Icon mạng xã hội được bind linh động -->
           <div class="flex gap-3">
             <a href="#" class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container/30 text-on-surface-variant hover:text-primary flex items-center justify-center transition-all duration-200" aria-label="Instagram">
               <span class="material-symbols-outlined">camera_alt</span>
             </a>
-            <a href="#" class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container/30 text-on-surface-variant hover:text-primary flex items-center justify-center transition-all duration-200" aria-label="Email">
+            <a :href="`mailto:${shopInfo?.shop_email}`" v-if="shopInfo?.shop_email" class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container/30 text-on-surface-variant hover:text-primary flex items-center justify-center transition-all duration-200" aria-label="Email">
               <span class="material-symbols-outlined">mail</span>
             </a>
-            <a href="https://www.facebook.com/profile.php?id=61581909366342" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container/30 text-on-surface-variant hover:text-primary flex items-center justify-center transition-all duration-200" aria-label="Facebook">
+            <a :href="website?.social_facebook" v-if="website?.social_facebook" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container/30 text-on-surface-variant hover:text-primary flex items-center justify-center transition-all duration-200" aria-label="Facebook">
               <span class="material-symbols-outlined">thumb_up</span>
             </a>
           </div>
         </div>
       
-        <!-- Cột 2: Khám phá (Chiếm 2 cột trên PC) -->
+        <!-- Cột 2: Khám phá -->
         <div class="lg:col-span-2 flex flex-col gap-3">
           <h4 class="font-sans text-label-md text-primary font-semibold mb-1">Khám phá</h4>
           <a href="/ve-chung-toi" @click.prevent="navigateTo('/ve-chung-toi')" class="font-sans text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors duration-200">Về chúng tôi</a>
@@ -221,7 +235,7 @@ router.on('navigate', () => {
           <a href="/thuc-don" @click.prevent="navigateTo('/thuc-don')" class="font-sans text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors duration-200">Thực đơn</a>
         </div>
       
-        <!-- Cột 3: Hỗ trợ (Chiếm 2 cột trên PC) -->
+        <!-- Cột 3: Hỗ trợ -->
         <div class="lg:col-span-2 flex flex-col gap-3">
           <h4 class="font-sans text-label-md text-primary font-semibold mb-1">Hỗ trợ</h4>
           <a href="#" class="font-sans text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors duration-200">Chính sách bảo mật</a>
@@ -230,25 +244,25 @@ router.on('navigate', () => {
           <a href="#" class="font-sans text-label-sm text-on-surface-variant/70 hover:text-primary transition-colors duration-200">FAQ</a>
         </div>
       
-        <!-- Cột 4: Liên hệ (Chiếm 4 cột trên PC, gộp thông tin liên hệ & Facebook iframe) -->
+        <!-- Cột 4: Liên hệ (Hiển thị dữ liệu động) -->
         <div class="sm:col-span-2 lg:col-span-4 flex flex-col gap-4">
           <div>
             <h4 class="font-sans text-label-md text-primary font-semibold mb-2">Thông tin liên hệ</h4>
             <p class="font-sans text-label-sm text-on-surface-variant/70 mb-1 leading-relaxed">
-              <strong>Địa chỉ:</strong> 137 Đường Nguyễn Thị Thập, Phường Hoà Minh, Quận Liên Chiểu, TP. Đà Nẵng
+              <strong>Địa chỉ:</strong> {{ shopInfo?.shop_address || 'Đang cập nhật...' }}
             </p>
             <p class="font-sans text-label-sm text-on-surface-variant/70 mb-1">
-              <strong>Điện thoại:</strong> 0336 620 188
+              <strong>Điện thoại:</strong> {{ shopInfo?.shop_hotline || 'Đang cập nhật...' }}
             </p>
             <p class="font-sans text-label-sm text-on-surface-variant/70 mb-3">
-              <strong>Email:</strong> dinhtu20091998@gmail.com
+              <strong>Email:</strong> {{ shopInfo?.shop_email || 'Đang cập nhật...' }}
             </p>
           </div>
         
           <!-- Fanpage Facebook Plugin -->
-          <div class="w-full max-w-[340px] overflow-hidden shadow-sm border border-surface-container-highest/30 bg-white">
+          <div class="w-full max-w-[340px] overflow-hidden shadow-sm border border-surface-container-highest/30 bg-white" v-if="website?.social_facebook">
             <iframe 
-              src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fprofile.php%3Fid%3D61581909366342&tabs=&width=340&height=130&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=false&appId" 
+              :src="`https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(website.social_facebook)}&tabs=&width=340&height=130&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=false&appId`" 
               width="100%" 
               height="130" 
               style="border:none;overflow:hidden" 
@@ -262,7 +276,6 @@ router.on('navigate', () => {
       
       </div>
     
-      <!-- Bổ sung dòng Copyright ở cuối chân trang -->
       <div class="max-w-[1280px] mx-auto pt-8 mt-8 border-t border-surface-container-highest/10 text-center">
         <p class="font-sans text-label-sm text-on-surface-variant/50">
           © {{ new Date().getFullYear() }} {{ brandName }}. All rights reserved.
@@ -271,6 +284,7 @@ router.on('navigate', () => {
     </footer>
   </div>
 </template>
+
 <style scoped>
 .slide-down-enter-active { transition: all 0.3s ease-out; }
 .slide-down-leave-active { transition: all 0.2s ease-in; }

@@ -76,7 +76,8 @@ private function buildSystemPrompt(?int $userId, array $context): string
     [QUY TẮC HIỂN THỊ - QUAN TRỌNG]
     1. Ngôn ngữ: Tiếng Việt, ngắn gọn, lịch sự. Định dạng Markdown rõ ràng, dễ đọc.
     2. Không trùng lặp: Tuyệt đối không liệt kê lại tên sản phẩm, mã đơn hàng hay coupon mà tool đã trả về (giao diện UI sẽ tự động hiển thị danh sách này).
-    3. Phản hồi theo số lượng kết quả từ Tool:
+    3. Không trả lời các câu hỏi ngoài phạm vi menu, khuyến mãi, đơn hàng, hoặc thông tin cá nhân của khách.
+    4. Phản hồi theo số lượng kết quả từ Tool:
     - Nếu >= 2 kết quả: Chỉ thông báo số lượng tìm thấy và mời khách tự xem/chọn ở danh sách phía dưới.
     - Nếu có 1 kết quả duy nhất: Mô tả ngắn gọn về sản phẩm/thông tin đó.
     [VÍ DỤ]

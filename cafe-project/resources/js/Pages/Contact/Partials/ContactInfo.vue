@@ -1,38 +1,70 @@
 ﻿<script setup>
+import { computed } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 import AnimateOnScroll from '@/Components/Base/AnimateOnScroll.vue'
-const contactDetails = [
-  {
-    icon: 'location_on',
-    title: 'Địa chỉ',
-    content: '137 Đường Nguyễn Thị Thập, Thanh Khê, Đà Nẵng, Việt Nam',
-    link: 'https://maps.google.com/?q=123+Nguyen+Hue+Quan+1+Ho+Chi+Minh'
-  },
-  {
-    icon: 'call',
-    title: 'Điện thoại',
-    content: '(+84) 28 1234 5678',
-    link: 'tel:+842812345678'
-  },
-  {
-    icon: 'mail',
-    title: 'Email',
-    content: 'hello@caphemoi.vn',
-    link: 'mailto:hello@caphemoi.vn'
-  },
-  {
-    icon: 'schedule',
-    title: 'Giờ mở cửa',
-    content: 'Thứ 2 - Chủ nhật: 7:00 - 22:00',
-    link: null
+
+const page = usePage()
+const settings = computed(() => page.props.settings || {})
+const brand = computed(() => page.props.brand || {})
+
+const contactDetails = computed(() => {
+  const shop = settings.value?.shop_info || {}
+  const address = shop.shop_address || 'Chưa cập nhật'
+  const hotline = shop.shop_hotline || 'Chưa cập nhật'
+  const email = shop.shop_email || 'Chưa cập nhật'
+
+  return [
+    {
+      icon: 'location_on',
+      title: 'Địa chỉ',
+      content: address,
+      link: `https://maps.google.com/?q=${encodeURIComponent(address)}`
+    },
+    {
+      icon: 'call',
+      title: 'Điện thoại',
+      content: hotline,
+      link: `tel:${hotline.replace(/\s/g, '')}`
+    },
+    {
+      icon: 'mail',
+      title: 'Email',
+      content: email,
+      link: `mailto:${email}`
+    },
+    {
+      icon: 'schedule',
+      title: 'Giờ mở cửa',
+      content: 'Thứ 2 - Chủ nhật: 7:00 - 22:00', // Có thể thêm setting nếu muốn động
+      link: null
+    }
+  ]
+})
+
+const socialLinks = computed(() => {
+  const website = settings.value?.website || {}
+  const links = []
+
+  if (website.social_facebook) {
+    links.push({
+      icon: 'thumb_up',
+      label: 'Facebook',
+      url: website.social_facebook
+    })
   }
-]
-const socialLinks = [
-  { icon: 'camera_alt', label: 'Instagram', url: '#' },
-  { icon: 'thumb_up', label: 'Facebook', url: '#' },
-  { icon: 'alternate_email', label: 'Twitter', url: '#' },
-  { icon: 'play_circle', label: 'YouTube', url: '#' }
-]
+
+  if (website.social_zalo) {
+    links.push({
+      icon: 'chat',
+      label: 'Zalo',
+      url: website.social_zalo
+    })
+  }
+
+  return links
+})
 </script>
+
 <template>
   <section class="relative py-24 px-margin-mobile md:px-gutter bg-surface-container-low">
     <div class="max-w-[1280px] mx-auto">
