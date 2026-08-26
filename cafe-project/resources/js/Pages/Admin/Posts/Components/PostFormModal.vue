@@ -144,7 +144,6 @@ const generateSlug = () => {
                                 class="px-4 py-2 rounded-xl border border-outline-variant bg-surface outline-none">
                                 <option value="DRAFT">Bản nháp (Chưa hiện)</option>
                                 <option value="PUBLISHED">Xuất bản (Công khai)</option>
-                                <option value="ARCHIVED">Lưu trữ (Ẩn đi)</option>
                             </select>
                         </div>
                     </div>

@@ -9,9 +9,11 @@ use Carbon\Carbon;
 use Throwable;
 use App\Models\Material;
 use App\Services\MaterialExpiryService;
+use App\Models\AdminNotification;
 
 class NotificationController extends Controller
 {
+    
     /**
      * Ngưỡng cảnh báo cận hạn (ngày). Đồng bộ với isExpiringSoon() bên frontend (Warehouse/Index.vue).
      */
@@ -20,25 +22,78 @@ class NotificationController extends Controller
     public function getNotifications(MaterialExpiryService $expiryService)
     {
         try {
-            $notifications = [];
+            $liveNotifications = array_merge(
+                $this->buildStockNotifications(),
+                $this->buildVoucherNotifications(),
+                $this->buildCancelledOrderNotifications(),
+                $this->buildExpiryNotifications($expiryService)
+            );
 
-            $notifications = array_merge($notifications, $this->buildStockNotifications());
-            $notifications = array_merge($notifications, $this->buildVoucherNotifications());
-            $notifications = array_merge($notifications, $this->buildCancelledOrderNotifications());
-            $notifications = array_merge($notifications, $this->buildExpiryNotifications($expiryService));
+            foreach ($liveNotifications as $item) {
+                // Tự động phân loại category dựa vào prefix của ID (stock, voucher, order, expired/expiring)
+                $category = explode('_', $item['id'])[0] ?? 'general';
+
+                AdminNotification::firstOrCreate(
+                    ['dedup_key' => $item['id']],
+                    [
+                        'category' => $category, 
+                        'type'     => $item['type'],
+                        'title'    => $item['title'],
+                        'message'  => $item['message'],
+                        'link'     => $item['link'],
+                    ]
+                );
+            }
+
+            // Lấy danh sách từ DB
+            $dbNotifications = AdminNotification::latest('updated_at')
+                ->limit(10)
+                ->get()
+                ->map(fn($n) => [
+                    'id'       => $n->id,
+                    'type'     => $n->type,
+                    'title'    => $n->title,
+                    'message'  => $n->message,
+                    'link'     => $n->link,
+                    'is_read'  => !is_null($n->read_at),
+                    'time'     => $n->updated_at ? $n->updated_at->diffForHumans() : $n->created_at->diffForHumans(),
+                ]);
+
+            $unreadCount = AdminNotification::whereNull('read_at')->count();
 
             return response()->json([
-                'status' => true,
-                'unread_count' => count($notifications),
-                'notifications' => array_slice($notifications, 0, 10),
+                'status'        => true,
+                'unread_count'  => $unreadCount,
+                'notifications' => $dbNotifications,
             ]);
         } catch (Throwable $e) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Lỗi Server: ' . $e->getMessage(),
-                'line' => $e->getLine(),
+                'line'    => $e->getLine(),
+                'file'    => $e->getFile(),
             ], 500);
         }
+    }
+
+    /**
+     * Đánh dấu thông báo là đã đọc
+     */
+    public function markAsRead($id)
+    {
+        AdminNotification::where('id', $id)->update(['read_at' => now()]);
+
+        return response()->json(['status' => true]);
+    }
+
+    /**
+     * Đánh dấu tất cả thông báo là đã đọc
+     */
+    public function markAllAsRead()
+    {
+        AdminNotification::whereNull('read_at')->update(['read_at' => now()]);
+
+        return response()->json(['status' => true]);
     }
 
     /**
@@ -116,7 +171,6 @@ class NotificationController extends Controller
     {
         $cancelledOrders = DB::table('orders')
             ->where('status', 'CANCELLED')
-            ->whereDate('created_at', Carbon::today())
             ->select('id', 'cancel_reason', 'created_at')
             ->latest()
             ->limit(3)

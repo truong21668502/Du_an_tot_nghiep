@@ -17,13 +17,13 @@ return new class extends Migration
             // Khóa ngoại liên kết tới danh mục bài viết
             $table->foreignId('category_id')
                 ->constrained('post_categories')
-                ->onDelete('restrict') // Chặn xóa danh mục nếu bên trong vẫn còn bài viết đang lưu trữ
+                ->onDelete('cascade') // Nếu xóa danh mục, xóa các bài viết thuộc danh mục đó
                 ->comment('Mã danh mục bài viết (Khóa ngoại → post_categories.id)');
                 
             // Khóa ngoại liên kết tới người viết bài (Nhân viên/Admin)
             $table->foreignId('user_id')
                 ->constrained('users')
-                ->onDelete('restrict') // Chặn xóa tài khoản nhân viên nếu họ đang là tác giả của bài viết
+                ->onDelete('restrict') // Không cho phép xóa người dùng nếu còn bài viết liên quan
                 ->comment('Mã tác giả bài viết (Khóa ngoại → users.id)');
                 
             $table->string('title', 255)->comment('Tiêu đề bài viết');

@@ -17,7 +17,7 @@ return new class extends Migration
             // Khóa ngoại liên kết tới bảng categories
             $table->foreignId('category_id')
                 ->constrained('categories')
-                ->onDelete('restrict') // Nếu xóa danh mục, xóa các sản phẩm thuộc danh mục đó
+                ->onDelete('cascade') // Nếu xóa danh mục, xóa các sản phẩm thuộc danh mục đó
                 ->comment('Mã danh mục (Khóa ngoại liên kết tới bảng categories)');
             
             // Khóa ngoại liên kết tới bảng brands (Bảng thương hiệu dùng id mặc định là BIGINT giống Laravel)

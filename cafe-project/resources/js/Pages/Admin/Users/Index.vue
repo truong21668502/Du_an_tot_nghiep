@@ -185,7 +185,6 @@ const deleteUser = (id) => {
                                 <th class="p-4 text-left">Email liên hệ</th>
                                 <th class="p-4">Chức vụ</th>
                                 <th class="p-4">Giới tính</th>
-                                <th class="p-4">Điểm tích lũy</th>
                                 <th class="p-4">Trạng thái</th>
                                 <th class="p-4">Địa chỉ</th>
                                 <th class="p-4 text-right w-24">Hành động</th>
@@ -218,7 +217,6 @@ const deleteUser = (id) => {
                                     </span>
                                 </td>
                                 <td class="p-4 text-on-surface-variant">{{ user.gender }}</td>
-                                <td class="p-4 font-mono font-bold text-secondary">{{ (user.reward_points ?? 0).toLocaleString('vi-VN') }} P</td>
                                 <td class="px-4 py-3 text-center">
                                     <span v-if="user.status === 'active'" class="px-2 py-1 bg-green-100 rounded-full text-body-small font-bold">Hoạt động</span>
                                     <span v-else-if="user.status === 'inactive'" class="px-2 py-1 bg-amber-100 rounded-full text-body-small font-bold">Tạm ngưng</span>

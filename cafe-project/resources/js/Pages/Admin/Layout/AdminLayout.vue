@@ -166,6 +166,7 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                 ? 'translate-x-0'
                 : '-translate-x-full md:translate-x-0',
         ]">
+
             <!-- Logo -->
             <div class="flex items-center h-16 px-4 border-b border-outline-variant/20 flex-shrink-0">
                 <button @click="collapsed = !collapsed"
@@ -182,7 +183,6 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-
             
             <!-- User -->
             <div v-if="user" class="border-t border-outline-variant/20 p-3 flex-shrink-0">
@@ -252,6 +252,7 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                 </div>
                 
                 <div class="flex items-center gap-3 ml-auto">
+                    <!-- Tìm kiếm nhanh chức năng (Command Palette) -->
                     <CommandPalette />
 
                     <div class="p-2 hover:bg-surface-container-low rounded-full transition-colors relative">
