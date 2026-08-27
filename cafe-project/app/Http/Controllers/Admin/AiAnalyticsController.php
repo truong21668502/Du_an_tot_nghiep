@@ -24,6 +24,7 @@ class AiAnalyticsController extends Controller
 
     public function getStrategicAdvice()
     {
+        // Lấy ID của quản lý hiện tại
         $userId = Auth::id();
 
         // Tìm hoặc tạo phiên chat gần nhất cho quản lý này
@@ -32,7 +33,8 @@ class AiAnalyticsController extends Controller
             ['last_activity_at' => now()]
         );
 
-        $userQuestion = "Dựa vào doanh thu, khung giờ mua hàng, đơn đặt và sản phẩm bán chạy, hãy gợi ý cho tôi chiến lược kinh doanh tiếp theo?";
+        // Câu hỏi mẫu từ User để gửi đến AI
+        $userQuestion = "Dựa vào khung giờ mua hàng, đơn đặt và sản phẩm bán chạy, hãy gợi ý cho tôi chiến lược kinh doanh tiếp theo?";
 
         // Lưu tin nhắn của User vào database
         ChatMessage::create([
@@ -43,10 +45,12 @@ class AiAnalyticsController extends Controller
 
         // Gom dữ liệu thống kê từ Database (orders & order_details)
         $salesData = [
+            // Thống kê tổng số đơn hàng
             'overview' => [
                 'total_orders' => Order::count(),
-                'total_revenue' => Order::where('status', 'COMPLETED')->sum('final_amount')
             ],
+
+            // Thống kê khung giờ mua hàng (peak hours)
             'peak_hours' => Order::select(
                     DB::RAW('HOUR(created_at) as hour'),
                     DB::RAW('COUNT(*) as total_orders'),
@@ -56,13 +60,30 @@ class AiAnalyticsController extends Controller
                 ->where('status', 'COMPLETED')
                 ->limit(5)
                 ->get(),
+
+            // Thống kê sản phẩm bán chạy nhất
             'top_products' => OrderDetail::select(
                     'product_id',
                     DB::RAW('SUM(quantity) as total_sold'),
                     DB::RAW('SUM(quantity * unit_price) as total_revenue')
                 )->groupBy('product_id')->with('product:id,product_name')->orderByDesc('total_sold')->limit(5)->get(),
             
-            'counpons' => Coupon::get(),
+            // Thống kê các chương trình khuyến mãi đang hoạt động
+            'promotions' => Coupon::where('status', 'ACTIVE')
+            ->get()
+            ->map(function ($coupon, $index) {
+                return [
+                    'program_label'  => 'Mã ưu đãi #' . ($index + 1),
+                    'description'  => $coupon->description,
+                    'discount_type'  => $coupon->discount_type,
+                    'discount_value' => $coupon->discount_value,
+                    'max_discount_amount'   => $coupon->max_discount_amount ?? null,
+                    'min_order_value'     => $coupon->min_order_value ?? null,
+                    'usage_limit'     => $coupon->usage_limit ?? null,
+                    'used_count'     => $coupon->used_count ?? 0,
+                    'expiration_date' => $coupon->expiration_date ? $coupon->expiration_date->toDateString() : null,
+                ];
+            })
         ];
 
         // Gọi Gemini Service xử lý phân tích (kèm giới hạn token ngắn gọn)
@@ -82,6 +103,7 @@ class AiAnalyticsController extends Controller
         // Tự động xóa bớt tin nhắn cũ nếu vượt quá ngưỡng cho phép
         $this->autoDeleteOldMessages();
 
+        // Trả về dữ liệu phân tích cho Frontend
         return response()->json([
             'success' => true,
             'data' => $aiAdvice
@@ -93,10 +115,12 @@ class AiAnalyticsController extends Controller
      */
     public function sendChatMessage(Request $request)
     {
+        // Validate input
         $request->validate([
             'message' => 'required|string|max:500',
         ]);
 
+        // Lấy ID của user hiện tại
         $userId = Auth::id();
         $userQuestion = $request->input('message');
 
@@ -123,10 +147,23 @@ class AiAnalyticsController extends Controller
         // Gom dữ liệu thống kê quán
         $salesData = [
             'total_orders' => Order::count(),
-            'total_revenue' => Order::where('status', 'COMPLETED')->sum('final_amount'),
             'peak_hours' => Order::select(DB::RAW('HOUR(created_at) as hour'), DB::RAW('COUNT(*) as total'))->groupBy('hour')->get(),
             'top_products' => OrderDetail::select('product_id', DB::RAW('SUM(quantity) as total'))->groupBy('product_id')->with('product:id,product_name')->limit(3)->get(),
-            'counpons' => Coupon::get(),
+            'promotions' => Coupon::where('status', 'ACTIVE')
+            ->get()
+            ->map(function ($coupon, $index) {
+                return [
+                    'program_label'  => 'Mã ưu đãi #' . ($index + 1),
+                    'description'  => $coupon->description,
+                    'discount_type'  => $coupon->discount_type,
+                    'discount_value' => $coupon->discount_value,
+                    'max_discount_amount'   => $coupon->max_discount_amount ?? null,
+                    'min_order_value'     => $coupon->min_order_value ?? null,
+                    'usage_limit'     => $coupon->usage_limit ?? null,
+                    'used_count'     => $coupon->used_count ?? 0,
+                    'expiration_date' => $coupon->expiration_date ? $coupon->expiration_date->toDateString() : null,
+                ];
+            })
         ];
 
         // Gọi AI xử lý kèm lịch sử chat
@@ -139,6 +176,7 @@ class AiAnalyticsController extends Controller
             'content' => $aiResponse,
         ]);
 
+        // Cập nhật lại thông tin phiên chat
         $conversation->increment('message_count', 2);
         $conversation->update(['last_activity_at' => now()]);
 
@@ -154,12 +192,15 @@ class AiAnalyticsController extends Controller
     //lấy lịch sử chat
     public function getHistory()
     {
+        // Lấy phiên chat của user
         $conversation = ChatConversation::where('user_id', Auth::id())->first();
 
+        // Nếu không có phiên chat, trả về mảng rỗng
         if (!$conversation) {
             return response()->json(['success' => true, 'messages' => []]);
         }
 
+        // Lấy tất cả tin nhắn của phiên chat, sắp xếp theo thời gian tăng dần
         $messages = $conversation->messages()->orderBy('created_at', 'asc')->get(['role', 'content']);
 
         return response()->json([
@@ -173,14 +214,19 @@ class AiAnalyticsController extends Controller
     */
     public function autoDeleteOldMessages()
     {
+        // Giới hạn số lượng tin nhắn tối đa
         $maxMessages = 100; // Giới hạn số lượng tin nhắn tối đa
         $userId = Auth::id();
 
+        // Lấy phiên chat của user
         $conversation = ChatConversation::where('user_id', $userId)->first();
 
+        // Nếu có phiên chat, kiểm tra số lượng tin nhắn
         if ($conversation) {
+            // Đếm số lượng tin nhắn hiện tại
             $messageCount = $conversation->messages()->count();
 
+            // Nếu số lượng tin nhắn vượt quá giới hạn, xóa các tin nhắn cũ nhất
             if ($messageCount > $maxMessages) {
                 // Xóa các tin nhắn cũ nhất để giữ lại số lượng tối đa
                 $messagesToDelete = $conversation->messages()

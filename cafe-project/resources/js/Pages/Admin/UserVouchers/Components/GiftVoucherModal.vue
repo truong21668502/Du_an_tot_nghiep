@@ -33,6 +33,15 @@ const submitForm = () => {
         },
     });
 };
+
+const customFilter = (option, label, search) => {
+    const s = (search || '').toLowerCase().trim();
+    const name = (option.full_name || '').toLowerCase();
+    const email = (option.email || '').toLowerCase();
+    const phone = (option.phone_number || '').toLowerCase();
+
+    return name.includes(s) || email.includes(s) || phone.includes(s);
+};
 </script>
 
 <template>
@@ -69,7 +78,7 @@ const submitForm = () => {
                     <p class="text-body-small text-outline">Bật tùy chọn này để chạy chiến dịch kích cầu tiêu dùng, hệ thống tự động phát vào ví của mọi thành viên.</p>
                 </div>
 
-                <div class="flex flex-col gap-1">
+                <div v-if="!form.send_to_all" class="flex flex-col gap-1">
                     <label class="text-label-large text-on-surface-variant font-bold">Chọn khách hàng nhận *</label>
 
                     <v-select 
@@ -77,18 +86,20 @@ const submitForm = () => {
                         :options="users" 
                         :reduce="user => user.id" 
                         label="full_name"
-                        placeholder="Tìm theo tên hoặc SĐT..."
+                        :filter-by="customFilter"
+                        placeholder="Tìm theo tên, email hoặc SĐT..."
                         class="style-chooser"
                     >
-                        <template #option="{ full_name, phone_number }">
+                        <template #option="{ full_name, phone_number, email }">
                             <div class="flex flex-col cursor-pointer">
                                 <span class="font-bold">{{ full_name }}</span>
                                 <span class="text-body-small text-outline">{{ phone_number }}</span>
+                                <span class="text-body-small text-outline">{{ email }}</span>
                             </div>
                         </template>
                     
-                        <template #selected-option="{ full_name, phone_number }">
-                            {{ full_name }} ({{ phone_number }})
+                        <template #selected-option="{ full_name, phone_number, email }">
+                            {{ full_name }} ({{ phone_number }} - {{ email }})
                         </template>
                     </v-select>
                 

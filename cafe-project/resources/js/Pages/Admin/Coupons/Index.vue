@@ -2,6 +2,7 @@
 import { ref, watch } from "vue";
 import { router, Link } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
+import { debounce } from "lodash-es";
 
 import CouponFormModal from "./Components/CouponFormModal.vue";
 
@@ -20,11 +21,17 @@ const searchFilters = ref({
     status: props.filters.status || "",
 });
 
-watch(searchFilters, (newFilters) => {
-    router.get("/quan-tri/ma-giam-gia", newFilters, {
+// Xử lý bộ lọc tìm kiếm và phân trang, delay 500ms để tránh gửi quá nhiều request khi người dùng gõ liên tục
+const performSearch = debounce((filters) => {
+    router.get("/quan-tri/ma-giam-gia", filters, {
         preserveState: true,
         replace: true,
     });
+}, 500);
+
+// theo dõi sự thay đổi của searchFilters và gọi performSearch khi có thay đổi
+watch(searchFilters, (newFilters) => {
+    performSearch(newFilters);
 }, { deep: true });
 
 const clearFilters = () => {
@@ -152,6 +159,7 @@ const isExpired = (date) => {
                                 <th class="p-4">Yêu cầu đơn</th>
                                 <th class="p-4">Hạn mức dùng</th>
                                 <th class="p-4">Ngày hết hạn</th>
+                                <th class="p-4">Mô tả</th>
                                 <th class="p-4">Trạng thái</th>
                                 <th class="p-4 text-right w-32">Hành động</th>
                             </tr>
@@ -214,6 +222,15 @@ const isExpired = (date) => {
                                                 class="bg-green-100 text-green-800 px-2 py-0.5 rounded-lg font-medium">
                                             Còn hạn
                                         </span>
+                                    </div>
+                                </td>
+
+                                <td class="p-4 text-left">
+                                    <div v-if="coupon.description" class="text-body-small text-on-surface-variant font-sans">
+                                        {{ coupon.description }}
+                                    </div>
+                                    <div v-else class="text-body-small text-outline font-sans italic">
+                                        Không có mô tả
                                     </div>
                                 </td>
 

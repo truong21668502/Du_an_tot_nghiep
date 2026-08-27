@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { router, Link } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
+import { debounce } from "lodash-es";
 
 // Import các component con
 import ProductFilters from "./Components/ProductFilters.vue";
@@ -27,13 +28,13 @@ const variantModalData = ref({ name: "", list: [] });
 const isImageModalOpen = ref(false);
 const imageModalProduct = ref(null);
 
-// Xử lý bộ lọc
-const handleFilterChange = (newFilters) => {
+// Xử lý bộ lọc tìm kiếm và phân trang, delay 500ms để tránh gửi quá nhiều request khi người dùng gõ liên tục
+const handleFilterChange = debounce((newFilters) => {
     router.get("/quan-tri/san-pham", newFilters, {
         preserveState: true,
         replace: true,
     });
-};
+}, 500);
 
 // Điều khiển Form Thêm/Sửa
 const openCreateModal = () => {

@@ -16,18 +16,21 @@ class UserVoucherController extends Controller
     {
         $filters = $request->only(['search', 'is_used','coupon_id']);
         
-        // Query bảng trung gian, kết nối (Eager Load) sang bảng users và coupons
+        // Lấy danh sách voucher của khách hàng, kèm thông tin khách hàng và thông tin mã giảm giá
         $query = CouponUser::with([
             'user:id,full_name,phone_number,email', 
             'coupon:id,code,discount_type,discount_value,max_discount_amount,min_order_value,used_count,usage_limit,expiration_date'
-        ]);
+        ])->whereHas('user', function ($q) {
+            $q->where('role', 'CUSTOMER');
+        });
 
-        //Bộ lọc tìm kiếm: Theo Tên khách, Số điện thoại hoặc ký tự Mã giảm giá
+        //Bộ lọc tìm kiếm: Theo Tên khách, Email, Số điện thoại hoặc ký tự Mã giảm giá
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
                 $q->whereHas('user', function ($u) use ($request) {
                     $u->where('full_name', 'like', '%' . $request->search . '%')
-                    ->orWhere('phone_number', 'like', '%' . $request->search . '%');
+                    ->orWhere('phone_number', 'like', '%' . $request->search . '%')
+                    ->orWhere('email', 'like', '%' . $request->search . '%');
                 })->orWhereHas('coupon', function ($c) use ($request) {
                     $c->where('code', 'like', '%' . $request->search . '%');
                 });
@@ -49,9 +52,10 @@ class UserVoucherController extends Controller
         // Lấy danh sách toàn bộ khách hàng đang hoạt động để nạp vào ô tặng lẻ
         $allCustomers = User::where('role', 'CUSTOMER')
                         ->where('status', 'active')
-                        ->select('id', 'full_name', 'phone_number')
+                        ->select('id', 'full_name', 'phone_number', 'email')
                         ->get();
 
+        // Sắp xếp theo ID giảm dần và phân trang 10 bản ghi mỗi trang, giữ nguyên các tham số truy vấn
         $vouchers = $query->orderBy('id', 'desc')->paginate(10)->withQueryString();
 
         return Inertia::render('Admin/UserVouchers/Index', [

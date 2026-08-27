@@ -4,6 +4,7 @@ import { router, Link } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
 
 import TableFormModal from "./Components/TableFormModal.vue";
+import { debounce } from "lodash-es";
 
 const props = defineProps({
     tables: { type: Object, required: true },
@@ -30,14 +31,16 @@ const clearFilters = () => {
     searchFilters.value.status = "";
 };
 
-// Theo dõi sự thay đổi của bộ lọc để tự động gọi lại dữ liệu (Inertia Get)
+// Khi searchFilters thay đổi, tự động gửi request để lọc dữ liệu, delay 500ms để tránh gửi quá nhiều request khi người dùng gõ liên tục
+const performSearch = debounce((filters) => {
+    router.get("/quan-tri/ban", filters, { preserveState: true, replace: true });
+}, 500);
+
+// theo dõi sự thay đổi của searchFilters và gọi performSearch khi có thay đổi
 watch(
     searchFilters,
     (newFilters) => {
-        router.get("/quan-tri/ban", newFilters, {
-            preserveState: true,
-            replace: true,
-        });
+        performSearch(newFilters);
     },
     { deep: true }
 );
@@ -180,7 +183,7 @@ const closeQrPreview = () => {
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 text-body-medium">
-                    <div class="sm:col-span-4 flex items-center gap-2 px-3 py-2 rounded-xl border border-outline-variant bg-surface-container-low focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+                    <div class="sm:col-span-3 flex items-center gap-2 px-3 py-2 rounded-xl border border-outline-variant bg-surface-container-low focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
                         <span class="material-symbols-outlined text-outline text-xl select-none">search</span>
                         <input v-model="searchFilters.search" type="text" placeholder="Tìm tên bàn hoặc URL QR Code..." class="w-full bg-transparent focus:outline-none text-on-surface" />
                     </div>

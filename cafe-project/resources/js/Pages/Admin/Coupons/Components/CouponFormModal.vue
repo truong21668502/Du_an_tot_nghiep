@@ -18,6 +18,7 @@ const form = useForm({
     min_order_value: 0,
     usage_limit: "",
     expiration_date: "",
+    description: "",
     status: "ACTIVE",
 });
 
@@ -31,6 +32,8 @@ watch(() => props.isOpen, (newVal) => {
             form.max_discount_amount = props.couponData.max_discount_amount || "";
             form.min_order_value = props.couponData.min_order_value;
             form.usage_limit = props.couponData.usage_limit || "";
+            form.description = props.couponData.description || "";
+
             form.status = props.couponData.status;
             
             // Xử lý chuỗi ngày giờ khớp định dạng datetime-local (YYYY-MM-DDTHH:MM)
@@ -133,6 +136,7 @@ const submitForm = () => {
                         <span v-if="form.errors.expiration_date" class="text-body-small text-error flex items-center gap-0.5"><span class="material-symbols-outlined text-sm">error</span>{{ form.errors.expiration_date }}</span>
                     </div>
 
+
                     <div class="flex flex-col gap-1">
                         <label class="text-label-large text-on-surface-variant font-bold">Trạng thái phát hành</label>
                         <select v-model="form.status" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface text-on-surface cursor-pointer">
@@ -141,10 +145,19 @@ const submitForm = () => {
                             <option value="EXPIRED">EXPIRED (Hết hiệu lực)</option>
                         </select>
                     </div>
+
+                    <div class="flex flex-col gap-1 col-span-2">
+                        <label class="text-label-large text-on-surface-variant font-bold">Mô tả</label>
+                        <textarea v-model="form.description" placeholder="Nhập mô tả cho mã giảm giá" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface text-on-surface font-mono" rows="3"></textarea>
+                        <span v-if="form.errors.description" class="text-body-small text-error flex items-center gap-0.5"><span class="material-symbols-outlined text-sm">error</span>{{ form.errors.description }}</span>
+                    </div>
                 </div>
 
                 <p class="text-body-small text-on-surface-variant">
-                    Lưu ý: Đối với giảm theo % thì chỉ được giảm tối đa là 50% và giảm tối đa 50.000đ
+                    <span class="material-symbols-outlined">info</span> Lưu ý: 
+                    <p class="ml-4">- Đối với giảm theo % thì chỉ được giảm tối đa là 50%</p>
+                    <p class="ml-4">- Đơn tối thiểu phải lớn hơn giá trị giảm và giá trị giảm tối đa là 50.000đ.</p>
+                    <p class="ml-4">- Khi chỉnh sửa mã giảm giá, không thể sửa code mã giảm giá vì đã được sử dụng.</p>
                 </p>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-outline-variant/20 flex-shrink-0">

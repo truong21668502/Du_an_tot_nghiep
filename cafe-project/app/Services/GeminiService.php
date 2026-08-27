@@ -98,6 +98,7 @@ class GeminiService
             . "- CHỈ phân tích dữ liệu F&B của Nắng Coffee được cung cấp bên dưới.\n"
             . "- Trình bày trọng tâm, ngắn gọn dưới 300 từ, có gạch đầu dòng và emoji sinh động.";
 
+        // Chuyển đổi dữ liệu doanh số thành JSON để gửi cho AI
         $dataJson = json_encode($salesData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
         $userPrompt = "Dưới đây là dữ liệu thống kê đơn hàng từ hệ thống quán Nắng Coffee:\n"
@@ -158,7 +159,7 @@ class GeminiService
             . "=== PHẠM VI HOẠT ĐỘNG (BẮT BUỘC TỦY THỦ) ===\n"
             . "1. Bạn CHỈ ĐƯỢC PHÉP trả lời các câu hỏi liên quan đến:\n"
             . "   - Quán Nắng Coffee (thực đơn, đồ uống, khuyến mãi, hoạt động của quán).\n"
-            . "   - Dữ liệu kinh doanh, doanh thu, đơn hàng F&B được cung cấp bên dưới.\n"
+            . "   - Dữ liệu kinh doanh, đơn hàng F&B được cung cấp bên dưới.\n"
             . "   - Kiến thức vận hành, tiếp thị và tư vấn chiến lược ngành F&B / Quán cà phê.\n\n"
             . "2. TỪ CHỐI TẤT CẢ CÁC CÂU HỎI NGOÀI PHẠM VI:\n"
             . "   - Nếu người dùng hỏi về các chủ đề không liên quan (ví dụ: lập trình, giải toán, thời tiết, tin tức xã hội, lịch sử thế giới, tư vấn tình cảm, công nghệ chung, trò chơi...):\n"

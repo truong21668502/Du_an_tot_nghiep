@@ -26,6 +26,7 @@ class CouponSeeder extends Seeder
                 'used_count' => 0,
                 'expiration_date' => Carbon::now()->addMonths(2), // Hết hạn sau 2 tháng
                 'status' => 'ACTIVE',
+                'description' => 'Mã để chào đón khách hàng mới',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
@@ -39,19 +40,21 @@ class CouponSeeder extends Seeder
                 'used_count' => 0,
                 'expiration_date' => Carbon::now()->addMonth(),
                 'status' => 'ACTIVE',
+                'description' => 'Mã dành riêng cho sinh viên FPoly',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
             [
-                'code' => 'DOIDIEM2K',
+                'code' => 'TANG2K',
                 'discount_type' => 'FIXED',
                 'discount_value' => 2000.00,          // Giảm 2.000đ
                 'max_discount_amount' => null,
                 'min_order_value' => 10000.00,            // Đơn từ 10k
                 'usage_limit' => null,                // Không giới hạn số lượng đổi toàn hệ thống
                 'used_count' => 0,
-                'expiration_date' => Carbon::now()->addYear(), // Hạn dài cho việc đổi điểm
+                'expiration_date' => Carbon::now()->addYear(), 
                 'status' => 'ACTIVE',
+                'description' => 'Mã tặng 2.000đ cho đơn hàng từ 10k',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],

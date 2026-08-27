@@ -133,7 +133,7 @@ const fetchHistory = async () => {
 
 // Hàm gọi nút gợi ý nhanh chiến lược 
 const sendAiStrategy = async () => {
-  const strategyQuestion = "Dựa vào doanh thu, khung giờ mua hàng, đơn đặt và sản phẩm bán chạy, hãy gợi ý cho tôi chiến lược kinh doanh tiếp theo?";
+  const strategyQuestion = "Dựa vào khung giờ mua hàng, đơn đặt và sản phẩm bán chạy, hãy gợi ý cho tôi chiến lược kinh doanh tiếp theo?";
   
   messages.value.push({ role: 'user', content: strategyQuestion });
   loading.value = true;

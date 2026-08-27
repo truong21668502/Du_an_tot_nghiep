@@ -137,12 +137,6 @@ Route::middleware(['auth', 'role:ADMIN'])->prefix('quan-tri')->name('admin.')->g
         Route::patch('/{order}/status', [OrderController::class, 'updateStatus'])->name('updateStatus');
     });
 
-    // Báo cáo
-    Route::get('/reports', function () {
-        return Inertia::render('Admin/Reports/Index');
-    })->name('reports.index');
-
-
     Route::middleware(['auth'])->group(function () {
         // Quản lý Bài viết (Posts)
         Route::get('/bai-viet', [PostController::class, 'index'])->name('posts.index');

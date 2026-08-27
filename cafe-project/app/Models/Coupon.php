@@ -27,6 +27,7 @@ class Coupon extends Model
         'usage_limit',
         'used_count',
         'expiration_date',
+        'description',
         'status',
     ];
 

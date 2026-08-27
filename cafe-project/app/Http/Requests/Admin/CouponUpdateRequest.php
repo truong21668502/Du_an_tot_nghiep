@@ -54,7 +54,7 @@ class CouponUpdateRequest extends FormRequest
 
                     // Kiểm tra logic: Đơn tối thiểu không được nhỏ hơn số tiền khách sẽ được giảm
                     if ($value <= $discountAmount) {
-                        $fail('Đơn hàng tối thiểu (' . number_format($value) . 'đ) phải lớn hơn giá trị giảm (50%) và giá trị giảm tối đa (' . number_format($discountAmount) . 'đ).');
+                        $fail('Đơn hàng tối thiểu (' . number_format($value) . 'đ) phải lớn hơn giá trị giảm và giá trị giảm tối đa (' . number_format($discountAmount) . 'đ).');
                     }
 
                     //kiểm tra logic: Đơn tối thiểu phải lớn hơn giá trị giảm tối đa
@@ -67,6 +67,7 @@ class CouponUpdateRequest extends FormRequest
             'usage_limit'         => 'nullable|integer|min:1|max:1000',
             'expiration_date'     => 'required|date|after:now',
             'status'              => 'required|in:ACTIVE,INACTIVE,EXPIRED',
+            'description'         => 'required|string|max:255',
         ];
     }
 
@@ -83,6 +84,9 @@ class CouponUpdateRequest extends FormRequest
             'min_order_value.min'               => 'Đơn hàng tối thiểu phải lớn hơn hoặc bằng 10.000đ',
             'usage_limit.min'               => 'Số lượt sử dụng mã không được nhỏ hơn 1',
             'usage_limit.max'               => 'Số lượt sử dụng mã không được lớn hơn 1000, bạn có thể bỏ trống ô này nếu muốn dùng vô hạn !',
+            'description.max'               => 'Mô tả không được vượt quá 255 ký tự',
+            'description.string'            => 'Mô tả phải là một chuỗi ký tự',
+            'description.required'          => 'Vui lòng nhập mô tả cho mã giảm giá!',
         ];
     }
 }

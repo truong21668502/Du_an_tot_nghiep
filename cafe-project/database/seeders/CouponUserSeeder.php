@@ -36,7 +36,7 @@ class CouponUserSeeder extends Seeder
             ],
             [
                 'user_id'     => 8,
-                'coupon_id'   => 3, // Mã DOIDIEM2K (Mã đổi điểm 2.000đ)
+                'coupon_id'   => 3, // Mã TANG2K (Giảm 2k)
                 'is_used'     => true, // Món này giả định ĐÃ SỬ DỤNG RỒI
                 'used_at'     => Carbon::now()->subDays(2), // Đã dùng cách đây 2 ngày
                 'created_at'  => Carbon::now()->subDays(5),

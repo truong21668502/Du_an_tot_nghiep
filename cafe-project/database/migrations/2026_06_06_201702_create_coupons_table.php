@@ -37,6 +37,8 @@ return new class extends Migration
             $table->enum('status', ['ACTIVE', 'INACTIVE', 'EXPIRED'])
                 ->default('ACTIVE')
                 ->comment('Trạng thái hoạt động của mã');
+            
+            $table->string('description', 255)->comment('Mô tả ngắn gọn về mã giảm giá (Tùy chọn)');
 
             $table->softDeletes();
 

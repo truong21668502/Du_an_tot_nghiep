@@ -3,6 +3,7 @@ import { ref, watch, computed } from "vue";
 import { router, Link } from "@inertiajs/vue3";
 import AdminLayout from "../Layout/AdminLayout.vue";
 import GiftVoucherModal from "./Components/GiftVoucherModal.vue";
+import { debounce } from "lodash-es";
 
 const props = defineProps({
     vouchers: { type: Object, required: true },
@@ -29,11 +30,18 @@ const searchFilters = ref({
     coupon_id: props.filters.coupon_id || "",
 });
 
-watch(searchFilters, (newFilters) => {
-    router.get("/quan-tri/vi-voucher", newFilters, {
+// Bọc hàm router.get trong debounce 500ms
+const performSearch = debounce((filters) => {
+    router.get("/quan-tri/vi-voucher", filters, {
         preserveState: true,
         replace: true,
+        preserveScroll: true,
     });
+}, 500); // 500ms debounce
+
+// Trong watch chỉ cần gọi hàm đã debounce
+watch(searchFilters, (newFilters) => {
+    performSearch(newFilters);
 }, { deep: true });
 
 const clearFilters = () => {
@@ -120,7 +128,7 @@ const isGiftModalOpen = ref(false);
                 <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 text-body-medium">
                     <div class="sm:col-span-4 flex items-center gap-2 px-3 py-2 rounded-xl border border-outline-variant bg-surface-container-low focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
                         <span class="material-symbols-outlined text-outline text-xl select-none">search</span>
-                        <input v-model="searchFilters.search" type="text" placeholder="Tìm theo tên khách, số điện thoại hoặc mã code..." class="w-full bg-transparent focus:outline-none text-on-surface" />
+                        <input v-model="searchFilters.search" type="text" placeholder="Tìm theo tên khách, email, số điện thoại hoặc mã code..." class="w-full bg-transparent focus:outline-none text-on-surface" />
                     </div>
 
                     <div class="sm:col-span-3">

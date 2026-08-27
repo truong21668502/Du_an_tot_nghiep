@@ -104,8 +104,10 @@ class AdminReviewController extends Controller
     // Gọi AI Gemini sinh câu trả lời (Giữ JSON vì gọi trực tiếp điền vào input)
     public function generateAiReply(Request $request, $id, GeminiService $geminiService)
     {
+        // Lấy đánh giá cần phản hồi
         $review = Review::with(['user', 'product'])->findOrFail($id);
 
+        // Gọi Gemini Service để sinh câu trả lời dựa trên đánh giá
         $aiReply = $geminiService->generateReviewReply(
             $review->user->full_name ?? 'Khách hàng',
             $review->rating,

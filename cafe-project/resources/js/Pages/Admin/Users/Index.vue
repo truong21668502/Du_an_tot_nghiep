@@ -5,6 +5,7 @@ import AdminLayout from "../Layout/AdminLayout.vue";
 
 import UserFormModal from "./Components/UserFormModal.vue";
 import UserAddressesModal from "./Components/UserAddressesModal.vue";
+import { debounce } from "lodash-es";
 
 const props = defineProps({
     users: { type: Object, required: true },
@@ -31,8 +32,13 @@ const searchFilters = ref({
     gender: props.filters.gender || "",
 });
 
+// Khi searchFilters thay đổi, tự động gửi request để lọc dữ liệu, delay 500ms để tránh gửi quá nhiều request khi người dùng gõ liên tục
+const performSearch = debounce((filters) => {
+    router.get("/quan-tri/nguoi-dung", filters, { preserveState: true, replace: true });
+}, 500);
+
 watch(searchFilters, (newFilters) => {
-    router.get("/quan-tri/nguoi-dung", newFilters, { preserveState: true, replace: true });
+    performSearch(newFilters);
 }, { deep: true });
 
 const clearFilters = () => {
