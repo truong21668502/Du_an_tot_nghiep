@@ -418,6 +418,12 @@ onMounted(() => {
                         selectedTable.value.parent_table_id = e.parent_table_id;
                     }
                 }
+            })
+            .listen('.TableListUpdated', () => {
+                router.reload({
+                    only: ['initialTables'],
+                    preserveScroll: true
+                });
             });
 
         window.Echo.channel('staff-orders')

@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Table; // Đảm bảo bạn đã có Model Table kết nối bảng 'tables'
+use App\Models\Table;
 use App\Http\Requests\Admin\TableStoreRequest;
 use App\Http\Requests\Admin\TableUpdateRequest;
+use App\Events\TableListUpdated;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -59,6 +60,7 @@ class TableController extends Controller
     public function store(TableStoreRequest $request)
     {
         Table::create($request->validated());
+        event(new TableListUpdated());
         return redirect()->back()->with('toast-success', 'Thêm bàn phục vụ mới thành công!');
     }
 
@@ -66,6 +68,7 @@ class TableController extends Controller
     {
         $table = Table::findOrFail($id);
         $table->update($request->validated());
+        event(new TableListUpdated());
         return redirect()->back()->with('toast-success', 'Cập nhật thông tin bàn thành công!');
     }
 
@@ -73,6 +76,7 @@ class TableController extends Controller
     {
         $table = Table::findOrFail($id);
         $table->delete();
+        event(new TableListUpdated());
         return redirect()->back()->with('toast-success', 'Xóa bàn phục vụ thành công!');
     }
     public function print()

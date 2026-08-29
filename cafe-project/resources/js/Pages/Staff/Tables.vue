@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import StaffLayout from '../../Layouts/StaffLayout.vue';
 import { toast } from "vue3-toastify";
@@ -10,6 +10,10 @@ const props = defineProps({
 });
 
 const tables = ref(props.initialTables || []);
+
+watch(() => props.initialTables, (newVal) => {
+    if (newVal) tables.value = newVal;
+}, { deep: true });
 
 const selectedTable = ref(null);
 const isTableModalOpen = ref(false);
@@ -265,6 +269,12 @@ onMounted(() => {
                         selectedTable.value.parent_table_id = e.parent_table_id;
                     }
                 }
+            })
+            .listen('.TableListUpdated', () => {
+                router.reload({
+                    only: ['initialTables'],
+                    preserveScroll: true
+                });
             });
 
         window.Echo.channel('staff-orders')
