@@ -141,6 +141,8 @@ onMounted(() => {
                     status: e.order.status,
                     table_id: e.order.table_id,
                     table: e.order.table,
+                    shipper: e.order.shipper,
+                    delivery_photo: e.order.delivery_photo,
                 };
 
                 toast.info(
