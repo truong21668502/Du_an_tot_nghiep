@@ -295,7 +295,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Head title="Sơ đồ bàn - Nắng Coffee" />
+    <Head title="Sơ đồ bàn" />
 
     <StaffLayout>
         <!-- Page Header -->

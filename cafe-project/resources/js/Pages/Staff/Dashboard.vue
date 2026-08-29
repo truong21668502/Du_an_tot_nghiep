@@ -513,7 +513,7 @@ onUnmounted(() => {
 
 <template>
 
-    <Head title="Bảng điều khiển - Nắng Coffee" />
+    <Head title="Bảng điều khiển" />
 
     <StaffLayout>
         <!-- Merge Confirm Modal -->
@@ -583,11 +583,11 @@ onUnmounted(() => {
         </div>
 
         <!-- Nội dung chính: sơ đồ bàn + đơn hàng -->
-        <div class="flex gap-5 h-[calc(100vh-240px)] min-h-[500px]">
+        <div class="flex flex-col lg:flex-row gap-5 h-auto lg:h-[calc(100vh-240px)] min-h-[500px]">
 
             <!-- Sơ đồ bàn -->
             <div
-                class="flex-1 min-w-0 flex flex-col relative rounded-2xl border bg-surface-container-low border-outline-variant/30 overflow-hidden">
+                class="flex-1 min-w-0 flex flex-col relative rounded-2xl border bg-surface-container-low border-outline-variant/30 overflow-hidden min-h-[400px] lg:min-h-0">
 
                 <!-- Ảnh nền quán Cafe -->
                 <img src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1783495774/background_nangcoffee_gdibni.png"
@@ -720,7 +720,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Danh sách đơn hàng hoạt động -->
-            <div class="w-72 xl:w-80 flex-shrink-0 flex flex-col">
+            <div class="w-full lg:w-72 xl:w-80 flex-shrink-0 flex flex-col min-h-[400px] lg:min-h-0 mt-6 lg:mt-0">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="text-[15px] font-bold text-on-surface">Đơn đang hoạt động</h3>
                     <span v-if="orders.length > 0"
@@ -738,7 +738,7 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Danh sách đơn hàng -->
-                <TransitionGroup v-else tag="div" name="list" class="flex-1 overflow-y-auto hide-scrollbar space-y-3 pr-1">
+                <TransitionGroup v-else tag="div" name="list" class="flex-1 overflow-y-auto hide-scrollbar space-y-3 pr-1 pt-1 -mt-1">
                     <div v-for="order in orders" :key="order.id" @click="openOrderDetails(order)"
                         class="order-card group cursor-pointer rounded-xl border p-4 transition-all hover:shadow-md hover:-translate-y-0.5"
                         :class="order.status === 'PENDING'
@@ -852,15 +852,15 @@ onUnmounted(() => {
                                         class="text-[10px] font-bold uppercase tracking-wider mb-1 text-on-surface-variant">
                                         Trạng thái</p>
                                     <span v-if="selectedOrder?.status === 'PENDING'"
-                                        class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20">
+                                        class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20">
                                         <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>Chờ xử lý
                                     </span>
                                     <span v-else-if="selectedOrder?.status === 'PROCESSING'"
-                                        class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                                        class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                                         <span class="w-1.5 h-1.5 rounded-full bg-primary/70"></span>Đang xử lý
                                     </span>
                                     <span v-else-if="selectedOrder?.status === 'READY'"
-                                        class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
+                                        class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
                                         <span class="w-1.5 h-1.5 rounded-full bg-green-500/70"></span>Sẵn sàng giao
                                     </span>
                                 </div>

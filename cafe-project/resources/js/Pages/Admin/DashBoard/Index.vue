@@ -26,7 +26,7 @@ const formatCurrency = (value) => {
 <template>
 
 <AdminLayout>
-    <Head title="Trang chủ Quản trị | Nắng Coffee" />
+    <Head title="Trang chủ Quản trị" />
 
     <div class="p-6 space-y-6 bg-surface min-h-screen text-on-surface font-sans">
         

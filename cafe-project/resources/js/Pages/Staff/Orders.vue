@@ -227,7 +227,7 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
 
 <template>
 
-    <Head title="Đơn hàng - Nắng Coffee" />
+    <Head title="Đơn hàng" />
 
     <StaffLayout>
         <!-- Page Header -->
@@ -289,7 +289,7 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
             <div v-for="order in filteredOrders" :key="order.id" @click="openOrderDetails(order)"
                 class="group relative overflow-hidden rounded-2xl border cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
                 :class="order.status === 'PENDING'
-                    ? 'bg-surface-container-low border-error/30 hover:border-error/60'
+                    ? 'bg-error/5 border-error/30 hover:border-error/50'
                     : 'bg-surface-container-low border-outline-variant/20 hover:border-primary/40'">
 
                 <div class="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
@@ -302,7 +302,7 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                             #{{ order.id }}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h4 class="text-label-md font-bold text-on-surface truncate">
+                            <h4 class="text-label-md font-bold text-on-surface truncate uppercase tracking-wide">
                                 {{ order.table ? order.table.table_name : (order.order_type === 'DELIVERY' ? 'Giao hàng' : 'Mang đi') }}
                             </h4>
                             <p class="text-[11px] text-on-surface-variant mt-0.5 uppercase tracking-wider">{{
@@ -310,8 +310,8 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                         </div>
                         <div class="flex flex-col items-end gap-1 flex-shrink-0">
                             <span v-if="order.status === 'PENDING'"
-                                class="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20">
-                                <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>Chờ xử lý
+                                class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>CHỜ XỬ LÝ
                             </span>
                             <span v-else-if="order.status === 'PROCESSING'"
                                 class="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
@@ -389,15 +389,15 @@ const processingCount = computed(() => orders.value.filter(o => o.status === 'PR
                                         class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1 self-start">
                                         Trạng thái</p>
                                     <span v-if="selectedOrder?.status === 'PENDING'"
-                                        class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20">
+                                        class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20">
                                         <span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span>Chờ xử lý
                                     </span>
                                     <span v-else-if="selectedOrder?.status === 'PROCESSING'"
-                                        class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                                        class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                                         <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>Đang xử lý
                                     </span>
                                     <span v-else-if="selectedOrder?.status === 'READY'"
-                                        class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
+                                        class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
                                         <span class="w-1.5 h-1.5 rounded-full bg-green-500/70"></span>Sẵn sàng giao
                                     </span>
                                 </div>
