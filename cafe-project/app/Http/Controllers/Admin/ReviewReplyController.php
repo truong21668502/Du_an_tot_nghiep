@@ -9,6 +9,7 @@ use App\Models\ReviewReply;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 
 class ReviewReplyController extends Controller
 {
@@ -68,7 +69,7 @@ class ReviewReplyController extends Controller
 // PATCH /replies/{reply}
 public function update(ReplyReviewRequest $request, ReviewReply $reply)
 {
-    $user = auth()->user();
+    $user = Auth::user();
 
     // Chỉ chủ sở hữu mới được sửa
     if ($user->id !== $reply->user_id) {
@@ -114,7 +115,7 @@ public function update(ReplyReviewRequest $request, ReviewReply $reply)
     // DELETE /admin/replies/{reply}
     public function destroy(ReviewReply $reply)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Chỉ ADMIN mới được xóa
         if ($user->role !== 'ADMIN') {

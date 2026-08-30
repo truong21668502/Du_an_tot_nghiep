@@ -173,7 +173,22 @@ const toggleVisibility = (reviewId) => {
                         </div>
                     </div>
                 </template>
+                <!-- Phân trang -->
+                <div v-if="reviews?.links && reviews.links.length > 0" class="mt-4">
+                    <nav class="flex justify-center items-center gap-2 flex-wrap">
+                        <template v-for="(link, idx) in reviews.links" :key="idx">
+                            <button 
+                                v-if="link.url"
+                                @click.prevent="router.get(link.url, {}, { preserveState: true })"
+                                :class="['px-3 py-1 rounded-lg text-base cursor-pointer', link.active ? 'bg-primary text-on-primary font-bold' : 'bg-surface border border-outline-variant/30 text-on-surface hover:bg-surface-variant']"
+                                v-html="link.label"
+                            />
+                            <span v-else class="px-3 py-1 rounded-lg text-base bg-surface border border-outline-variant/30 text-on-surface" v-html="link.label"></span>
+                        </template>
+                    </nav>
+                </div>
             </div>
         </div>
+
     </AdminLayout>
 </template>
