@@ -63,7 +63,7 @@ const formatDateTime = (dateStr) => {
                         <span class="material-symbols-outlined text-primary">category</span> 
                         DANH MỤC SẢN PHẨM
                     </h1>
-                    <p class="font-sans text-body-medium text-on-surface-variant">Quản lý và giám sát các nhóm thực đơn của Nắng Coffee.</p>
+                    <p class="font-sans text-body-medium text-on-surface-variant">Quản lý và giám sát các nhóm thực đơn.</p>
                 </div>
                 
                 <div class="flex items-center gap-3 self-start sm:self-center">

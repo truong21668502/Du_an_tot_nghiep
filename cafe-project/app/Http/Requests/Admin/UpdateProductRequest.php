@@ -32,14 +32,14 @@ class UpdateProductRequest extends FormRequest
             // Xác thực mảng biến thể
             'variants'                  => 'required|array|min:1',
             'variants.*.size'           => 'required|string|max:50',
-            'variants.*.price'          => 'required|numeric|min:0',
+            'variants.*.price'          => 'required|numeric|min:10000|max:50000',
             'variants.*.discount_price' => 'nullable|numeric|min:0|lt:variants.*.price',
             'variants.*.status'         => 'required|in:AVAILABLE,OUT_OF_STOCK',
             
-            // 🌟 THÊM MỚI: Xác thực số lượng đã bán (sold)
+            //  Xác thực số lượng đã bán (sold)
             'variants.*.sold'           => 'nullable|integer|min:0',
             
-            // 🌟 THÊM MỚI: Xác thực ngày bắt đầu và kết thúc khuyến mãi
+            //  Xác thực ngày bắt đầu và kết thúc khuyến mãi
             'variants.*.sale_date_start' => 'nullable|date',
             'variants.*.sale_date_end'   => 'nullable|date|after_or_equal:variants.*.sale_date_start',
         ];
@@ -57,6 +57,10 @@ class UpdateProductRequest extends FormRequest
             'variants.*.size.required'           => 'Tên kích cỡ không được để trống.',
             'variants.*.price.required'          => 'Giá gốc không được để trống.',
             'variants.*.price.numeric'           => 'Giá gốc phải là số.',
+            //giá bán không vượt quá 50.000đ
+            'variants.*.price.max'     => 'Giá bán không được vượt quá 50.000đ.',
+            //giá bán không nhỏ hơn 10.000đ
+            'variants.*.price.min'     => 'Giá bán không được nhỏ hơn 10.000đ.',
             'variants.*.discount_price.lt'       => 'Giá khuyến mãi phải nhỏ hơn giá bán gốc.',
             
             // 🌟 Thông báo lỗi thêm mới
@@ -65,6 +69,9 @@ class UpdateProductRequest extends FormRequest
             'variants.*.sale_date_start.date'    => 'Ngày bắt đầu khuyến mãi không đúng định dạng.',
             'variants.*.sale_date_end.date'      => 'Ngày kết thúc khuyến mãi không đúng định dạng.',
             'variants.*.sale_date_end.after_or_equal' => 'Ngày kết thúc KM phải lớn hơn hoặc bằng ngày bắt đầu.',
+
+            //Ngày bắt đầu khuyến mãi phải lớn hơn hoặc bằng ngày hiện tại
+            'variants.*.sale_date_start.after_or_equal' => 'Ngày bắt đầu khuyến mãi phải lớn hơn hoặc bằng ngày hiện tại.',
         ];
     }
 }

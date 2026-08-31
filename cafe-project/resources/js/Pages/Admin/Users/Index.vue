@@ -116,7 +116,7 @@ const deleteUser = (id) => {
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 class="text-headline-md text-on-surface font-sans text-primary text-3xl mb-2 mt-2"><span class="material-symbols-outlined text-primary">people</span> QUẢN TRỊ NHÂN SỰ & THÀNH VIÊN</h1>
-                    <p class="text-body-medium text-on-surface-variant">Hệ thống cấp tài khoản nhân sự điều hành quán và điều phối tệp khách hàng Nắng Coffee.</p>
+                    <p class="text-body-medium text-on-surface-variant">Hệ thống cấp tài khoản nhân sự điều hành quán và điều phối tệp khách hàng</p>
                 </div>
                 <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer">
                     <span class="material-symbols-outlined text-md">person_add</span>

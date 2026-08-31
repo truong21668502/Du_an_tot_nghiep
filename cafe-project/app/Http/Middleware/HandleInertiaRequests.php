@@ -41,6 +41,10 @@ class HandleInertiaRequests extends Middleware
 
             'brand' => fn () => \App\Models\Brand::first(),
 
+            'currentBrand' => Cache::rememberForever('global_brand', function () {
+                return \App\Models\Brand::first();
+            }),
+
             'auth_config' => [
                 'google_client_id' => env('GOOGLE_CLIENT_ID'),
             ],

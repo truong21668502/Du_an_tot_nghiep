@@ -11,6 +11,17 @@ const user = computed(() => page.props.auth?.user || null);
 const collapsed = ref(false);
 const mobileOpen = ref(false);
 
+// 🌟 Lấy dữ liệu Thương hiệu động từ Inertia Props
+const currentBrand = computed(() => page.props.currentBrand || {});
+const brandName = computed(() => currentBrand.value.brand_name);
+const brandLogo = computed(() => {
+    const url = currentBrand.value.logo_url;
+    if (!url) {
+        return 'https://res.cloudinary.com/dltgjdf9t/image/upload/v1780996916/NangCoffee_logo_fullmau_wl8jbz.png';
+    }
+    return url.startsWith('http://') || url.startsWith('https://') ? url : `/${url}`;
+});
+
 const isActive = (path) => {
     if (path === "/quan-tri") return currentUrl.value === "/quan-tri";
     if (path === "/quan-tri/kho/nhap") return currentUrl.value === path; // chỉ match chính xác
@@ -123,20 +134,19 @@ const menuGroups = [
     }
 ];
 
-
 // 1. Xác định buổi, câu chào và icon theo giờ thực tế
 const timeContext = computed(() => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
         return { greeting: 'Chào buổi sáng', icon: '☀️' };
     } else if (hour >= 12 && hour < 18) {
-        return { greeting: 'Chào buổi chiều', icon: '🌇' }; // Chiều hoàng hôn
+        return { greeting: 'Chào buổi chiều', icon: '🌇' };
     } else {
-        return { greeting: 'Chào buổi tối', icon: '🌙' }; // Đêm trăng sao
+        return { greeting: 'Chào buổi tối', icon: '🌙' };
     }
 });
 
-// 2. Định dạng ngày tháng tiếng Việt (Cập nhật chuẩn năm 2026)
+// 2. Định dạng ngày tháng tiếng Việt
 const getCurrentDate = () => {
     const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
     return new Date().toLocaleDateString('vi-VN', options);
@@ -153,7 +163,7 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
 </script>
 
 <template>
-    <div class="flex h-screen overflow-hidden bg-surface-container-low" >
+    <div class="flex h-screen overflow-hidden bg-surface-container-low">
         <!-- Mobile overlay -->
         <div v-if="mobileOpen" @click="mobileOpen = false"
             class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden"></div>
@@ -167,16 +177,17 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                 : '-translate-x-full md:translate-x-0',
         ]">
 
-            <!-- Logo -->
+            <!-- Logo (Tự động cập nhật theo Brand) -->
             <div class="flex items-center h-16 px-4 border-b border-outline-variant/20 flex-shrink-0">
                 <button @click="collapsed = !collapsed"
                     class="hidden md:flex p-1.5 hover:bg-surface-container-low rounded-lg transition-colors mr-2">
                     <span class="material-symbols-outlined text-on-surface-variant">menu</span>
                 </button>
-                <div :class="collapsed ? 'hidden' : 'flex items-center gap-2'">
-                    <img src="https://res.cloudinary.com/dltgjdf9t/image/upload/v1780996916/NangCoffee_logo_fullmau_wl8jbz.png"
-                        alt="Logo" class="w-8 h-8 rounded-full object-cover" />
-                    <span class="font-sans text-headline-sm text-primary truncate">Nắng Coffee</span>
+                <div :class="collapsed ? 'hidden' : 'flex items-center gap-2 min-w-0'">
+                    <img :src="brandLogo"
+                        :alt="brandName" 
+                        class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                    <span class="font-sans text-headline-sm text-primary truncate">{{ brandName }}</span>
                 </div>
                 <button @click="mobileOpen = false"
                     class="md:hidden ml-auto p-1.5 hover:bg-surface-container-low rounded-lg">
@@ -245,7 +256,7 @@ const bottomLinks = [{ label: "Về trang chủ", href: "/", icon: "home" }];
                     <span class="material-symbols-outlined">menu</span>
                 </button>
 
-                <!-- 🌟 LỜI CHÀO ĐỘNG KÈM ICON THAY ĐỔI THEO GIỜ Ở GIỮA -->
+                <!-- LỜI CHÀO ĐỘNG KÈM ICON THAY ĐỔI THEO GIỜ Ở GIỮA -->
                 <div class="hidden lg:flex items-center gap-2 text-sm font-medium text-on-surface-variant select-none text-lg">
                     <span class="text-lg animate-pulse">{{ timeContext.icon }}</span>
                     <span class="font-bold text-primary text-lg">{{ adminGreeting }}</span>

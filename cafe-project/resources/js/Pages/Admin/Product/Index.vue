@@ -100,7 +100,7 @@ const formatDateTime = (dateStr) => {
                         <span class="material-symbols-outlined text-primary">coffee</span> 
                         QUẢN LÝ SẢN PHẨM
                     </h1>
-                    <p class="font-sans text-body-medium text-on-surface-variant">Danh sách đồ uống tại Nắng Coffee.</p>
+                    <p class="font-sans text-body-medium text-on-surface-variant">Danh sách đồ uống</p>
                 </div>
 
                 <div class="flex items-center gap-3 self-start sm:self-center">

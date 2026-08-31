@@ -29,7 +29,9 @@ class AuthenticatedSessionController extends Controller
     {
         //trả về trang đăng nhập hệ thống admin
         return Inertia::render('Admin/Login', [
+            //trả về trang đăng nhập hệ thống admin
             'canResetPassword' => Route::has('password.request'),
+            //trả về trạng thái thông báo nếu có
             'status' => session('status'),
         ]);
     }
@@ -39,14 +41,20 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // Xác thực thông tin đăng nhập
         $request->authenticate();
 
+        // Kiểm tra xem người dùng có bị khóa hay không
         $user = $request->user();
 
+        // Nếu người dùng bị khóa, đăng xuất và chuyển hướng với thông báo
         if ($user->status === 'banned') {
             Auth::logout();
 
+            // Hủy phiên làm việc và tạo lại token CSRF
             $request->session()->invalidate();
+
+            // Tạo lại token CSRF để bảo vệ chống tấn công CSRF
             $request->session()->regenerateToken();
 
             return redirect()->route('login')
@@ -69,16 +77,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Kiểm tra vai trò của người dùng trước khi đăng xuất
         if (Auth::user()->role !== "CUSTOMER") {
+            // Nếu người dùng không phải là khách hàng, đăng xuất và chuyển hướng đến trang đăng nhập hệ thống
             Auth::guard('web')->logout();
 
+            // Hủy phiên làm việc và tạo lại token CSRF
             $request->session()->invalidate();
 
+            // Tạo lại token CSRF để bảo vệ chống tấn công CSRF
             $request->session()->regenerateToken();
 
             return redirect('/dang-nhap-he-thong');
         }
 
+        // Nếu người dùng là khách hàng, đăng xuất và chuyển hướng đến trang chủ
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

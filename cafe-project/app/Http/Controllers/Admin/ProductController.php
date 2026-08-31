@@ -124,7 +124,6 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        // Chỗ này bạn có thể bổ sung kiểm tra nếu sản phẩm đã nằm trong Đơn hàng (Order Details) thì không cho xóa
         $product->delete();
 
         return redirect()->back()->with('toast-success', 'Đã đưa sản phẩm vào thùng rác!');

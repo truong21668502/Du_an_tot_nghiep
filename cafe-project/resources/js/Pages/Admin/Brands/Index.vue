@@ -69,7 +69,7 @@ const formatDateTime = (dateStr) => {
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl mt-2 mb-2"><span class="material-symbols-outlined text-primary">store</span> THƯƠNG HIỆU SẢN PHẨM</h1>
-                    <p class="text-body-medium text-on-surface-variant">Quản lý và giám sát nguồn gốc các dòng sản phẩm của Nắng Coffee.</p>
+                    <p class="text-body-medium text-on-surface-variant">Quản lý và giám sát nguồn gốc các dòng sản phẩm.</p>
                 </div>
                 <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer">
                     <span class="material-symbols-outlined text-md">add</span> Thêm thương hiệu

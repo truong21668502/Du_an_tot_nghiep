@@ -75,8 +75,7 @@ const getStatusData = (status) => {
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl"><span class="material-symbols-outlined text-primary">article</span> QUẢN LÝ BÀI VIẾT</h1>
-                    <p class="font-sans text-body-medium text-on-surface-variant">Danh sách tin tức và bài viết trên
-                        Nắng Coffee.</p>
+                    <p class="font-sans text-body-medium text-on-surface-variant">Danh sách tin tức và bài viết</p>
                 </div>
                 <button @click="openCreateModal"
                     class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 rounded-full cursor-pointer transition-colors">

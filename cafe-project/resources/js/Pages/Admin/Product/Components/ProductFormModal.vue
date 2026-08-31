@@ -143,16 +143,19 @@ const submitForm = () => {
                     <div class="flex flex-col gap-1">
                         <label class="text-label-medium text-on-surface-variant font-bold">Image URL</label>
                         <input v-model="form.image_url" type="text" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface font-mono" />
+                        <span v-if="form.errors.image_url" class="text-body-small text-error flex items-center gap-0.5"><span class="material-symbols-outlined text-sm">error</span>{{ form.errors.image_url }}</span>
                     </div>
 
                     <div class="flex flex-col gap-1">
                         <label class="text-label-medium text-on-surface-variant font-bold">Mô tả ngắn</label>
                         <input v-model="form.short_description" type="text" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface" />
+                        <span v-if="form.errors.short_description" class="text-body-small text-error flex items-center gap-0.5"><span class="material-symbols-outlined text-sm">error</span>{{ form.errors.short_description }}</span>
                     </div>
 
                     <div class="flex flex-col gap-1">
                         <label class="text-label-medium text-on-surface-variant font-bold">Mô tả chi tiết</label>
                         <textarea rows="5" v-model="form.description" type="text" class="px-4 py-2 rounded-xl border border-outline-variant bg-surface" />
+                        <span v-if="form.errors.description" class="text-body-small text-error flex items-center gap-0.5"><span class="material-symbols-outlined text-sm">error</span>{{ form.errors.description }}</span>
                     </div>
                 </div>
 
@@ -177,14 +180,26 @@ const submitForm = () => {
                                 <div class="flex flex-col gap-0.5">
                                     <label class="text-label-small text-on-surface-variant font-bold">Tên kích cỡ *</label>
                                     <input v-model="variant.size" type="text" class="px-3 py-1.5 rounded-lg border border-outline-variant bg-surface" required />
+                                    <span v-if="form.errors[`variants.${index}.size`]" class="text-body-small text-error flex items-center gap-0.5">
+                                        <span class="material-symbols-outlined text-sm">error</span>
+                                        {{ form.errors[`variants.${index}.size`] }}
+                                    </span>
                                 </div>
                                 <div class="flex flex-col gap-0.5">
                                     <label class="text-label-small text-on-surface-variant font-bold">Giá bán gốc *</label>
                                     <input v-model.number="variant.price" type="number" class="px-3 py-1.5 rounded-lg border border-outline-variant bg-surface" required />
+                                    <span v-if="form.errors[`variants.${index}.price`]" class="text-body-small text-error flex items-center gap-0.5">
+                                        <span class="material-symbols-outlined text-sm">error</span>
+                                        {{ form.errors[`variants.${index}.price`] }}
+                                    </span>
                                 </div>
                                 <div class="flex flex-col gap-0.5">
                                     <label class="text-label-small text-on-surface-variant font-bold">Số lượng đã bán</label>
                                     <input v-model.number="variant.sold" type="number" class="px-3 py-1.5 rounded-lg border border-outline-variant bg-surface" />
+                                    <span v-if="form.errors[`variants.${index}.sold`]" class="text-body-small text-error flex items-center gap-0.5">
+                                        <span class="material-symbols-outlined text-sm">error</span>
+                                        {{ form.errors[`variants.${index}.sold`] }}
+                                    </span>
                                 </div>
                             </div>
 
@@ -192,14 +207,26 @@ const submitForm = () => {
                                 <div class="flex flex-col gap-0.5">
                                     <label class="text-label-small text-on-surface-variant font-bold">Giá KM</label>
                                     <input v-model.number="variant.discount_price" type="number" class="px-3 py-1.5 rounded-lg border border-outline-variant bg-surface" />
+                                    <span v-if="form.errors[`variants.${index}.discount_price`]" class="text-body-small text-error flex items-center gap-0.5">
+                                        <span class="material-symbols-outlined text-sm">error</span>
+                                        {{ form.errors[`variants.${index}.discount_price`] }}
+                                    </span>
                                 </div>
                                 <div class="flex flex-col gap-0.5">
                                     <label class="text-label-small text-on-surface-variant font-bold">Ngày BĐ</label>
                                     <input v-model="variant.sale_date_start" type="datetime-local" class="px-3 py-1.5 rounded-lg border border-outline-variant bg-surface text-body-small" />
+                                    <span v-if="form.errors[`variants.${index}.sale_date_start`]" class="text-body-small text-error flex items-center gap-0.5">
+                                        <span class="material-symbols-outlined text-sm">error</span>
+                                        {{ form.errors[`variants.${index}.sale_date_start`] }}
+                                    </span>
                                 </div>
                                 <div class="flex flex-col gap-0.5">
                                     <label class="text-label-small text-on-surface-variant font-bold">Ngày KT</label>
                                     <input v-model="variant.sale_date_end" type="datetime-local" class="px-3 py-1.5 rounded-lg border border-outline-variant bg-surface text-body-small" />
+                                    <span v-if="form.errors[`variants.${index}.sale_date_end`]" class="text-body-small text-error flex items-center gap-0.5">
+                                        <span class="material-symbols-outlined text-sm">error</span>
+                                        {{ form.errors[`variants.${index}.sale_date_end`] }}
+                                    </span>
                                 </div>
                                 <div class="flex flex-col gap-0.5">
                                     <label class="text-label-small text-on-surface-variant font-bold">Kho hàng</label>

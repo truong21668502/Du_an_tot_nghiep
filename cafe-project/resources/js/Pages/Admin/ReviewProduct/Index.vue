@@ -80,7 +80,7 @@ const toggleVisibility = (reviewId) => {
                         <span class="material-symbols-outlined text-primary">star</span> QUẢN LÝ ĐÁNH GIÁ
                     </h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">
-                        Danh sách đánh giá từ khách hàng trên Nắng Coffee.
+                        Danh sách đánh giá từ khách hàng.
                     </p>
                 </div>
 

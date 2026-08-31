@@ -33,7 +33,7 @@ const formatCurrency = (value) => {
         <!-- HEADER TRANG -->
         <div class="flex flex-col gap-1">
             <h1 class="font-sans font-bold text-primary text-3xl"><span class="material-symbols-outlined text-primary">space_dashboard</span> TỔNG QUAN VẬN HÀNH</h1>
-            <p class="text-body-medium text-outline">Dữ liệu phân tích hoạt động kinh doanh thực tế tại Nắng Coffee.</p>
+            <p class="text-body-medium text-outline">Dữ liệu phân tích hoạt động kinh doanh thực tế.</p>
         </div>
 
         <hr class="border-outline-variant/30" />

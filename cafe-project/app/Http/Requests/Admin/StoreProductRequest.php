@@ -26,7 +26,7 @@ class StoreProductRequest extends FormRequest
             // Validate mảng biến thể đi kèm
             'variants'                  => 'required|array|min:1',
             'variants.*.size'           => 'required|string|max:50',
-            'variants.*.price'          => 'required|numeric|min:0',
+            'variants.*.price'          => 'required|numeric|min:10000|max:50000',
             'variants.*.discount_price' => 'nullable|numeric|min:0|lt:variants.*.price',
             'variants.*.status'         => 'required|in:AVAILABLE,OUT_OF_STOCK',
             
@@ -50,6 +50,11 @@ class StoreProductRequest extends FormRequest
             'variants.required'        => 'Sản phẩm phải có ít nhất một biến thể (Size/Giá).',
             'variants.*.size.required' => 'Kích cỡ không được để trống.',
             'variants.*.price.required'=> 'Giá bán không được để trống.',
+            //giá bán không vượt quá 50.000đ
+            'variants.*.price.max'     => 'Giá bán không được vượt quá 50.000đ.',
+            //giá bán không nhỏ hơn 10.000đ
+            'variants.*.price.min'     => 'Giá bán không được nhỏ hơn 10.000đ.',
+            'variants.*.price.numeric' => 'Giá bán phải là một số.',
             'variants.*.discount_price.lt' => 'Giá giảm phải nhỏ hơn giá gốc.', 
 
             // 🌟 Thông báo lỗi thêm mới

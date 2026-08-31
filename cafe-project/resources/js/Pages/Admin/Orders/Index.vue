@@ -319,7 +319,7 @@ const closeOrderModal = () => {
                         QUẢN LÝ ĐƠN HÀNG
                     </h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">
-                        Theo dõi và xử lý đơn hàng của Nắng Coffee theo thời gian thực.
+                        Theo dõi và xử lý đơn hàng theo thời gian thực.
                     </p>
                 </div>
 

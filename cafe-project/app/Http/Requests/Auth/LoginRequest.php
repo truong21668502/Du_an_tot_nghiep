@@ -64,6 +64,7 @@ class LoginRequest extends FormRequest
      */
     public function authenticate(): void
     {
+        // Kiểm tra giới hạn số lần đăng nhập
         $this->ensureIsNotRateLimited();
         
         $user = User::where('email', $this->email)->first();
@@ -74,14 +75,18 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        // Kiểm tra thông tin đăng nhập
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+            // Nếu đăng nhập thất bại, tăng số lần đăng nhập(ghi nhận vào RateLimiter)
             RateLimiter::hit($this->throttleKey());
 
+            // Ném ra ngoại lệ với thông báo lỗi
             throw ValidationException::withMessages([
                 'email' => 'Email hoặc mật khẩu không chính xác.',
             ]);
         }
 
+        // Nếu đăng nhập thành công, xóa giới hạn đăng nhập
         RateLimiter::clear($this->throttleKey());
     }
 
@@ -92,14 +97,18 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
+        // Nếu số lần đăng nhập vượt quá giới hạn, ném ra ngoại lệ
         if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
             return;
         }
 
+        // Gửi sự kiện khóa đăng nhập
         event(new Lockout($this));
 
+        // Lấy thời gian còn lại trước khi có thể thử lại
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
+        // Ném ra ngoại lệ với thông báo lỗi
         throw ValidationException::withMessages([
             'email' => "Bạn đã đăng nhập sai quá nhiều lần. Vui lòng thử lại sau {$seconds} giây.",
         ]);
