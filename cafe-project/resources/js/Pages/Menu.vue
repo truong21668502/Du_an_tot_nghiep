@@ -36,13 +36,14 @@ const {
 <template>
   <div class="w-full max-w-[1440px] mx-auto px-margin-mobile md:px-gutter py-12 md:py-24">
     <div class="flex gap-8">
-      <FilterSidebar
-        :filters="filters"
-        :show="showFilterSidebar"
-        @update:price-range="setPriceRange($event.min, $event.max)"
-        @update:rating="setRating"
-        @close="showFilterSidebar = false"
-      />
+  <FilterSidebar
+      :filters="filters"
+      :show="showFilterSidebar"
+      @update:price-range="setPriceRange($event.min, $event.max)"
+      @update:rating="setRating"
+      @update:search="setSearch"
+      @close="showFilterSidebar = false"
+  />
 
       <div class="flex-1 min-w-0">
         <MenuHeader

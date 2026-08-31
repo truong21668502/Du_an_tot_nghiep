@@ -49,6 +49,11 @@ class ProductController extends Controller
             });
         }
 
+        if (!empty($filters['rating'])) {
+                $rating = (float) $filters['rating'];
+                $productsQuery->having('reviews_avg_rating', '>=', $rating);
+            }
+
         $sortBy = $filters['sort_by'] ?? 'newest';
 
         if (in_array($sortBy, ['price_asc', 'price_desc'])) {

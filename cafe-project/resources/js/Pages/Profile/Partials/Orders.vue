@@ -187,7 +187,7 @@ const closeDetailModal = () => {
               <div>
                 <h4 class="font-sans text-label-md font-semibold text-on-surface mb-3">Món đã đặt</h4>
                 <div class="space-y-3">
-                  <div v-for="item in selectedOrder.items" :key="item.id" class="flex gap-4">
+                  <Link :href="route('product.show', { slug: item.product_slug })"  v-for="item in selectedOrder.items" :key="item.id" class="flex gap-4">
                     <img v-if="item.product_image" :src="item.product_image" :alt="item.product_name" class="w-16 h-16 rounded-lg object-cover" />
                     <div class="flex-1">
                       <p class="font-sans text-body-md text-on-surface font-medium">{{ item.product_name }}</p>
@@ -201,7 +201,7 @@ const closeDetailModal = () => {
                       <p class="font-sans text-body-md text-on-surface">{{ formatPrice(item.unit_price) }}</p>
                       <p class="font-sans text-label-sm text-on-surface-variant">= {{ formatPrice(item.subtotal) }}</p>
                     </div>
-                  </div>
+                  </Link>
                 </div>
               </div>
 

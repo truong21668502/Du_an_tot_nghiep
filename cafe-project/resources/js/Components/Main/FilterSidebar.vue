@@ -1,4 +1,5 @@
 <script setup>
+import SearchBar from '@/Components/Main/SearchBar.vue'
 import PriceRangeFilter from "./PriceRangeFilter.vue";
 import RatingFilter from "./RatingFilter.vue";
 
@@ -13,7 +14,7 @@ defineProps({
     },
 });
 
-defineEmits(["update:priceRange", "update:rating", "close"]);
+defineEmits(["update:search", "update:priceRange", "update:rating", "close"]);
 </script>
 
 <template>
@@ -41,6 +42,14 @@ defineEmits(["update:priceRange", "update:rating", "close"]);
         </div>
 
         <div class="space-y-8">
+            <!-- Search moved here -->
+            <SearchBar
+                :model-value="filters.search"
+                @update:model-value="$emit('update:search', $event)"
+            />
+
+            <hr class="border-outline-variant/20" />
+
             <PriceRangeFilter
                 :current-min="filters?.min_price ?? ''"
                 :current-max="filters?.max_price ?? ''"

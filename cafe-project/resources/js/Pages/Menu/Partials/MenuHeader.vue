@@ -1,5 +1,4 @@
 <script setup>
-import SearchBar from '@/Components/Main/SearchBar.vue'
 import SortSelect from '@/Components/Main/SortSelect.vue'
 import CategoryFilter from '@/Components/Main/CategoryFilter.vue'
 
@@ -20,7 +19,6 @@ defineProps({
 
 defineEmits([
   'update:category',
-  'update:search',
   'update:sortBy',
   'toggle-filter'
 ])
@@ -38,24 +36,24 @@ defineEmits([
       </p>
     </div>
 
-    <!-- Search & Sort Bar -->
-    <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
-      <!-- Search -->
-      <div class="w-full md:flex-1">
-        <SearchBar
-          :model-value="filters.search"
-          @update:model-value="$emit('update:search', $event)"
-        />
-      </div>
+    <!-- Category & Sort Row -->
+    <div class="flex flex-wrap items-center gap-4">
+      <!-- Category Filters (chiếm không gian còn lại) -->
+      <CategoryFilter
+        :categories="categories"
+        :model-value="filters.category"
+        @update:model-value="$emit('update:category', $event)"
+        class="flex-1 min-w-0"
+      />
 
-      <!-- Sort & Filter Toggle -->
-      <div class="flex items-center gap-3 w-full md:w-auto">
+      <!-- Sort & Mobile Toggle (nằm bên phải) -->
+      <div class="flex items-center gap-3 ml-auto">
         <SortSelect
           :model-value="filters.sortBy"
           :options="sortOptions"
           @update:model-value="$emit('update:sortBy', $event)"
         />
-        
+
         <button
           @click="$emit('toggle-filter')"
           class="md:hidden flex items-center gap-2 px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-full font-sans text-label-md text-on-surface-variant hover:bg-surface-container transition-all"
@@ -65,12 +63,5 @@ defineEmits([
         </button>
       </div>
     </div>
-
-    <!-- Category Filters -->
-    <CategoryFilter
-      :categories="categories"
-      :model-value="filters.category"
-      @update:model-value="$emit('update:category', $event)"
-    />
   </div>
 </template>

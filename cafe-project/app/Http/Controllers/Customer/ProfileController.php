@@ -369,6 +369,7 @@ private function formatAddresses($addresses): array
                 'id' => $d->id,
                 'product_name' => $d->product->product_name ?? 'Sản phẩm',
                 'product_image' => $d->product->image_url ?? null,
+                'product_slug' => $d->product->slug ?? null,
                 'size' => $d->variant->size ?? null,
                 'quantity' => $d->quantity,
                 'unit_price' => (float) $d->unit_price,

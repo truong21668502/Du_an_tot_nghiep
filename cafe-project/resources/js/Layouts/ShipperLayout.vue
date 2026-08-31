@@ -3,6 +3,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 
 const currentUrl = computed(() => usePage().url);
+const auth = computed(() => usePage().props.auth);
+
 const isMobileMenuOpen = ref(false);
 
 const navLinks = [
@@ -111,7 +113,7 @@ const props = defineProps({
                             <span class="material-symbols-outlined text-primary text-[18px]">local_shipping</span>
                         </div>
                         <div class="hidden sm:block">
-                            <p class="text-[14px] font-bold text-on-surface leading-none">Shipper</p>
+                            <p class="text-[14px] font-bold text-on-surface leading-none"> {{ auth.user.full_name }} </p>
                             <p class="text-[12px] text-on-surface-variant mt-0.5">Giao hàng</p>
                         </div>
                     </div>
