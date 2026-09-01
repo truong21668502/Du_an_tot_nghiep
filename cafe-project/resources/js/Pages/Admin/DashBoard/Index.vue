@@ -273,6 +273,8 @@ const formatCurrency = (value) => {
                     <thead>
                         <tr class="text-on-surface-variant border-b border-outline-variant/30 text-label-large">
                             <th class="py-3 pl-4">Tiêu đề bài viết</th>
+                            <th class="py-3 pl-4">Danh mục bài viết</th>
+                            <th class="py-3 pl-4">Hình ảnh</th>
                             <th class="py-3 text-right pr-4">Đánh giá</th>
                             <th class="py-3 text-right pr-4">Tổng sao trung bình</th>
                         </tr>
@@ -280,6 +282,10 @@ const formatCurrency = (value) => {
                     <tbody class="divide-y divide-outline-variant/10">
                         <tr v-for="post in topPosts" :key="post.id" class="hover:bg-surface-container-high/50 transition-colors">
                             <td class="py-3 pl-4 font-medium max-w-xs truncate">{{ post.title }}</td>
+                            <td class="py-3 pl-4 font-medium text-on-surface">{{ post.category_name }}</td>
+                            <td class="py-3 pl-4">
+                                <img :src="post.thumbnail_url" alt="Hình bài viết" class="w-20 h-20 object-cover" />
+                            </td>
                             <td class="py-3 text-right pr-4 font-bold text-on-surface">{{ post.total_reviews }} lượt đánh giá</td>
                             <td class="py-3 text-right pr-4 font-bold text-on-surface">{{ post.avg_rating }} <span class="material-symbols-outlined text-yellow-500">star</span></td>
                         </tr>

@@ -96,13 +96,14 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        $topPosts = Post::select('posts.id', 'posts.title')
+        $topPosts = Post::select('posts.id', 'posts.title', 'posts.thumbnail_url', 'post_categories.name as category_name')
             ->selectRaw('ROUND(AVG(post_comments.rating), 1) as avg_rating')
             ->selectRaw('COUNT(post_comments.id) as total_reviews')
             ->selectRaw('SUM(post_comments.rating) as total_rating')
             ->join('post_comments', 'posts.id', '=', 'post_comments.post_id')
+            ->join('post_categories', 'posts.category_id', '=', 'post_categories.id')
             ->where('post_comments.status', 'APPROVED')
-            ->groupBy('posts.id', 'posts.title')
+            ->groupBy('posts.id', 'posts.title', 'post_categories.name', 'posts.thumbnail_url')
             ->orderBy('avg_rating', 'desc')
             ->orderBy('total_reviews', 'desc')
             ->orderBy('total_rating', 'desc')

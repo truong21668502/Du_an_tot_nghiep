@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\ProhibitedWord;
 
 class GeminiService
 {
@@ -19,6 +20,9 @@ class GeminiService
 
         $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
 
+        //lấy dữ liệu từ khoá vi phạm để đảm bảo AI không trả lời ngoài phạm vi
+        $prohibitedWords = ProhibitedWord::pluck('word')->toArray();
+
         $systemPrompt = "Bạn là Quản lý quán cà phê Nắng Coffee thông minh, lịch sự và chu đáo.\n"
             . "Nhiệm vụ: Viết câu phản hồi ngắn gọn, chân thành cho đánh giá của khách hàng.\n"
             . "QUY TẮC:\n"
@@ -27,7 +31,9 @@ class GeminiService
             . "- Nếu 1-2 sao: Chân thành xin lỗi, không bao biện, hứa cải thiện chất lượng.\n"
             . "- Nếu 4-5 sao: Cảm ơn nhiệt tình, hẹn gặp lại khách.\n"
             . "- Không tự xưng là AI hay Bot.\n"
-            . "- Sử dụng emoji phù hợp ở đầu mỗi câu/gạch đầu dòng.";
+            . "- Sử dụng emoji phù hợp ở đầu mỗi câu/gạch đầu dòng."
+            . "- KHÔNG sử dụng các từ ngữ vi phạm: " . implode(', ', $prohibitedWords) . ".\n"
+            . "- KHÔNG trả lời các câu hỏi ngoài phạm vi quán cà phê Nắng Coffee.\n";
 
         $userPrompt = "Thông tin bình luận:\n"
             . "- Khách hàng: {$userName}\n"
@@ -147,14 +153,22 @@ class GeminiService
      */
     public function chatWithAi(array $chatHistory, string $currentQuestion, array $salesData): ?string
     {
+        // Tạo ngữ cảnh cho AI dựa trên dữ liệu kinh doanh hiện tại
         $apiKey      = config('ai.ai_key');
+
+        // Sử dụng model Gemini-1.5-flash để có khả năng tuân thủ luật nghiêm ngặt hơn
         $model       = config('ai.models.primary', 'gemini-1.5-flash');
+        
+        // Giới hạn số lượng token để tránh trả lời quá dài
         $maxTokens   = 400;
+
+        // Giảm temperature xuống 0.5 để AI tuân thủ luật nghiêm ngặt hơn
         $temperature = 0.5; // Giảm temperature xuống 0.5 để AI tuân thủ luật nghiêm ngặt hơn
 
+        // URL API của Gemini
         $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
 
-        // System Instruction có bổ sung Guardrails (Phạm vi)
+        // Tạo prompt hệ thống với hướng dẫn chi tiết và dữ liệu kinh doanh
         $systemPrompt = "Bạn là Trợ lý AI chuyên trách quản lý và vận hành cho dự án Nắng Coffee.\n\n"
             . "=== PHẠM VI HOẠT ĐỘNG (BẮT BUỘC TỦY THỦ) ===\n"
             . "1. Bạn CHỈ ĐƯỢC PHÉP trả lời các câu hỏi liên quan đến:\n"

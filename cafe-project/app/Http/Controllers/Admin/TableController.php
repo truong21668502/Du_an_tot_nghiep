@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Table;
 use App\Http\Requests\Admin\TableStoreRequest;
 use App\Http\Requests\Admin\TableUpdateRequest;
-use App\Events\TableListUpdated;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -60,7 +59,6 @@ class TableController extends Controller
     public function store(TableStoreRequest $request)
     {
         Table::create($request->validated());
-        event(new TableListUpdated());
         return redirect()->back()->with('toast-success', 'Thêm bàn phục vụ mới thành công!');
     }
 
@@ -68,7 +66,6 @@ class TableController extends Controller
     {
         $table = Table::findOrFail($id);
         $table->update($request->validated());
-        event(new TableListUpdated());
         return redirect()->back()->with('toast-success', 'Cập nhật thông tin bàn thành công!');
     }
 
@@ -76,13 +73,31 @@ class TableController extends Controller
     {
         $table = Table::findOrFail($id);
         $table->delete();
-        event(new TableListUpdated());
-        return redirect()->back()->with('toast-success', 'Xóa bàn phục vụ thành công!');
+        return redirect()->back()->with('toast-success', 'Đã thêm bàn vào thùng rác!');
     }
     public function print()
     {
         $tables = Table::orderBy('id')->get();
 
         return view('admin.tables.print', compact('tables'));
+    }
+
+    public function trash()
+    {
+        // Lấy danh sách các bàn đã bị xóa mềm (soft deleted)
+        $trashedTables = Table::onlyTrashed()->orderBy('deleted_at', 'desc')->paginate(10);
+
+        return Inertia::render('Admin/Tables/Trash', [
+            'trashedTables' => $trashedTables,
+        ]);
+    }
+
+    // Khôi phục bàn
+    public function restore($id)
+    {
+        $table = Table::onlyTrashed()->findOrFail($id);
+        $table->restore();
+
+        return redirect()->back()->with('success', "Đã khôi phục '{$table->table_name}' thành công!");
     }
 }

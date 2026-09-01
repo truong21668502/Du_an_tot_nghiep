@@ -59,7 +59,7 @@ const openEditModal = (table) => {
 };
 
 const deleteTable = (id, name) => {
-    if (confirm(`Bạn có chắc muốn xóa cấu hình "${name}" khỏi sơ đồ quán không?`)) {
+    if (confirm(`Bạn có chắc muốn đưa bàn "${name}" vào thùng rác?`)) {
         router.delete(`/quan-tri/ban/${id}`);
     }
 };
@@ -161,19 +161,33 @@ const openQrPreview = (qrCode, tableName) => {
 const closeQrPreview = () => {
     previewQr.value.isOpen = false;
 };
+
+// Modal thùng rác xoá mềm
+const openTrashModal = () => {
+    router.get(route('admin.tables.trash'), {}, { preserveState: true });
+};
+
 </script>
 
 <template>
     <AdminLayout>
         <div class="space-y-6 relative">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 class="font-sans text-headline-md text-on-surface text-primary text-3xl mt-2 mb-2"><span class="material-symbols-outlined text-primary">table_bar</span> SƠ ĐỒ & QUẢN LÝ BÀN ĂN</h1>
                     <p class="font-sans text-body-medium text-on-surface-variant">Quản lý định danh mã QR đầu cuối phục vụ tại bàn.</p>
                 </div>
-                <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer">
-                    <span class="material-symbols-outlined text-md">add</span> Thêm bàn mới
-                </button>
+
+                <div class="flex items-center gap-3 mt-4">
+                    <!-- Thêm nút xem danh sách thùng rác xoá mềm -->
+                    <button @click="openTrashModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary text-red-600 bg-white font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-md">delete</span> Thùng rác
+                    </button>
+
+                    <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-md">add</span> Thêm bàn mới
+                    </button>
+                </div>
             </div>
 
             <div class="bg-surface p-4 rounded-2xl border border-outline-variant/20 shadow-sm font-sans space-y-3">
