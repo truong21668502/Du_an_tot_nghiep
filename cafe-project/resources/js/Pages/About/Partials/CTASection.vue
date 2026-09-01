@@ -1,6 +1,28 @@
 <script setup>
 import BaseButton from "@/Components/Base/BaseButton.vue";
 import AnimateOnScroll from "@/Components/Base/AnimateOnScroll.vue";
+import { usePage, Link } from "@inertiajs/vue3";
+
+// 1. Lấy toàn bộ object page từ Inertia
+const page = usePage();
+
+// 2. Hàm xử lý mở Google Maps dẫn đường lấy dữ liệu từ usePage()
+const openGoogleMaps = () => {
+    const settings = page.props.settings;
+
+    const shopLat = settings?.shop_info?.shop_lat;
+    const shopLng = settings?.shop_info?.shop_lng;
+
+    if (!shopLat || !shopLng) {
+        console.error("Không tìm thấy tọa độ cửa hàng", settings);
+        return;
+    }
+
+    const googleMapsUrl =
+        `https://www.google.com/maps/dir/?api=1&destination=${shopLat},${shopLng}`;
+
+    window.open(googleMapsUrl, "_blank", "noopener,noreferrer");
+};
 </script>
 
 <template>
@@ -42,12 +64,17 @@ import AnimateOnScroll from "@/Components/Base/AnimateOnScroll.vue";
                             :duration="700"
                         >
                             <div class="flex flex-wrap justify-center gap-4">
-                                <BaseButton variant="inverted"
-                                    >Tìm Chi Nhánh</BaseButton
-                                >
+                                <!-- Nút 1: Tìm Chi Nhánh (Mở bản đồ) -->
+                                <BaseButton variant="inverted" @click="openGoogleMaps">
+                                    Tìm Chi Nhánh
+                                </BaseButton>
+                                
+                                <!-- Nút 2: Đặt Bàn Ngay (Giữ nguyên gốc của bạn) -->
+                                                                <Link href="/thuc-don">
                                 <BaseButton variant="secondary"
-                                    >Đặt Bàn Ngay</BaseButton
+                                    >Đặt món ngay</BaseButton
                                 >
+                            </Link>
                             </div>
                         </AnimateOnScroll>
                     </div>

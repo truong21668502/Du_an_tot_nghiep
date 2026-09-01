@@ -158,6 +158,7 @@ class ChatToolService
                 'name'              => $p->product_name,
                 'slug'              => $p->slug,
                 'category'          => $p->category?->category_name,
+                'image_url'         => $p->image_url,
                 'short_description' => $p->short_description,
                 // Trả về chi tiết từng size kèm giá gốc + giá giảm để AI biết đường tư vấn
                 'variants'          => $p->variants->map(fn ($v) => [

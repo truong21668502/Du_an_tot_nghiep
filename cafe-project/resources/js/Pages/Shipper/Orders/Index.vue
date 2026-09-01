@@ -30,12 +30,12 @@ const formatTime = (isoString) => {
 }
 
 // --- COMPUTED ---
-// Cột 1: Đơn mới, chưa có ai nhận
+// Đơn mới, chưa có ai nhận
 const availableOrders = computed(() => {
     return ordersList.value.filter(o => o.status === 'READY' && !o.is_my_order)
 })
 
-// Cột 2: Đơn mình đang giao
+// Đơn mình đang giao
 const myOrders = computed(() => {
     return ordersList.value.filter(o => o.is_my_order)
 })
@@ -130,10 +130,89 @@ const goToDelivery = (orderId) => {
                 <h1 class="text-headline-md text-on-surface">Quản Lý Giao Hàng</h1>
             </div>
 
-            <!-- Grid 2 Cột -->
-            <div class="px-4 lg:px-6 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <!-- Bố cục Stack (Xếp dọc) thay vì Grid -->
+            <div class="px-4 lg:px-6 flex flex-col gap-6 items-stretch">
                 
-                <!-- ================= CỘT 1: ĐƠN MỚI (CHỜ NHẬN) ================= -->
+                <!-- ================= ĐƠN ĐANG GIAO ================= -->
+                <div class="bg-surface-container-low rounded-2xl p-4 shadow-sm border border-surface-container">
+                    <div class="flex items-center justify-between mb-4 border-b border-surface-container-highest pb-3">
+                        <h2 class="text-headline-sm text-secondary flex items-center">
+                            <span class="material-symbols-outlined mr-2">speed</span>
+                            Đơn Đang Giao
+                        </h2>
+                        <span v-if="myOrders.length" class="bg-secondary text-on-secondary px-3 py-1 rounded-full text-label-md shadow-sm">
+                            {{ myOrders.length }}
+                        </span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <TransitionGroup name="list" tag="div" class="space-y-4">
+                            <div 
+                                v-for="order in myOrders" 
+                                :key="order.id"
+                                class="bg-surface-container-lowest rounded-xl p-4 shadow-soft border border-surface-container-high relative overflow-hidden"
+                            >
+                                <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-secondary"></div>
+
+                                <!-- Card Header -->
+                                <div class="flex justify-between items-start mb-3 pl-2">
+                                    <div>
+                                        <span class="text-label-md text-primary font-bold">{{ order.code }}</span>
+                                        <div class="flex items-center text-label-sm text-outline mt-1">
+                                            <span class="material-symbols-outlined text-[14px] mr-1">schedule</span>
+                                            {{ formatTime(order.created_at) }}
+                                        </div>
+                                    </div>
+                                    <span class="px-2.5 py-1 rounded-sm text-[11px] font-bold tracking-wider bg-secondary-container text-on-secondary-container">
+                                        ĐANG GIAO
+                                    </span>
+                                </div>
+
+                                <hr class="border-surface-container-high mb-3">
+
+                                <!-- Card Body -->
+                                <div class="space-y-2.5 pl-2 mb-4">
+                                    <div class="flex items-start">
+                                        <div class="bg-surface-container p-1.5 rounded-full mr-3 shrink-0 flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-[16px] text-on-surface-variant">location_on</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-body-md text-on-surface font-medium line-clamp-2 leading-tight">{{ order.address }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="bg-surface-container p-1.5 rounded-full mr-3 shrink-0 flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-[16px] text-on-surface-variant">phone</span>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="text-body-md text-on-surface">{{ order.customer }}</span>
+                                            <a :href="`tel:${order.phone}`" class="text-label-sm text-secondary font-medium">{{ order.phone }}</a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card Action -->
+                                <div class="pl-2 pt-2">
+                                    <button 
+                                        @click="goToDelivery(order.id)"
+                                        class="w-full bg-secondary hover:bg-tertiary text-on-secondary py-3 rounded-lg text-label-md transition-colors flex items-center justify-center shadow-md"
+                                    >
+                                        <span class="material-symbols-outlined text-[20px] mr-2">check_circle</span>
+                                        TIẾP TỤC GIAO HÀNG
+                                    </button>
+                                </div>
+                            </div>
+                        </TransitionGroup>
+
+                        <!-- Empty State Đang Giao -->
+                        <div v-if="myOrders.length === 0" class="flex flex-col items-center justify-center py-12 text-center opacity-60">
+                            <span class="material-symbols-outlined text-[48px] text-outline mb-3">check_box_outline_blank</span>
+                            <p class="text-body-md text-on-surface-variant">Bạn chưa nhận đơn nào.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= ĐƠN MỚI (CHỜ NHẬN) ================= -->
                 <div class="bg-surface-container-low rounded-2xl p-4 shadow-sm border border-surface-container">
                     <div class="flex items-center justify-between mb-4 border-b border-surface-container-highest pb-3">
                         <h2 class="text-headline-sm text-primary flex items-center">
@@ -207,89 +286,10 @@ const goToDelivery = (orderId) => {
                             </div>
                         </TransitionGroup>
 
-                        <!-- Empty State Cột 1 -->
+                        <!-- Empty State Chờ Nhận -->
                         <div v-if="availableOrders.length === 0" class="flex flex-col items-center justify-center py-12 text-center opacity-60">
                             <span class="material-symbols-outlined text-[48px] text-outline mb-3">inbox</span>
                             <p class="text-body-md text-on-surface-variant">Không có đơn hàng mới nào.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ================= CỘT 2: ĐANG GIAO ================= -->
-                <div class="bg-surface-container-low rounded-2xl p-4 shadow-sm border border-surface-container">
-                    <div class="flex items-center justify-between mb-4 border-b border-surface-container-highest pb-3">
-                        <h2 class="text-headline-sm text-secondary flex items-center">
-                            <span class="material-symbols-outlined mr-2">speed</span>
-                            Đơn Đang Giao
-                        </h2>
-                        <span v-if="myOrders.length" class="bg-secondary text-on-secondary px-3 py-1 rounded-full text-label-md shadow-sm">
-                            {{ myOrders.length }}
-                        </span>
-                    </div>
-
-                    <div class="space-y-4">
-                        <TransitionGroup name="list" tag="div" class="space-y-4">
-                            <div 
-                                v-for="order in myOrders" 
-                                :key="order.id"
-                                class="bg-surface-container-lowest rounded-xl p-4 shadow-soft border border-surface-container-high relative overflow-hidden"
-                            >
-                                <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-secondary"></div>
-
-                                <!-- Card Header -->
-                                <div class="flex justify-between items-start mb-3 pl-2">
-                                    <div>
-                                        <span class="text-label-md text-primary font-bold">{{ order.code }}</span>
-                                        <div class="flex items-center text-label-sm text-outline mt-1">
-                                            <span class="material-symbols-outlined text-[14px] mr-1">schedule</span>
-                                            {{ formatTime(order.created_at) }}
-                                        </div>
-                                    </div>
-                                    <span class="px-2.5 py-1 rounded-sm text-[11px] font-bold tracking-wider bg-secondary-container text-on-secondary-container">
-                                        ĐANG GIAO
-                                    </span>
-                                </div>
-
-                                <hr class="border-surface-container-high mb-3">
-
-                                <!-- Card Body -->
-                                <div class="space-y-2.5 pl-2 mb-4">
-                                    <div class="flex items-start">
-                                        <div class="bg-surface-container p-1.5 rounded-full mr-3 shrink-0 flex items-center justify-center">
-                                            <span class="material-symbols-outlined text-[16px] text-on-surface-variant">location_on</span>
-                                        </div>
-                                        <div>
-                                            <p class="text-body-md text-on-surface font-medium line-clamp-2 leading-tight">{{ order.address }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <div class="bg-surface-container p-1.5 rounded-full mr-3 shrink-0 flex items-center justify-center">
-                                            <span class="material-symbols-outlined text-[16px] text-on-surface-variant">phone</span>
-                                        </div>
-                                        <div class="flex flex-col">
-                                            <span class="text-body-md text-on-surface">{{ order.customer }}</span>
-                                            <a :href="`tel:${order.phone}`" class="text-label-sm text-secondary font-medium">{{ order.phone }}</a>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Card Action -->
-                                <div class="pl-2 pt-2">
-                                    <button 
-                                        @click="goToDelivery(order.id)"
-                                        class="w-full bg-secondary hover:bg-tertiary text-on-secondary py-3 rounded-lg text-label-md transition-colors flex items-center justify-center shadow-md"
-                                    >
-                                        <span class="material-symbols-outlined text-[20px] mr-2">check_circle</span>
-                                        TIẾP TỤC GIAO HÀNG
-                                    </button>
-                                </div>
-                            </div>
-                        </TransitionGroup>
-
-                        <!-- Empty State Cột 2 -->
-                        <div v-if="myOrders.length === 0" class="flex flex-col items-center justify-center py-12 text-center opacity-60">
-                            <span class="material-symbols-outlined text-[48px] text-outline mb-3">check_box_outline_blank</span>
-                            <p class="text-body-md text-on-surface-variant">Bạn chưa nhận đơn nào.</p>
                         </div>
                     </div>
                 </div>

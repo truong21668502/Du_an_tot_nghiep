@@ -20,7 +20,7 @@ public function index()
         $shipperId = Auth::id(); 
 
         $orders = Order::with('payment')
-            ->where('order_type', 'DELIVERY')
+            ->where('order_type', 'DELIVERY')   
             ->where(function ($query) use ($shipperId) {
                 // Điều kiện A: Đơn mới chờ nhận (READY & chưa có shipper)
                 $query->where(function ($q) {
