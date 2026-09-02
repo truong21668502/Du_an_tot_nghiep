@@ -69,8 +69,9 @@ class TableController extends Controller
         $qrCode = $baseQr;
         $count = 1;
 
-        // Chống trùng lặp định danh
-        while (Table::where('qr_code', $qrCode)
+        // Kiểm tra xem mã QR đã tồn tại trong cơ sở dữ liệu chưa, nếu có thì thêm số đếm vào cuối
+        while (Table::withTrashed()
+            ->where('qr_code', $qrCode)
             ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))
             ->exists()) {
             $qrCode = "{$baseQr}_{$count}";
@@ -101,15 +102,16 @@ class TableController extends Controller
 
         // Lấy dữ liệu đã được xác thực từ request
         $data = $request->validated();
-
-        // Tự tạo định danh QR nếu chưa có
-        if (!isset($data['qr_code'])) {
-            $data['qr_code'] = $this->generateQrCode($data['table_name'], $id);
+        
+        // CHỈ tạo lại mã QR mới nếu người dùng thực sự THAY ĐỔI tên bàn
+        if (isset($data['table_name']) && $data['table_name'] !== $table->table_name) {
+            $data['qr_code'] = $this->generateQrCode($data['table_name'], $table->id);
+        } else {
+            // Không đổi tên thì giữ nguyên mã QR cũ, không cho phép gán đè
+            unset($data['qr_code']);
         }
 
-        // Cập nhật thông tin bàn
         $table->update($data);
-
 
         return redirect()->back()->with('toast-success', 'Cập nhật thông tin bàn thành công!');
     }
