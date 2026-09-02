@@ -24,7 +24,7 @@ watch(() => props.isOpen, (newVal) => {
     if (newVal) {
         if (props.editMode && props.tableData) {
             form.table_name = props.tableData.table_name;
-            form.area = props.tableData.area || "Tầng trệt";
+            form.area = props.tableData.area;
             form.capacity = props.tableData.capacity;
             form.qr_code = props.tableData.qr_code || "";
             form.status = props.tableData.status;
@@ -78,7 +78,11 @@ const submitForm = () => {
 
                 <div class="flex flex-col gap-1">
                     <label class="text-label-large text-on-surface-variant font-bold">Khu vực vị trí</label>
-                    <input v-model="form.area" type="text" placeholder="Ví dụ: Tầng trệt, Ngoài trời, Sân thượng" class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" />
+                    <select v-model="form.area" class="px-4 py-2.5 rounded-xl border border-outline-variant bg-surface text-on-surface focus:outline-none focus:border-primary transition-all cursor-pointer">
+                        <option value="Tầng trệt">Tầng trệt</option>
+                        <option value="Tầng lầu">Tầng lầu</option>
+                        <option value="Sân vườn">Sân vườn</option>
+                    </select>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
