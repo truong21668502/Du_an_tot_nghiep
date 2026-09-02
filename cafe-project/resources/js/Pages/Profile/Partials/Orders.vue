@@ -1,11 +1,45 @@
 <script setup>
-import { ref } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
 import axios from 'axios'
+
 import ProfileLayout from '@/Layouts/ProfileLayout.vue'
 import { useProfile } from '@/Composables/useProfile'
 import Pagination from '@/Components/Main/Pagination.vue'
-import { router } from '@inertiajs/vue3'
+import { toast } from 'vue3-toastify'
+
+defineOptions({ layout: ProfileLayout })
+
+const props = defineProps({
+    orders: Object,
+})
+
+// Dùng bản local reactive để cập nhật realtime
+const orderList = ref(props.orders)
+
+watch(
+    () => props.orders,
+    (newOrders) => {
+        orderList.value = newOrders
+    },
+    { deep: true }
+)
+
+const {
+    formatPrice,
+    formatDate,
+    orderStatusMap,
+    paymentStatusMap,
+    orderTypeMap,
+    cancelOrder
+} = useProfile()
+
+const getVisibleItems = (items) => items.slice(0, 2)
+
+
+// ================================
+// PAGINATION
+// ================================
 
 const onPageChange = (page) => {
     router.visit(route('profile.orders'), {
@@ -14,44 +48,94 @@ const onPageChange = (page) => {
         preserveState: true,
     })
 }
-const getVisibleItems = (items) => items.slice(0, 2)
 
-defineOptions({ layout: ProfileLayout })
 
-defineProps({
-  orders: Object,
-})
+// ================================
+// MODAL
+// ================================
 
-const { formatPrice, formatDate, orderStatusMap, paymentStatusMap, orderTypeMap, cancelOrder } = useProfile()
-
-// Modal state
 const showDetailModal = ref(false)
 const selectedOrder = ref(null)
 const loadingDetail = ref(false)
 
 const openOrderDetail = async (orderId) => {
-  showDetailModal.value = true
-  loadingDetail.value = true
-  selectedOrder.value = null
-  
-  try {
-    const response = await axios.get(route('profile.orders.detail', orderId))
-    selectedOrder.value = response.data.order
-  } catch (error) {
-    console.error('Error loading order detail:', error)
-  } finally {
-    loadingDetail.value = false
-  }
+    showDetailModal.value = true
+    loadingDetail.value = true
+    selectedOrder.value = null
+
+    try {
+        const response = await axios.get(
+            route('profile.orders.detail', orderId)
+        )
+
+        selectedOrder.value = response.data.order
+    } catch (error) {
+        console.error('Error loading order detail:', error)
+    } finally {
+        loadingDetail.value = false
+    }
 }
 
 const closeDetailModal = () => {
-  showDetailModal.value = false
-  selectedOrder.value = null
+    showDetailModal.value = false
+    selectedOrder.value = null
 }
 
+
+// ================================
+// BỔ SUNG THANH TOÁN
+// ================================
+
 const retryPayment = (orderId) => {
-    router.post(route('customer.orders.retry-payment', orderId))
+    router.post(
+        route('customer.orders.retry-payment', orderId)
+    )
 }
+
+
+// ================================
+// WEBSOCKET REALTIME
+// ================================
+
+onMounted(() => {
+    if (typeof window.Echo === 'undefined') {
+        return
+    }
+
+    window.Echo
+        .channel('staff-orders')
+        .listen('.order.status-updated', (event) => {
+
+            if (!event.order) return
+
+            const updatedOrder = event.order
+
+            const index = orderList.value?.data?.findIndex(
+                (order) => order.id === updatedOrder.id
+            )
+
+            // Đơn đang hiển thị trong trang hiện tại
+            if (index !== -1 && index !== undefined) {
+                orderList.value.data[index].status = updatedOrder.status
+            }
+
+            // Nếu modal đang mở đúng đơn đó
+            if (
+                selectedOrder.value &&
+                selectedOrder.value.id === updatedOrder.id
+            ) {
+                selectedOrder.value.status = updatedOrder.status
+            }
+
+            toast.info(`Đơn #${updatedOrder.id} đã được cập nhật trạng thái: ${orderStatusMap[updatedOrder.status]?.label || updatedOrder.status}`)
+        })
+})
+
+onUnmounted(() => {
+    if (typeof window.Echo !== 'undefined') {
+        window.Echo.leave('staff-orders')
+    }
+})
 </script>
 
 <template>
@@ -68,7 +152,7 @@ const retryPayment = (orderId) => {
     </div>
 
     <div v-else class="space-y-4">
-      <div v-for="order in orders.data" :key="order.id" class="border border-outline-variant/20 rounded-xl p-5 space-y-3">
+      <div v-for="order in orderList.data" :key="order.id" class="border border-outline-variant/20 rounded-xl p-5 space-y-3">
         <div class="flex flex-wrap justify-between items-start gap-3">
           <div>
             <span class="font-sans text-label-md text-on-surface font-semibold">Đơn #{{ order.id }}</span>
@@ -137,10 +221,10 @@ const retryPayment = (orderId) => {
         </div>
       </div>
       <Pagination 
-    v-if="orders.last_page > 1"
-    :current-page="orders.current_page"
-    :total-pages="orders.last_page"
-    :total-items="orders.total"
+    v-if="orderList.last_page > 1"
+    :current-page="orderList.current_page"
+    :total-pages="orderList.last_page"
+    :total-items="orderList.total"
     @page-change="onPageChange"
 />
     </div>
