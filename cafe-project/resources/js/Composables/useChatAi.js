@@ -71,17 +71,24 @@ export function useChatAi() {
         }
     }
 
-    const loadHistory = async () => {
-        if (!conversationId.value) return
-        try {
-            const response = await axios.get('/chat/history', {
-                params: { conversation_id: conversationId.value }
-            })
-            messages.value = response.data.data || []
-        } catch (err) {
-            console.error('Không thể tải lịch sử')
+const loadHistory = async (convId = null) => {
+    const id = convId || conversationId.value
+    if (!id) return
+    
+    try {
+        const response = await axios.get('/chat/history', {
+            params: { conversation_id: id }
+        })
+        messages.value = response.data.data || []
+        // Cập nhật conversationId nếu có truyền vào
+        if (convId) {
+            conversationId.value = convId
         }
+    } catch (err) {
+        console.error('Không thể tải lịch sử', err)
+        error.value = 'Không thể tải lịch sử tin nhắn'
     }
+}
 
     const loadConversations = async () => {
         try {

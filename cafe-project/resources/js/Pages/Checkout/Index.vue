@@ -55,7 +55,7 @@ const calculateShippingForAddress = async (address) => {
     isAddressOutOfRange.value = false
 
     try {
-       const url = `https://rsapi.goong.io/Direction?api_key=${GOONG_API_KEY}&origin=${shopPos.value.lat},${shopPos.value.lng}&destination=${address.latitude},${address.longitude}&vehicle=bike`
+      const url = `https://rsapi.goong.io/Direction?api_key=${GOONG_API_KEY}&origin=${shopPos.value.lat},${shopPos.value.lng}&destination=${address.latitude},${address.longitude}&vehicle=bike`
         const res = await fetch(url)
         const data = await res.json()
 

@@ -48,6 +48,10 @@ const closeDetailModal = () => {
   showDetailModal.value = false
   selectedOrder.value = null
 }
+
+const retryPayment = (orderId) => {
+    router.post(route('customer.orders.retry-payment', orderId))
+}
 </script>
 
 <template>
@@ -117,7 +121,18 @@ const closeDetailModal = () => {
               class="px-4 py-1.5 bg-red-50 text-red-700 rounded-full font-sans text-label-sm hover:bg-red-100 transition-colors"
             >
               Hủy đơn
-            </button>
+            </button> 
+                  <button
+        v-if="
+            order.status === 'PENDING' &&
+            order.payment?.method === 'BANK_TRANSFER' &&
+            ['PENDING', 'FAILED'].includes(order.payment?.status)
+        "
+          @click="retryPayment(order.id)"
+          class="px-4 py-1.5 bg-primary text-white rounded-full font-sans text-label-sm hover:opacity-90 transition"
+      >
+          Bổ sung thanh toán
+      </button>
           </div>
         </div>
       </div>

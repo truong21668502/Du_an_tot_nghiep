@@ -46,6 +46,8 @@ Route::post('/orders', [OrderController::class, 'store'])->name('customer.orders
 Route::get('/don-hang/{order}/pending', [OrderController::class, 'pending'])->name('customer.orders.pending');
 
 Route::get('/vnpay-ket-qua', [VnpayController::class, 'return'])->name('vnpay.return');
+Route::post('/orders/{order}/retry-payment', [OrderController::class, 'retryPayment'])
+    ->name('customer.orders.retry-payment');
 
 
 // Về chúng tôi
