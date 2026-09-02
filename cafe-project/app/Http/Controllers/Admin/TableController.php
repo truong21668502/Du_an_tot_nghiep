@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\TableStoreRequest;
 use App\Http\Requests\Admin\TableUpdateRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Str;
 
 class TableController extends Controller
 {
@@ -56,16 +57,62 @@ class TableController extends Controller
         ]);
     }
 
+    /**
+     * Hàm tự tạo mã định danh QR từ tên bàn
+     */
+    private function generateQrCode(string $name, ?int $ignoreId = null): string
+    {
+        // Chuyển thành slug không dấu, thay gạch ngang bằng gạch dưới và in hoa
+        // Ví dụ: "Bàn VIP 01" -> "BAN_VIP_01"
+        $formatted = strtoupper(str_replace('-', '_', Str::slug($name)));
+        $baseQr = 'QR_' . $formatted;
+        $qrCode = $baseQr;
+        $count = 1;
+
+        // Kiểm tra xem mã QR đã tồn tại trong cơ sở dữ liệu chưa, nếu có thì thêm số đếm vào cuối
+        while (Table::withTrashed()
+            ->where('qr_code', $qrCode)
+            ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))
+            ->exists()) {
+            $qrCode = "{$baseQr}_{$count}";
+            $count++;
+        }
+
+        return $qrCode;
+    }
+
     public function store(TableStoreRequest $request)
     {
-        Table::create($request->validated());
+        // Lấy dữ liệu đã được xác thực từ request
+        $data = $request->validated();
+
+        // Tự tạo định danh QR theo tên bàn
+        $data['qr_code'] = $this->generateQrCode($data['table_name']);
+
+        // Tạo bản ghi mới trong cơ sở dữ liệu
+        Table::create($data);
+
         return redirect()->back()->with('toast-success', 'Thêm bàn phục vụ mới thành công!');
     }
 
     public function update(TableUpdateRequest $request, $id)
     {
+        // Tìm bàn theo ID, nếu không tìm thấy sẽ ném lỗi 404
         $table = Table::findOrFail($id);
-        $table->update($request->validated());
+
+        // Lấy dữ liệu đã được xác thực từ request
+        $data = $request->validated();
+        
+        // CHỈ tạo lại mã QR mới nếu người dùng thực sự THAY ĐỔI tên bàn
+        if (isset($data['table_name']) && $data['table_name'] !== $table->table_name) {
+            $data['qr_code'] = $this->generateQrCode($data['table_name'], $table->id);
+        } else {
+            // Không đổi tên thì giữ nguyên mã QR cũ, không cho phép gán đè
+            unset($data['qr_code']);
+        }
+
+        $table->update($data);
+
         return redirect()->back()->with('toast-success', 'Cập nhật thông tin bàn thành công!');
     }
 

@@ -65,6 +65,30 @@ class OrderController extends Controller
         ]);
     }
 
+    public function retryPayment(Order $order, Request $request)
+    {
+        $payment = $order->payment;
+
+        if (
+            $order->status !== 'PENDING' ||
+            !$payment ||
+            $payment->payment_method !== 'BANK_TRANSFER' ||
+            !in_array($payment->payment_status, ['PENDING', 'FAILED'])
+        ) {
+            return back()->withErrors([
+                'payment' => 'Đơn hàng này không thể thanh toán lại.'
+            ]);
+        }
+
+        $payment->update([
+            'payment_status' => 'PENDING',
+        ]);
+
+        return Inertia::location(
+            $this->buildVnpayUrl($order, $request->ip())
+        );
+    }
+
     // ─── Order Logic ───────────────────────────────────────────
 
 private function placeOrder(Cart $cart, array $data, Request $request): Order

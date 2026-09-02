@@ -123,15 +123,15 @@ router.on('navigate', () => {
           v-if="isMobileMenuOpen" 
           class="md:hidden bg-surface border-t border-outline-variant/30 px-margin-mobile py-4 shadow-lg"
         >
-          <!-- (Nội dung Mobile menu giữ nguyên) -->
           <template v-if="user">
+            <Link href="/ho-so">
             <div class="flex items-center gap-3 px-4 py-3 mb-2 bg-primary-container/20 rounded-xl">
               <span class="material-symbols-outlined text-3xl text-primary">account_circle</span>
               <div>
                 <p class="font-sans text-label-md text-on-surface">{{ user.full_name }}</p>
                 <p class="font-sans text-label-sm text-on-surface-variant">{{ user.email }}</p>
               </div>
-            </div>
+            </div></Link>
           </template>
           <a 
             v-for="link in navLinks" 
@@ -148,6 +148,7 @@ router.on('navigate', () => {
             {{ link.label }}
           </a>
           <div class="mt-4 pt-4 border-t border-outline-variant/30 space-y-3">
+            <!-- Bổ sung: Giỏ hàng và Yêu thích cho mobile -->
             <a 
               href="/gio-hang"
               @click.prevent="navigateTo('/gio-hang')"
@@ -156,15 +157,16 @@ router.on('navigate', () => {
               <span class="material-symbols-outlined">shopping_cart</span>
               <span class="font-sans text-body-md">Giỏ hàng</span>
             </a>
+            <a 
+              href="/yeu-thich"
+              @click.prevent="navigateTo('/yeu-thich')"
+              class="flex items-center gap-3 py-3 px-4 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all"
+            >
+              <span class="material-symbols-outlined">favorite</span>
+              <span class="font-sans text-body-md">Yêu thích</span>
+            </a>
             <template v-if="user">
-              <a 
-                href="/dashboard"
-                @click.prevent="navigateTo('/dashboard')"
-                class="flex items-center gap-3 py-3 px-4 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-all"
-              >
-                <span class="material-symbols-outlined">dashboard</span>
-                <span class="font-sans text-body-md">Bảng điều khiển</span>
-              </a>
+              <!-- Bổ sung: Link đến trang cá nhân cho user đã đăng nhập -->
               <a 
                 href="/dang-xuat"
                 @click.prevent="router.post(route('logout'))"

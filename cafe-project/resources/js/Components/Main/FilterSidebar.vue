@@ -51,9 +51,9 @@ defineEmits(["update:search", "update:priceRange", "update:rating", "close"]);
             <hr class="border-outline-variant/20" />
 
             <PriceRangeFilter
-                :current-min="filters?.min_price ?? ''"
-                :current-max="filters?.max_price ?? ''"
-                @update:price-range="$emit('update:priceRange', $event)"
+                :current-min="filters?.priceRange?.min ?? ''"
+                :current-max="filters?.priceRange?.max ?? ''"
+                @update:price-range="(payload) => $emit('update:priceRange', payload)"
             />
 
             <hr class="border-outline-variant/20" />

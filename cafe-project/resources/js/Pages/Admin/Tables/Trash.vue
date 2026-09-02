@@ -72,15 +72,6 @@ const formatDateTime = (dateStr) => {
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <button 
-                        v-if="trashedTables.data.length > 0"
-                        @click="restoreAllTables" 
-                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary text-on-secondary hover:bg-secondary/90 font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer"
-                    >
-                        <span class="material-symbols-outlined text-md">settings_backup_restore</span>
-                        Khôi phục tất cả
-                    </button>
-                    
                     <Link 
                         :href="route('admin.tables.index')" 
                         class="inline-flex items-center gap-2 px-5 py-2.5 bg-surface-container-high text-on-surface hover:bg-surface-container-highest font-sans text-label-large rounded-full shadow-sm transition-all"

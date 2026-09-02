@@ -78,6 +78,7 @@ class UserController extends Controller
             return redirect()->back()->with('toast-error', 'Bạn không được phép tự khóa hoặc hạ quyền của chính mình!');
         }
 
+        // Lấy dữ liệu đã được validate từ request
         $data = $request->validated();
         
         // Xử lý bảo mật: Nếu không nhập mật khẩu mới thì loại bỏ khỏi mảng update, không ghi đè rỗng
@@ -113,15 +114,7 @@ class UserController extends Controller
         
         $user->restore(); // Khôi phục lại trạng thái hoạt động bình thường
 
-        return redirect()->back()->with('toast-success', 'Đã khôi phục tài khoản thành công! Toàn bộ điểm tích lũy được giữ nguyên.');
-    }
-
-    // Hàm Xóa Vĩnh Viễn (test hệ thống hoặc dọn dẹp)
-    public function forceDelete($id)
-    {
-        $user = User::onlyTrashed()->findOrFail($id);
-        $user->forceDelete();
-        return redirect()->back()->with('toast-success', 'Đã xóa vĩnh viễn tài khoản khỏi cơ sở dữ liệu.');
+        return redirect()->back()->with('toast-success', 'Đã khôi phục tài khoản thành công!');
     }
 
     // Hàm Cập Nhật Địa Chỉ Người Dùng

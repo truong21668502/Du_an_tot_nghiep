@@ -26,15 +26,22 @@ export function useMenuFilters(props) {
         { value: "name_desc", label: "Tên: Z-A" },
     ];
 
-    const buildQueryParams = (override = {}) => {
+const buildQueryParams = (override = {}) => {
         const merged = { ...filters.value, ...override };
         const params = {};
 
         if (merged.category && merged.category !== "all")
             params.category = merged.category;
         if (merged.search) params.search = merged.search;
-        if (merged.priceRange?.min) params.min_price = merged.priceRange.min;
-        if (merged.priceRange?.max) params.max_price = merged.priceRange.max;
+        
+        // SỬA LỖI SỐ 0 Ở ĐÂY: Kiểm tra khác chuỗi rỗng và khác null/undefined
+        if (merged.priceRange?.min !== "" && merged.priceRange?.min != null) {
+            params.min_price = merged.priceRange.min;
+        }
+        if (merged.priceRange?.max !== "" && merged.priceRange?.max != null) {
+            params.max_price = merged.priceRange.max;
+        }
+
         if (merged.rating) params.rating = merged.rating;
         if (merged.sortBy && merged.sortBy !== "newest")
             params.sort_by = merged.sortBy;
@@ -64,9 +71,13 @@ export function useMenuFilters(props) {
     };
 
     const setPriceRange = (min, max) => {
-        filters.value.priceRange = { min: min || "", max: max || "" };
+        filters.value.priceRange = { 
+            min: min !== "" && min != null ? min : "", 
+            max: max !== "" && max != null ? max : "" 
+        };
         filters.value.page = 1;
-        navigate({ min_price: min || "", max_price: max || "", page: 1 });
+        
+        navigate({ page: 1 }); 
     };
 
     const setRating = (val) => {

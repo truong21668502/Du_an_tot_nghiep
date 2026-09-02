@@ -11,12 +11,12 @@ const props = defineProps({
         default: 1000000,
     },
     currentMin: {
-        type: Number,
-        default: 0,
+        type: [Number, String], // Cho phép nhận chuỗi rỗng "" từ component cha
+        default: "",
     },
     currentMax: {
-        type: Number,
-        default: 1000000,
+        type: [Number, String], // Cho phép nhận chuỗi rỗng "" từ component cha
+        default: "",
     },
 });
 
@@ -39,10 +39,21 @@ watch(
 );
 
 const applyPriceRange = () => {
-    emit("update:priceRange", {
-        min: Math.min(localMin.value, localMax.value),
-        max: Math.max(localMin.value, localMax.value),
-    });
+    // Xử lý an toàn: nếu là chuỗi rỗng hoặc null thì giữ nguyên chuỗi rỗng
+    let min = localMin.value !== "" && localMin.value !== null ? Number(localMin.value) : "";
+    let max = localMax.value !== "" && localMax.value !== null ? Number(localMax.value) : "";
+
+    // Chỉ tự động đảo giá trị khi người dùng nhập đầy đủ cả min và max
+    if (min !== "" && max !== "" && min > max) {
+        const temp = min;
+        min = max;
+        max = temp;
+        // Cập nhật lại UI để hiển thị đúng thứ tự
+        localMin.value = min;
+        localMax.value = max;
+    }
+
+    emit("update:priceRange", { min, max });
 };
 
 const formatPrice = (price) => {

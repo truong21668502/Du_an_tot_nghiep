@@ -83,27 +83,24 @@ const handleClickOutside = (e) => {
 }
 
 onMounted(async () => {
-    // The parent only mounts this component when it wants the chat open,
-    // so make sure the composable's internal state reflects that. We assign
-    // `isOpen` directly (it's a plain writable ref, same as the close button
-    // uses) instead of calling `toggleChat()` — that function's exact
-    // behavior isn't guaranteed to be "always open", and if it ever flips
-    // an already-true value back to false, the panel would appear to close
-    // itself immediately after opening.
     isOpen.value = true
 
-    if (!conversationId.value && conversations.value.length === 0) {
-        await loadConversations()
+    // 1. Luôn tải lại danh sách cuộc hội thoại
+    await loadConversations()
+
+    // 2. Xác định conversationId để tải tin nhắn
+    let targetId = conversationId.value
+
+    // Nếu chưa có conversationId, chọn cuộc hội thoại đầu tiên (mới nhất)
+    if (!targetId && conversations.value.length > 0) {
+        targetId = conversations.value[0].id
     }
 
-    // Attach the outside-click listener on the NEXT tick, not this one.
-    // The click that just opened the chat (e.g. "Chat với trợ lý") is still
-    // the currently-processing click; adding a document-level 'click'
-    // listener synchronously in onMounted can, depending on timing, still
-    // catch that same originating click and immediately treat it as an
-    // "outside click" — closing the panel right after it opens. Deferring
-    // by one tick guarantees the listener only sees clicks that happen
-    // strictly after mount.
+    // 3. Nếu có targetId, luôn load lại tin nhắn (bất kể messages có dữ liệu cũ hay không)
+        await loadHistory(targetId)
+
+
+    // Gắn sự kiện click outside
     await nextTick()
     document.addEventListener('click', handleClickOutside)
 })
