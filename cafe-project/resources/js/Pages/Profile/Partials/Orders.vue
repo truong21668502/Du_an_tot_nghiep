@@ -97,6 +97,8 @@ const retryPayment = (orderId) => {
 // WEBSOCKET REALTIME
 // ================================
 
+let lastToastAt = 0
+
 onMounted(() => {
     if (typeof window.Echo === 'undefined') {
         return
@@ -105,7 +107,6 @@ onMounted(() => {
     window.Echo
         .channel('staff-orders')
         .listen('.order.status-updated', (event) => {
-
             if (!event.order) return
 
             const updatedOrder = event.order
@@ -127,7 +128,19 @@ onMounted(() => {
                 selectedOrder.value.status = updatedOrder.status
             }
 
-            toast.info(`Đơn #${updatedOrder.id} đã được cập nhật trạng thái: ${orderStatusMap[updatedOrder.status]?.label || updatedOrder.status}`)
+            // Không hiển thị toast thứ 2 nếu đến trong vòng 100ms
+            const now = Date.now()
+
+            if (now - lastToastAt >= 100) {
+                toast.info(
+                    `Đơn #${updatedOrder.id} đã được cập nhật trạng thái: ${
+                        orderStatusMap[updatedOrder.status]?.label ||
+                        updatedOrder.status
+                    }`
+                )
+
+                lastToastAt = now
+            }
         })
 })
 

@@ -24,7 +24,7 @@ onMounted(() => {
         window.Echo
             .channel('staff-orders')
             .listen('.order.status-updated', (event) => {
-                if (event.order?.id === order.value.id) {
+                if (event.order?.id === order.value?.id) {
                     currentStatus.value = event.order.status
                 }
             })
