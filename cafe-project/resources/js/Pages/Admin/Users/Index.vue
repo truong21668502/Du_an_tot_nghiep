@@ -113,28 +113,32 @@ const deleteUser = (id) => {
 <template>
     <AdminLayout>
         <div class="space-y-6 relative font-sans">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 class="text-headline-md text-on-surface font-sans text-primary text-3xl mb-2 mt-2"><span class="material-symbols-outlined text-primary">people</span> QUẢN TRỊ NHÂN SỰ & THÀNH VIÊN</h1>
                     <p class="text-body-medium text-on-surface-variant">Hệ thống cấp tài khoản nhân sự điều hành quán và điều phối tệp khách hàng</p>
                 </div>
-                <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer">
-                    <span class="material-symbols-outlined text-md">person_add</span>
-                    Thêm nhân sự mới
-                </button>
-                <button @click="switchTab('all')" 
-                        :class="currentTab === 'all' ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'"
-                        class="px-4 py-2 rounded-xl font-sans text-label-large cursor-pointer transition-all flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[18px]">group</span>
-                    Danh sách sử dụng
-                </button>
 
-                <button @click="switchTab('trash')" 
-                        :class="currentTab === 'trash' ? 'bg-error text-on-error' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'"
-                        class="px-4 py-2 rounded-xl font-sans text-label-large cursor-pointer transition-all flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[18px]">delete</span>
-                    Thùng rác dữ liệu
-                </button>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 mt-4 sm:mt-0">
+                    <button @click="switchTab('trash')" 
+                            :class="currentTab === 'trash' ? 'bg-error text-on-error' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'"
+                            class="px-4 py-2 rounded-xl font-sans text-label-large cursor-pointer transition-all flex items-center gap-1 border text-red-600 bg-white">
+                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                        Thùng rác
+                    </button>
+
+                    <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary hover:bg-primary/90 font-sans text-label-large rounded-full shadow-sm transition-all cursor-pointer">
+                        <span class="material-symbols-outlined text-md">person_add</span>
+                        Thêm nhân sự
+                    </button>
+                    <button @click="switchTab('all')" 
+                            :class="currentTab === 'all' ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'"
+                            class="px-4 py-2 rounded-xl font-sans text-label-large cursor-pointer transition-all flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[18px]">group</span>
+                        Danh sách sử dụng
+                    </button>
+                </div>
+                
             </div>
 
             <div class="bg-surface p-4 rounded-2xl border border-outline-variant/20 shadow-sm space-y-3">

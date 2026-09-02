@@ -23,9 +23,8 @@ class UserUpdateRequest extends FormRequest
             'role'          => 'required|in:ADMIN,STAFF,BARISTA,CUSTOMER',
             'status'        => 'required|in:active,inactive,banned',
             'status_note'   => 'nullable|string|max:255',
-            'gender'        => 'required|in:Nam,Nữ,Khác',
+            'gender'        => 'nullable|in:Nam,Nữ,Khác',
             'date_of_birth' => 'nullable|date',
-            'reward_points' => 'required|integer|min:0',
             'password'      => 'nullable|string|min:6|max:255', // Cho phép cập nhật mật khẩu nếu điền
         ];
     }
