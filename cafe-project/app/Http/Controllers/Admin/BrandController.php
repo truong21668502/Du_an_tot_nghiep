@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\BrandStoreRequest;
 use App\Http\Requests\Admin\BrandUpdateRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Cache;
 
 class BrandController extends Controller
 {
@@ -34,14 +35,27 @@ class BrandController extends Controller
 
     public function store(BrandStoreRequest $request)
     {
+        // Tạo thương hiệu mới từ dữ liệu hợp lệ
         Brand::create($request->validated());
+
+        // Xóa cache thương hiệu toàn cục để cập nhật dữ liệu mới
+        Cache::forget('global_brand');
+
+        // Trả về thông báo thành công
         return redirect()->back()->with('toast-success', 'Thêm thương hiệu sản phẩm thành công!');
     }
 
     public function update(BrandUpdateRequest $request, $id)
     {
+        // Cập nhật thương hiệu từ dữ liệu hợp lệ
         $brand = Brand::findOrFail($id);
+
+        // Cập nhật dữ liệu thương hiệu
         $brand->update($request->validated());
+
+        // Xóa cache thương hiệu toàn cục để cập nhật dữ liệu mới
+        Cache::forget('global_brand');
+
         return redirect()->back()->with('toast-success', 'Cập nhật thương hiệu thành công!');
     }
 
