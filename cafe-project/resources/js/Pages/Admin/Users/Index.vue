@@ -159,6 +159,7 @@ const deleteUser = (id) => {
                             <option value="STAFF">Nhân viên phục vụ</option>
                             <option value="BARISTA">Nhân viên pha chế</option>
                             <option value="ADMIN">Quản trị hệ thống (Admin)</option>
+                            <option value="SHIPPER">Tài xế giao hàng (SHIPPER)</option>
                         </select>
                     </div>
                     <div class="sm:col-span-2">

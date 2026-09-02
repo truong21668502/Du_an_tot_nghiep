@@ -20,7 +20,7 @@ class UserUpdateRequest extends FormRequest
             'full_name'     => 'required|string|max:100',
             'phone_number'  => 'nullable|string|max:15|unique:users,phone_number,' . $userId,
             'email'         => 'required|email|max:100|unique:users,email,' . $userId,
-            'role'          => 'required|in:ADMIN,STAFF,BARISTA,CUSTOMER',
+            'role'          => 'required|in:ADMIN,STAFF,BARISTA,CUSTOMER,SHIPPER',
             'status'        => 'required|in:active,inactive,banned',
             'status_note'   => 'nullable|string|max:255',
             'gender'        => 'nullable|in:Nam,Nữ,Khác',

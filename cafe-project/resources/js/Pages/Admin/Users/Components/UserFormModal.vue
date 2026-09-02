@@ -114,6 +114,7 @@ const submitForm = () => {
                             <option value="STAFF">Phục vụ (STAFF)</option>
                             <option value="BARISTA">Pha chế (BARISTA)</option>
                             <option value="ADMIN">Quản trị (ADMIN)</option>
+                            <option value="SHIPPER">Tài xế giao hàng (SHIPPER)</option>
                             <option v-if="editMode" value="CUSTOMER">Khách hàng</option>
                         </select>
                     </div>

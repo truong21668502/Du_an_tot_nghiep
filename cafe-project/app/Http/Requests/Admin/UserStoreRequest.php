@@ -20,7 +20,7 @@ class UserStoreRequest extends FormRequest
             // Email có thể bắt buộc với nhân sự, kiểm tra tối đa 100 ký tự theo Migration
             'email'        => 'required|email|max:100|unique:users,email',
             'password'     => 'required|string|min:6|max:255',
-            'role'         => 'required|in:ADMIN,STAFF,BARISTA', 
+            'role'         => 'required|in:ADMIN,STAFF,BARISTA,SHIPPER', 
             'gender'       => 'required|in:Nam,Nữ,Khác',
             'date_of_birth'=> 'nullable|date',
         ];
