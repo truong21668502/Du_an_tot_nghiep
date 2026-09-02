@@ -95,13 +95,6 @@ const restoreUser = (id) => {
     }
 };
 
-// Hàm xóa vĩnh viễn
-const forceDeleteUser = (id) => {
-    if (confirm("CẢNH BÁO: Hành động này sẽ xóa vĩnh viễn tài khoản và KHÔNG THỂ khôi phục. Bạn vẫn muốn tiếp tục?")) {
-        router.delete(`/quan-tri/nguoi-dung/${id}/force-delete`);
-    }
-};
-
 // Hàm xóa mềm cũ 
 const deleteUser = (id) => {
     if (confirm("Đưa tài khoản này vào thùng rác?")) {
@@ -250,10 +243,6 @@ const deleteUser = (id) => {
                                         <button @click="restoreUser(user.id)" class="text-primary hover:text-primary/80 flex items-center gap-0.5 font-bold cursor-pointer" title="Khôi phục tài khoản">
                                             <span class="material-symbols-outlined text-[20px]">settings_backup_restore</span>
                                             Khôi phục
-                                        </button>
-                                        <button @click="forceDeleteUser(user.id)" class="text-error hover:text-error/80 flex items-center gap-0.5 cursor-pointer" title="Xóa vĩnh viễn không thể phục hồi">
-                                            <span class="material-symbols-outlined text-[20px]">delete_forever</span>
-                                            Xóa hẳn
                                         </button>
                                     </div>
                                 
