@@ -95,6 +95,9 @@ class GeminiService
 
         $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
 
+        //lấy dữ liệu từ khoá vi phạm để đảm bảo AI không trả lời ngoài phạm vi
+        $prohibitedWords = ProhibitedWord::pluck('word')->toArray();
+
         $systemPrompt = "Bạn là Chuyên gia tư vấn chiến lược kinh doanh F&B cho quán Nắng Coffee.\n"
             . "Nhiệm vụ: Phân tích số liệu thực tế được cung cấp để giải quyết 3 vấn đề:\n"
             . "1. Khung giờ nào khách mua hàng nhiều nhất?\n"
@@ -102,6 +105,7 @@ class GeminiService
             . "3. Gợi ý chiến lược kinh doanh tiếp theo cho Nắng Coffee.\n"
             . "QUY TẮC:\n"
             . "- CHỈ phân tích dữ liệu F&B của Nắng Coffee được cung cấp bên dưới.\n"
+            . "- KHÔNG sử dụng các từ ngữ vi phạm: " . implode(', ', $prohibitedWords) . ".\n"
             . "- Trình bày trọng tâm, ngắn gọn dưới 300 từ, có gạch đầu dòng và emoji sinh động.";
 
         // Chuyển đổi dữ liệu doanh số thành JSON để gửi cho AI
@@ -168,6 +172,9 @@ class GeminiService
         // URL API của Gemini
         $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
 
+        //lấy dữ liệu từ khoá vi phạm để đảm bảo AI không trả lời ngoài phạm vi
+        $prohibitedWords = ProhibitedWord::pluck('word')->toArray();
+
         // Tạo prompt hệ thống với hướng dẫn chi tiết và dữ liệu kinh doanh
         $systemPrompt = "Bạn là Trợ lý AI chuyên trách quản lý và vận hành cho dự án Nắng Coffee.\n\n"
             . "=== PHẠM VI HOẠT ĐỘNG (BẮT BUỘC TỦY THỦ) ===\n"
@@ -179,6 +186,7 @@ class GeminiService
             . "   - Nếu người dùng hỏi về các chủ đề không liên quan (ví dụ: lập trình, giải toán, thời tiết, tin tức xã hội, lịch sử thế giới, tư vấn tình cảm, công nghệ chung, trò chơi...):\n"
             . "   - Hãy TỪ CHỐI LỊCH SỰ và nhắc người dùng quay lại chủ đề Nắng Coffee.\n"
             . "   - Mẫu câu từ chối tham khảo: \"Dạ, tôi là Trợ lý AI chuyên trách của Nắng Coffee nên chỉ có thể hỗ trợ các vấn đề liên quan đến quán, thực đơn, khách hàng và chiến lược F&B. Bạn có cần hỗ trợ gì về hoạt động của quán không ạ? ☕\"\n\n"
+            . "- KHÔNG sử dụng các từ ngữ vi phạm: " . implode(', ', $prohibitedWords) . ".\n"
             . "=== DỮ LIỆU KINH DOANH CỦA NẮNG COFFEE ===\n"
             . json_encode($salesData, JSON_UNESCAPED_UNICODE);
 

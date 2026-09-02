@@ -34,9 +34,16 @@ class CategoryController extends Controller
 
         if (empty($validated['slug'])) {
             $validated['slug'] = Str::slug($validated['category_name']);
-            $slugCount = Category::where('slug', 'LIKE', $validated['slug'] . '%')->count();
+            $slugCount = Category::where('slug', 'LIKE', '%' . $validated['slug'] . '%')->count();
             if ($slugCount > 0) {
                 $validated['slug'] .= '-' . ($slugCount + 1);
+            }
+        }
+        else{
+            // Kiểm tra xem slug có bị trùng với các danh mục khác không
+            $slugCount = Category::where('slug', $validated['slug'])->count();
+            if ($slugCount > 0) {
+                return redirect()->back()->with('toast-error', 'Slug đã tồn tại. Vui lòng chọn slug khác.');
             }
         }
 
@@ -56,13 +63,26 @@ class CategoryController extends Controller
 
         if (empty($validated['slug'])) {
             $validated['slug'] = Str::slug($validated['category_name']);
-            $slugCount = Category::where('slug', 'LIKE', $validated['slug'] . '%')
+            $slugCount = Category::where('slug', 'LIKE', '%' . $validated['slug'] . '%')
                 ->where('id', '!=', $category->id)
                 ->count();
             if ($slugCount > 0) {
                 $validated['slug'] .= '-' . ($slugCount + 1);
             }
         }
+        else{
+            // Kiểm tra xem slug có bị trùng với các danh mục khác không
+            $slugCount = Category::where('slug', $validated['slug'])
+                ->where('id', '!=', $category->id)
+                ->count();
+            if ($slugCount > 0) {
+                return redirect()->back()->with('toast-error', 'Slug đã tồn tại. Vui lòng chọn slug khác.');
+            }
+
+            // Nếu slug không bị trùng, nhưng người dùng vẫn để trống slug, thì tự động tạo slug từ category_name
+            $validated['slug'] = Str::slug($validated['category_name']);
+        }
+
 
         // Cập nhật dữ liệu vào database
         $category->update($validated);

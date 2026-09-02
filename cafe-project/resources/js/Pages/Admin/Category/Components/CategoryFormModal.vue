@@ -49,6 +49,7 @@ const submitForm = () => {
         });
     }
 };
+
 </script>
 
 <template>
