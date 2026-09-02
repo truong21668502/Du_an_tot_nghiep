@@ -127,7 +127,7 @@ private function placeOrder(Cart $cart, array $data, Request $request): Order
                 }
             }
 
-            if ($data['order_type'] !== 'DELIVERY' || $data['payment_method'] !== 'VNPAY') {
+            if ($data['order_type'] !== 'DELIVERY' || $data['payment_method'] !== 'BANK_TRANSFER') {
                 broadcast(new OrderCreated($order));
             }
 
