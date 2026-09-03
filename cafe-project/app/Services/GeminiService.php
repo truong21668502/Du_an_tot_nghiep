@@ -109,7 +109,7 @@ class GeminiService
             . "- Trình bày trọng tâm, ngắn gọn dưới 300 từ, có gạch đầu dòng và emoji sinh động.";
 
         // Chuyển đổi dữ liệu doanh số thành JSON để gửi cho AI
-        $dataJson = json_encode($salesData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $dataJson = json_encode($salesData, JSON_UNESCAPED_UNICODE);
 
         $userPrompt = "Dưới đây là dữ liệu thống kê đơn hàng từ hệ thống quán Nắng Coffee:\n"
             . "```json\n{$dataJson}\n```\n\n"
@@ -167,7 +167,7 @@ class GeminiService
         $maxTokens   = 400;
 
         // Giảm temperature xuống 0.5 để AI tuân thủ luật nghiêm ngặt hơn
-        $temperature = 0.5; // Giảm temperature xuống 0.5 để AI tuân thủ luật nghiêm ngặt hơn
+        $temperature = 0.5;
 
         // URL API của Gemini
         $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";

@@ -83,6 +83,8 @@ class UserVoucherController extends Controller
                                     ->where('coupon_id', $couponId)
                                     ->where('is_used', false)
                                     ->exists();
+
+                // Nếu chưa có thì tạo mới, nếu đã có thì bỏ qua để tránh trùng lặp
                 if (!$exists) {
                     CouponUser::create([
                         'user_id'   => $userId,
@@ -107,6 +109,7 @@ class UserVoucherController extends Controller
             return redirect()->back()->with('toast-error', 'Khách hàng này hiện đang sở hữu mã này trong ví và chưa sử dụng!');
         }
 
+        // Nếu chưa có thì tạo mới, nếu đã có thì bỏ qua để tránh trùng lặp
         CouponUser::create([
             'user_id'   => $userId,
             'coupon_id' => $couponId,

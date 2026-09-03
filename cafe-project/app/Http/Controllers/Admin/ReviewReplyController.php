@@ -29,6 +29,7 @@ class ReviewReplyController extends Controller
                 ], 422);
             }
 
+            // Tạo phản hồi mới trong một transaction để đảm bảo tính toàn vẹn dữ liệu
             $reply = DB::transaction(function () use ($request, $review) {
                 return $review->replies()->create([
                     'user_id' => $request->user()->id,
@@ -36,8 +37,10 @@ class ReviewReplyController extends Controller
                 ]);
             });
 
+            // Load thông tin user để trả về trong response
             $reply->load('user:id,full_name,role');
 
+            // Trả về phản hồi thành công với dữ liệu phản hồi mới
             return response()->json([
                 'success' => true,
                 'message' => 'Phản hồi đánh giá thành công.',
@@ -79,6 +82,7 @@ public function update(ReplyReviewRequest $request, ReviewReply $reply)
         ], 403);
     }
 
+    // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu
     try {
         DB::transaction(function () use ($request, $reply) {
             $reply->update([
